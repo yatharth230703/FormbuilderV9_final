@@ -1,0 +1,7 @@
+node_modules/
+.env
+.replit
+rename_column_migration.sql
+supabase_rls_policies.sql
+update_rls_policies.sql
+attached_assets/

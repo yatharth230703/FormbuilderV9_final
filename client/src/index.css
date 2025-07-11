@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Quotation display styles */
+.quotation-display {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.quotation-display h1,
+.quotation-display h2,
+.quotation-display h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.quotation-display p {
+  margin-bottom: 0.75rem;
+}
+
+.quotation-display .quotation-content {
+  max-width: 100%;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    --primary: 141 73% 43%;              /* #1DB954 in HSL */
+    --primary-foreground: 0 0% 0%;       /* black */
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+
+  /* Component specific styles */
+  .bg-slate-900 {
+    background-color: white;
+  }
+
+  .bg-slate-800 {
+    background-color: #f9fafb; /* gray-50 */
+  }
+
+  .text-slate-400 {
+    color: #6b7280; /* gray-500 */
+  }
+
+  .text-slate-300 {
+    color: #374151; /* gray-700 */
+  }
+
+  .border-slate-700 {
+    border-color: #e5e7eb; /* gray-200 */
+  }
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;     /* Firefox */
+}

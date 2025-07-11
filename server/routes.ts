@@ -1,0 +1,766 @@
+import type { Express } from "express";
+import fs from 'fs'
+import express from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { z } from "zod";
+import { generateFormFromPrompt, editJsonWithLLM } from "./services/gemini";
+import { generateIconsFromOptions } from "./services/icons";
+import {
+  insertFormConfigSchema,
+  insertFormResponseSchema,
+} from "@shared/schema";
+import adminRoutes from "./admin";
+import authRoutes from "./auth";
+import { FormConfig } from "@shared/types";
+import { apiKeyAuthMiddleware } from "./services/api-key";
+import { deleteFormConfig, createFormConfig } from "./services/supabase";
+import Stripe from "stripe";
+import { getOrCreateApiKeyForUser } from "./services/api-key";
+import * as supabaseService from "./services/supabase";
+import { Request, Response } from "express";
+import { eq, desc } from "drizzle-orm";
+import { db } from "./db";
+import multer from "multer";
+import mammoth from "mammoth";
+import path from "path";
+import { parsePdf } from "./services/pdf-parser";
+import { uploadDocumentToStorage } from "./services/supabase-storage";
+import { sendFormResponseEmail } from "./services/email";
+import { generateQuotation, QuotationRequest } from "./services/quotation-generator";
+import { executeConsoleActions } from "./console-functions/executor";
+import { executeFormConfigFunctions } from "./console-functions/executor";
+
+const promptSchema = z.object({
+  prompt: z.string().min(1),
+});
+
+const publishSchema = z.object({
+  originalFormId: z.coerce.number().nullable().optional(),
+  label: z.string().min(1),
+  config: z.object({}).passthrough(),
+  language: z.string().default("en"),
+  promptHistory: z.array(z.string()).optional(),
+});
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+});
+
+// Helper functions for processing conditions
+
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Debug endpoint to check session state
+  app.get("/api/debug/session", (req, res) => {
+    res.json({
+      sessionID: req.sessionID,
+      session: req.session,
+      user: req.session.user || null,
+    });
+  });
+
+  // Temporary API key generation endpoint
+  app.get("/api/dev/generate-api-key", async (req, res) => {
+    try {
+      const userId = req.session.user?.supabaseUserId;
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ error: "Unauthorized: No user session found" });
+      }
+
+      const apiKey = await getOrCreateApiKeyForUser(userId);
+      return res.json({ apiKey });
+    } catch (err) {
+      console.error("Error generating API key:", err);
+      return res.status(500).json({ error: "Failed to generate API key" });
+    }
+  });
+
+  // Get user credits - THIS IS THE CRITICAL ENDPOINT FOR YOUR CREDITS
+  app.get("/api/user/credits", async (req, res) => {
+    try {
+      const userId = req.session.user?.supabaseUserId;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const user = await supabaseService.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      return res.json({
+        credits: user.credits || 0,
+      });
+    } catch (error) {
+      console.error("Error fetching user credits:", error);
+      return res.status(500).json({ error: "Failed to fetch credits" });
+    }
+  });
+
+  // Create Stripe checkout session for purchasing credits
+  app.post("/api/purchase-credits", async (req, res) => {
+    try {
+      const userId = req.session.user?.supabaseUserId;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const creditPackages = {
+        starter: { credits: 10, price: 5, name: "Starter" },
+        pro: { credits: 25, price: 10, name: "Pro" },
+        premium: { credits: 80, price: 20, name: "Premium" },
+      };
+
+      const { package: packageId } = req.body;
+      const selectedPackage =
+        creditPackages[packageId as keyof typeof creditPackages];
+
+      if (!selectedPackage) {
+        return res.status(400).json({ error: "Invalid package selected" });
+      }
+
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+        apiVersion: "2024-04-10",
+      });
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: `${selectedPackage.name} Credits Package`,
+                description: `${selectedPackage.credits} form creation credits`,
+              },
+              unit_amount: selectedPackage.price * 100,
+            },
+            quantity: 1,
+          },
+        ],
+        mode: "payment",
+        success_url: `${req.protocol}://${req.get("host")}/dashboard?payment=success`,
+        cancel_url: `${req.protocol}://${req.get("host")}/dashboard?payment=cancelled`,
+        metadata: {
+          userId,
+          credits: selectedPackage.credits.toString(),
+          package: packageId,
+        },
+      });
+
+      return res.json({ sessionId: session.id });
+    } catch (error) {
+      console.error("Error creating checkout session:", error);
+      return res
+        .status(500)
+        .json({ error: "Failed to create checkout session" });
+    }
+  });
+
+  // Icons endpoint
+  app.post("/api/icons", async (req, res) => {
+    try {
+      const { options } = req.body;
+
+      if (!Array.isArray(options)) {
+        return res.status(400).json({ error: "optionTitles must be an array" });
+      }
+
+      const { generateIconsFromOptions } = await import("./services/icons");
+      const icons = await generateIconsFromOptions(options);
+
+      return res.json({ icons });
+    } catch (error) {
+      console.error("Error generating icons:", error);
+      return res.status(500).json({ error: "Failed to generate icons" });
+    }
+  });
+
+  // Register admin routes
+  app.use("/api/admin", adminRoutes);
+
+  // Register auth routes
+  app.use("/api/auth", authRoutes);
+
+  // Get responses for a specific form by form ID
+  app.get("/api/forms/:id/responses", async (req, res) => {
+    try {
+      const formId = parseInt(req.params.id);
+      if (isNaN(formId)) {
+        return res.status(400).json({ error: "Invalid form ID" });
+      }
+
+      const responses = await supabaseService.getFormResponsesByFormId(formId);
+      return res.json(responses);
+    } catch (error) {
+      console.error("Error fetching form responses:", error);
+      return res.status(500).json({ error: "Failed to fetch responses" });
+    }
+  });
+
+  // Get all forms for the current user
+  app.get("/api/forms", async (req, res) => {
+    try {
+      const userId = req.session.user?.supabaseUserId;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const forms = await supabaseService.getUserFormConfigs(userId);
+      return res.json(forms);
+    } catch (error) {
+      console.error("Error fetching forms:", error);
+      return res.status(500).json({ error: "Failed to fetch forms" });
+    }
+  });
+
+  // Delete a form
+  app.delete("/api/forms/:id", async (req, res) => {
+    try {
+      const userId = req.session.user?.supabaseUserId;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const formId = parseInt(req.params.id);
+      if (isNaN(formId)) {
+        return res.status(400).json({ error: "Invalid form ID" });
+      }
+
+      const success = await supabaseService.deleteFormConfig(formId);
+      if (!success) {
+        return res
+          .status(404)
+          .json({ error: "Form not found or could not be deleted" });
+      }
+
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting form:", error);
+      return res.status(500).json({ error: "Failed to delete form" });
+    }
+  });
+
+  // Generate icons for form options
+  app.post("/api/icons", async (req, res) => {
+    try {
+      const { optionTitles } = req.body;
+
+      if (!Array.isArray(optionTitles)) {
+        return res.status(400).json({ error: "optionTitles must be an array" });
+      }
+
+      const icons = await generateIconsFromOptions(optionTitles);
+      return res.json({ icons });
+    } catch (err: any) {
+      console.error("Error in /api/icons:", err);
+      return res.status(500).json({ error: err.message || "Internal error" });
+    }
+  });
+
+  // Frontend form generation endpoint (used by dashboard)
+  app.post("/api/prompt", async (req, res) => {
+    try {
+      const userId = req.session.user?.supabaseUserId;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Check user credits using Supabase
+      const user = await supabaseService.getUserById(userId);
+      if (!user || (user.credits || 0) < 1) {
+        return res.status(402).json({
+          error: "Insufficient credits. You need 1 credit to create a form.",
+          creditsRequired: 1,
+          creditsAvailable: user?.credits || 0,
+        });
+      }
+
+      const validatedData = promptSchema.parse(req.body);
+      const formConfig = await generateFormFromPrompt(validatedData.prompt);
+
+      if (!formConfig) {
+        return res.status(500).json({ error: "Failed to generate form" });
+      }
+
+      // Save the form to Supabase
+      const label = `Generated Form ${new Date().toLocaleDateString()}`;
+      const savedFormId = await supabaseService.createFormConfig(
+        label,
+        formConfig,
+        "en",
+        null,
+        userId,
+      );
+
+      // Deduct credit after successful generation
+      await supabaseService.deductUserCredits(userId!, 1);
+
+      return res.json({ id: savedFormId, config: formConfig });
+    } catch (error: any) {
+      console.error("Error generating form:", error);
+      if (error.name === "ZodError") {
+        return res
+          .status(400)
+          .json({ error: "Invalid request data", details: error.errors });
+      }
+      return res.status(500).json({ error: "Failed to generate form" });
+    }
+  });
+
+  // API key based form generation endpoint (for external API access)
+  app.post("/api/generate-form", apiKeyAuthMiddleware, async (req, res) => {
+    try {
+      const userId = req.user?.uuid;
+
+      // Check user credits using Supabase
+      const user = await supabaseService.getUserById(userId!);
+      if (!user || (user.credits || 0) < 1) {
+        return res.status(402).json({
+          error: "Insufficient credits. You need 1 credit to create a form.",
+          creditsRequired: 1,
+          creditsAvailable: user?.credits || 0,
+        });
+      }
+
+      const validatedData = promptSchema.parse(req.body);
+      const formConfig = await generateFormFromPrompt(validatedData.prompt);
+
+      if (!formConfig) {
+        return res.status(500).json({ error: "Failed to generate form" });
+      }
+
+      await supabaseService.deductUserCredits(userId!, 1);
+
+      return res.json(formConfig);
+    } catch (error: any) {
+      console.error("Error generating form:", error);
+      if (error.name === "ZodError") {
+        return res
+          .status(400)
+          .json({ error: "Invalid request data", details: error.errors });
+      }
+      return res.status(500).json({ error: "Failed to generate form" });
+    }
+  });
+
+  // Publish a form configuration
+  app.post("/api/publish", async (req, res) => {
+    try {
+      const userId = req.session.user?.supabaseUserId;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const validatedData = publishSchema.parse(req.body);
+
+      const formData = {
+        userId,
+        label: validatedData.label,
+        config: validatedData.config as FormConfig,
+        language: validatedData.language,
+        promptHistory: validatedData.promptHistory,
+      };
+
+      const savedForm = await storage.createFormConfig(formData);
+      return res.json(savedForm);
+    } catch (error: any) {
+      console.error("Error publishing form:", error);
+      if (error.name === "ZodError") {
+        return res
+          .status(400)
+          .json({ error: "Invalid form data", details: error.errors });
+      }
+      return res.status(500).json({ error: "Failed to publish form" });
+    }
+  });
+
+  // Edit form with AI
+  app.post("/api/edit-form", async (req, res) => {
+    try {
+      const userId = req.session.user?.supabaseUserId;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Check user credits
+      const user = await supabaseService.getUserById(userId);
+      if (!user || (user.credits || 0) < 1) {
+        return res.status(402).json({
+          error: "Insufficient credits. You need 1 credit to edit a form.",
+          creditsRequired: 1,
+          creditsAvailable: user?.credits || 0,
+        });
+      }
+
+      const { currentConfig, instruction } = req.body;
+
+      if (!currentConfig || !instruction) {
+        return res
+          .status(400)
+          .json({ error: "Missing currentConfig or instruction" });
+      }
+
+      const updatedConfig = await editJsonWithLLM(currentConfig, instruction);
+
+      if (!updatedConfig) {
+        return res.status(500).json({ error: "Failed to edit form" });
+      }
+
+      // Deduct credit after successful edit
+      await storage.deductUserCredits(userId, 1);
+
+      return res.json(updatedConfig as FormConfig);
+    } catch (error: any) {
+      console.error("Error editing form:", error);
+      return res.status(500).json({ error: "Failed to edit form" });
+    }
+  });
+
+  // Get a specific form by ID
+  app.get("/api/forms/:id", async (req, res) => {
+    try {
+      const formId = parseInt(req.params.id);
+      if (isNaN(formId)) {
+        return res.status(400).json({ error: "Invalid form ID" });
+      }
+
+      const form = await supabaseService.getFormConfig(formId);
+      if (!form) {
+        return res.status(404).json({ error: "Form not found" });
+      }
+
+      // --- INTEGRATE AUTO-SELECT LOGIC ---
+      let modifiedForm = { ...form };
+      if (form.form_console) {
+        try {
+          console.log(`[Form Config] Running executeFormConfigFunctions for formId ${formId} with form_console:`, JSON.stringify(form.form_console));
+          modifiedForm.config = await executeFormConfigFunctions(form.config, form.form_console);
+          console.log(`[Form Config] Modified form config after auto-select for formId ${formId}:`, JSON.stringify(modifiedForm.config));
+        } catch (autoSelectError) {
+          console.error(`[Form Config] Error running executeFormConfigFunctions for formId ${formId}:`, autoSelectError);
+        }
+      }
+      // --- END AUTO-SELECT LOGIC ---
+
+      return res.json(modifiedForm);
+    } catch (error) {
+      console.error("Error fetching form:", error);
+      return res.status(500).json({ error: "Failed to fetch form" });
+    }
+  });
+
+  // Upload document endpoint
+  app.post(
+    "/api/upload-document",
+    upload.single("document"),
+    async (req, res) => {
+      try {
+        if (!req.file) {
+          return res.status(400).json({ error: "No file uploaded" });
+        }
+
+        const file = req.file;
+        let extractedText = "";
+
+        // Extract text based on file type
+        if (file.mimetype === "application/pdf") {
+          const pdfData = await parsePdf(file.buffer);
+          extractedText = pdfData.text;
+        } else if (
+          file.mimetype ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ) {
+          const result = await mammoth.extractRawText({ buffer: file.buffer });
+          extractedText = result.value;
+        } else if (file.mimetype === "text/plain") {
+          extractedText = file.buffer.toString("utf-8");
+        } else {
+          return res.status(400).json({ error: "Unsupported file type" });
+        }
+
+        // Upload document to Supabase Storage
+        const documentUrl = await uploadDocumentToStorage(
+          file.buffer,
+          file.originalname,
+          file.mimetype
+        );
+
+        console.log("Document uploaded and processed:", {
+          fileName: file.originalname,
+          fileSize: file.size,
+          documentUrl: documentUrl,
+          extractedTextLength: extractedText.length,
+        });
+
+        return res.json({
+          documentUrl: documentUrl,
+          extractedText: extractedText,
+        });
+      } catch (error) {
+        console.error("Error processing document:", error);
+        return res.status(500).json({ error: "Failed to process document" });
+      }
+    },
+  );
+
+  // Submit a form response
+  app.post("/api/forms/:id/submit", async (req, res) => {
+    console.log("[Form Submission] Form submission received");
+    try {
+      const formId = parseInt(req.params.id);
+      if (isNaN(formId)) {
+        return res.status(400).json({ error: "Invalid form ID" });
+      }
+
+      // Get the form to validate it exists and get label
+      const form = await supabaseService.getFormConfig(formId);
+      if (!form) {
+        return res.status(404).json({ error: "Form not found" });
+      }
+      console.log(`[Form Submission] Loaded form config for formId ${formId}: label=${form.label}`);
+      if (form.form_console) {
+        console.log(`[Form Submission] Loaded form_console config for formId ${formId}:`, JSON.stringify(form.form_console));
+      } else {
+        console.log(`[Form Submission] No form_console config found for formId ${formId}`);
+      }
+
+      // Create the form response with proper parameter order
+      const savedResponseId = await supabaseService.createFormResponse(
+        form.label,
+        req.body,
+        "en",
+        null,
+        formId,
+        null, // userUuid
+      );
+      console.log(`[Form Submission] Form response saved with ID ${savedResponseId} for formId ${formId}`);
+
+      // --- INTEGRATE CONSOLE FUNCTION EXECUTION ---
+      try {
+        console.log(`[Form Submission] Executing console functions for formId ${formId}...`);
+        await executeConsoleActions(formId, req.body, form.label);
+        console.log(`[Form Submission] Console functions executed for formId ${formId}`);
+      } catch (consoleError) {
+        console.error(`[Form Submission] Error executing console functions for formId ${formId}:`, consoleError);
+      }
+      // --- END INTEGRATION ---
+
+      // Send email notification if user provided an email
+      try {
+        // Look for email in the response data (common field names)
+        // const userEmail = req.body.email || req.body.Email || req.body.emailAddress || 
+        //                  req.body['Email Address'] || req.body['email_address'] ||
+        //                  req.body.contact?.email || req.body.Contact?.email ||
+        //                  req.body['Your Contact Information 📧']?.email;
+        console.log("email loop entered");
+/////////////CHANGEDLOCAL        
+        fs.appendFileSync('log.txt',JSON.stringify(req.body) + '\n')
+
+        const keys = Object.keys(req.body);
+        const lastKey = keys[keys.length - 1];
+        const userEmail = req.body[lastKey]?.email;
+////////////CHANGEDLOCAL
+        if (userEmail && form.user_uuid) {
+          // Get form creator's email
+          console.log("email exists")
+          const formCreator = await supabaseService.getUserById(form.user_uuid);
+          if (formCreator && formCreator.email) {
+            await sendFormResponseEmail(
+              formCreator.email,
+              userEmail,
+              form.label,
+              req.body
+            );
+            console.log(`email sent to ${userEmail} for form , this is route proof`)
+          }
+        }
+      } catch (emailError) {
+        console.error('Failed to send confirmation email:', emailError);
+        // Don't fail the form submission if email fails
+      }
+
+      return res.json({ success: true, id: savedResponseId });
+    } catch (error: any) {
+      console.error("Error submitting form response:", error);
+
+      // Ensure we always return JSON, never HTML
+      const errorMessage = error?.message || "Failed to submit response";
+      return res.status(500).json({
+        error: errorMessage,
+        success: false,
+      });
+    }
+  });
+
+  // Save quotation template endpoint
+  app.post('/api/quotation-template', async (req, res) => {
+    try {
+      const { template, formId } = req.body;
+      const userId = req.session.user?.supabaseUserId;
+
+      if (!template || !formId) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Template and formId are required' 
+        });
+      }
+
+      // Save template to database or session storage
+      // For now, we'll store it in session for simplicity
+      if (!req.session.quotationTemplates) {
+        req.session.quotationTemplates = {};
+      }
+      req.session.quotationTemplates[formId] = template;
+
+      res.json({ 
+        success: true, 
+        message: 'Quotation template saved successfully' 
+      });
+    } catch (error) {
+      console.error('Error saving quotation template:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to save quotation template' 
+      });
+    }
+  });
+
+  // Get quotation template endpoint
+  app.get('/api/quotation-template/:formId', async (req, res) => {
+    try {
+      const { formId } = req.params;
+      const userId = req.session.user?.supabaseUserId;
+
+      const template = req.session.quotationTemplates?.[formId] || '';
+
+      res.json({ 
+        success: true, 
+        template 
+      });
+    } catch (error) {
+      console.error('Error retrieving quotation template:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to retrieve quotation template' 
+      });
+    }
+  });
+
+  // Generate quotation using AI agent
+  app.post("/api/generate-quotation", async (req, res) => {
+    try {
+      const { formResponses, documentData, contentPrompt, formId } = req.body;
+      const stepTitle = Object.keys(documentData).find(key => key.toLowerCase().includes('document info') || key.toLowerCase().includes('analyzing your document')) || 'Document Information';
+      console.log('[API] /api/generate-quotation called with:', { formResponses, documentData, contentPrompt, formId, stepTitle });
+      // Use Gemini agent to generate quotation
+      const quotationResult = await generateQuotation({
+        formResponses,
+        documentContent: documentData.documentContent,
+        contentGenerationPrompt: contentPrompt
+      });
+      console.log('[API] Gemini quotation result:', quotationResult);
+      // Save the generated quotation in Supabase under the step title key
+      if (formId) {
+        // Fetch the latest form response for this formId
+        const responses = await supabaseService.getFormResponsesByFormId(formId);
+        const latestResponse = responses && responses.length > 0 ? responses[0] : null;
+        if (latestResponse) {
+          // Update the response object with the new quotation under the step title
+          const updatedResponse = {
+            ...latestResponse.response,
+            [stepTitle]: quotationResult.quotationHtml || quotationResult.quotation || 'Failed to generate quotation.'
+          };
+          // Save the updated response back to Supabase
+          await supabaseService.createFormResponse(
+            latestResponse.label,
+            updatedResponse,
+            latestResponse.language,
+            latestResponse.portal,
+            formId,
+            latestResponse.user_uuid || null
+          );
+          console.log('[API] Quotation saved in Supabase for formId', formId, 'under key', stepTitle);
+        } else {
+          console.warn('[API] No existing form response found for formId', formId, '. Skipping Supabase save.');
+        }
+      } else {
+        console.warn('[API] No formId provided. Skipping Supabase save.');
+      }
+      res.json({ quotation: quotationResult.quotationHtml || quotationResult.quotation });
+    } catch (error) {
+      console.error('[API] Error generating quotation:', error);
+      res.status(500).json({ quotation: 'An error occurred while generating the quotation.' });
+    }
+  });
+
+  // Console Functions API endpoints
+  
+  // Get console configuration for a form
+  app.get("/api/console/:formId", async (req, res) => {
+    try {
+      const formId = parseInt(req.params.formId);
+      const userId = req.session.user?.supabaseUserId;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const form = await supabaseService.getFormConfig(formId);
+      
+      if (!form || form.user_uuid !== userId) {
+        return res.status(404).json({ error: "Form not found" });
+      }
+      
+      res.json({
+        formId: form.id,
+        formLabel: form.label,
+        consoleConfig: form.form_console || {}
+      });
+    } catch (error) {
+      console.error("Error fetching console config:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+  
+  // Update console configuration for a form
+  app.put("/api/console/:formId", async (req, res) => {
+    try {
+      const formId = parseInt(req.params.formId);
+      const userId = req.session.user?.supabaseUserId;
+      const { consoleConfig } = req.body;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Verify form ownership
+      const form = await supabaseService.getFormConfig(formId);
+      
+      if (!form || form.user_uuid !== userId) {
+        return res.status(404).json({ error: "Form not found" });
+      }
+      
+      // Update the console configuration
+      await supabaseService.updateFormConsole(formId, consoleConfig);
+      
+      res.json({ success: true, message: "Console configuration updated" });
+    } catch (error) {
+      console.error("Error updating console config:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+  
+  // These endpoints are no longer needed with the new console structure
+  // The new structure uses direct configuration rather than AI-processed conditions
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
