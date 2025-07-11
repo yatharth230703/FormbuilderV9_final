@@ -1,5 +1,5 @@
 ## To run this project locally , for demos 
-### 1 git clone https://github.com/yatharth230703/form_builder_V6.git
+### 1 git clone https://github.com/yatharth230703/FormbuilderV9_final
 ### 2 cd form_builder_V6 
 ### 3 npm install 
 ### 4 npm run dev
