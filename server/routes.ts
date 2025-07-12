@@ -543,49 +543,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       console.log(`[Form Submission] Form response saved with ID ${savedResponseId} for formId ${formId}`);
 
-      // --- INTEGRATE CONSOLE FUNCTION EXECUTION ---
-      try {
-        console.log(`[Form Submission] Executing console functions for formId ${formId}...`);
-        await executeConsoleActions(formId, req.body, form.label);
-        console.log(`[Form Submission] Console functions executed for formId ${formId}`);
-      } catch (consoleError) {
-        console.error(`[Form Submission] Error executing console functions for formId ${formId}:`, consoleError);
-      }
-      // --- END INTEGRATION ---
+//COMMENTING OUT THE EMAIL SENDING FOR NOW 
 
-      // Send email notification if user provided an email
-      try {
-        // Look for email in the response data (common field names)
-        // const userEmail = req.body.email || req.body.Email || req.body.emailAddress || 
-        //                  req.body['Email Address'] || req.body['email_address'] ||
-        //                  req.body.contact?.email || req.body.Contact?.email ||
-        //                  req.body['Your Contact Information 📧']?.email;
-        console.log("email loop entered");
-/////////////CHANGEDLOCAL        
-        fs.appendFileSync('log.txt',JSON.stringify(req.body) + '\n')
+//       // --- INTEGRATE CONSOLE FUNCTION EXECUTION ---
+//       try {
+//         console.log(`[Form Submission] Executing console functions for formId ${formId}...`);
+//         await executeConsoleActions(formId, req.body, form.label);
+//         console.log(`[Form Submission] Console functions executed for formId ${formId}`);
+//       } catch (consoleError) {
+//         console.error(`[Form Submission] Error executing console functions for formId ${formId}:`, consoleError);
+//       }
+//       // --- END INTEGRATION ---
 
-        const keys = Object.keys(req.body);
-        const lastKey = keys[keys.length - 1];
-        const userEmail = req.body[lastKey]?.email;
-////////////CHANGEDLOCAL
-        if (userEmail && form.user_uuid) {
-          // Get form creator's email
-          console.log("email exists")
-          const formCreator = await supabaseService.getUserById(form.user_uuid);
-          if (formCreator && formCreator.email) {
-            await sendFormResponseEmail(
-              formCreator.email,
-              userEmail,
-              form.label,
-              req.body
-            );
-            console.log(`email sent to ${userEmail} for form , this is route proof`)
-          }
-        }
-      } catch (emailError) {
-        console.error('Failed to send confirmation email:', emailError);
-        // Don't fail the form submission if email fails
-      }
+//       // Send email notification if user provided an email
+//       try {
+//         // Look for email in the response data (common field names)
+//         // const userEmail = req.body.email || req.body.Email || req.body.emailAddress || 
+//         //                  req.body['Email Address'] || req.body['email_address'] ||
+//         //                  req.body.contact?.email || req.body.Contact?.email ||
+//         //                  req.body['Your Contact Information 📧']?.email;
+//         console.log("email loop entered");
+// /////////////CHANGEDLOCAL        
+//         fs.appendFileSync('log.txt',JSON.stringify(req.body) + '\n')
+
+//         const keys = Object.keys(req.body);
+//         const lastKey = keys[keys.length - 1];
+//         const userEmail = req.body[lastKey]?.email;
+// ////////////CHANGEDLOCAL
+//         if (userEmail && form.user_uuid) {
+//           // Get form creator's email
+//           console.log("email exists")
+//           const formCreator = await supabaseService.getUserById(form.user_uuid);
+//           if (formCreator && formCreator.email) {
+//             await sendFormResponseEmail(
+//               formCreator.email,
+//               userEmail,
+//               form.label,
+//               req.body
+//             );
+//             console.log(`email sent to ${userEmail} for form , this is route proof`)
+//           }
+//         }
+//       } catch (emailError) {
+//         console.error('Failed to send confirmation email:', emailError);
+//         // Don't fail the form submission if email fails
+//       }
 
       return res.json({ success: true, id: savedResponseId });
     } catch (error: any) {
