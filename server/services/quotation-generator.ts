@@ -11,30 +11,9 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_API_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent";
 
-const QUOTATION_SYSTEM_PROMPT = `You are a professional quotation generation agent that creates formal, structured quotes based on form data and document content.
+const TRANSLATION_PRICING_PROMPT = `FOR TRANSLATION\nItem\nUnit\nTypical Unit Price (€)\nStandard certified translation\nper page\n65-80 € \nCertification stamp (sworn seal)\nper document\n15 € \nExpress service (48 h)\nsurcharge\n+30 % of base translation fee (≈ 20 € on one page) \nTracked domestic shipping\nflat\n5 € \n\n// If Express Service option is chosen then put the +30% surcharge \n// Add domestic shipping surcharge to all\n// Total displayed should be in a range and a sum. \n// Total will be multiplied based on number of pages\n// Add 19% VAT`;
 
-Your task is to:
-1. Analyze the provided form responses and document content
-2. Generate a professional, formal quotation that accurately reflects the requirements
-3. Structure the quotation in a clear, business-appropriate format
-4. Include relevant details from both form responses and document content
-5. Provide pricing estimates when applicable (use reasonable market rates)
-6. Include terms and conditions when appropriate
-
-FORMATTING REQUIREMENTS:
-- Use professional business language
-- Structure with clear sections (header, items/services, pricing, terms)
-- Include company contact information placeholder
-- Use proper formatting for readability
-- Return as HTML for proper display
-
-CRITICAL RULES:
-1. Always maintain professional tone
-2. Be specific about services/products mentioned in the form
-3. Include timeline estimates when relevant
-4. Ensure all pricing is clearly itemized
-5. Add appropriate disclaimers and terms
-6. Make it look like an official business quotation`;
+const QUOTATION_SYSTEM_PROMPT = `You are a translation price estimation agent.\n\nYour task is to:\n1. Analyze the provided form responses and document content\n2. Use the following translation pricing structure:\n${TRANSLATION_PRICING_PROMPT}\n3. Calculate the estimated price range for the user's translation request, following all rules in the pricing prompt.\n4. If Express Service is selected, add the 30% surcharge. Always add the domestic shipping fee. Multiply by number of pages if provided. Add 19% VAT.\n\nCRITICAL RULES:\n- Return ONLY 1-2 lines of content, citing the estimated price range (e.g., \"Estimated total: 120-150 € (including VAT and surcharges)\").\n- Do NOT generate a full business quotation, no headers, no lengthy text, no official formatting.\n- Be concise and clear.\n- Output only the price estimate, nothing else.`;
 
 export interface QuotationRequest {
   formResponses: Record<string, any>;
