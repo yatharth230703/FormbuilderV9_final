@@ -18,6 +18,8 @@ export default function LocationStep({ step }: LocationStepProps) {
   const [validationStatus, setValidationStatus] = useState<'success' | 'error' | null>(null);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [extractedPostalCode, setExtractedPostalCode] = useState<string>('');
+  const [resolvedAddress, setResolvedAddress] = useState<string>('');
+  const [locationCoords, setLocationCoords] = useState<{ lat: string; lon: string } | null>(null);
 
   useEffect(() => {
     const savedResponse = formResponses[step.title];
@@ -74,6 +76,8 @@ export default function LocationStep({ step }: LocationStepProps) {
     if (!addressInput.trim()) {
       setValidationStatus('error');
       setValidationMessage(formConfig?.ui?.messages?.thisFieldRequired || 'Please enter your complete address');
+      setResolvedAddress('');
+      setLocationCoords(null);
       return;
     }
 
@@ -81,12 +85,15 @@ export default function LocationStep({ step }: LocationStepProps) {
     if (!postalCode) {
       setValidationStatus('error');
       setValidationMessage('Please include a valid postal code in your address');
+      setResolvedAddress('');
+      setLocationCoords(null);
       return;
     }
 
     setIsValidating(true);
+    setResolvedAddress('');
+    setLocationCoords(null);
 
-    // Validate postal code using Nominatim API
     try {
       const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&postalcode=${encodeURIComponent(postalCode)}`);
       const data = await response.json();
@@ -99,12 +106,19 @@ export default function LocationStep({ step }: LocationStepProps) {
           isAvailable: false
         });
         setIsValidating(false);
+        setResolvedAddress('');
+        setLocationCoords(null);
         return;
       }
+      // Set resolved address and coordinates from first result
+      setResolvedAddress(data[0].display_name || '');
+      setLocationCoords({ lat: data[0].lat, lon: data[0].lon });
     } catch (e) {
       setValidationStatus('error');
       setValidationMessage('Error validating postal code. Please try again.');
       setIsValidating(false);
+      setResolvedAddress('');
+      setLocationCoords(null);
       return;
     }
 
@@ -165,6 +179,12 @@ export default function LocationStep({ step }: LocationStepProps) {
             )}
           </Button>
         </div>
+        {/* Show resolved address if available */}
+        {resolvedAddress && validationStatus === 'success' && (
+          <div className="mt-2 text-sm text-blue-700 bg-blue-50 rounded p-2">
+            <span className="font-medium">Resolved Address:</span> {resolvedAddress}
+          </div>
+        )}
 
         {/* Show extracted postal code if found */}
         {extractedPostalCode && !validationStatus && (
@@ -204,17 +224,26 @@ export default function LocationStep({ step }: LocationStepProps) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="mt-6 flex items-center justify-center"
+            className="mt-6 flex flex-col items-center justify-center"
           >
-            <div className="flex items-center bg-primary/10 p-6 rounded-xl shadow-sm w-full max-w-md">
-            <div className="bg-primary text-white p-4 rounded-full mr-6 flex items-center justify-center">
-              <MapPin className="h-6 w-6" />
+            <div className="flex items-center bg-primary/10 p-6 rounded-xl shadow-sm w-full max-w-md mb-4">
+              <div className="bg-primary text-white p-4 rounded-full mr-6 flex items-center justify-center">
+                <MapPin className="h-6 w-6" />
+              </div>
+              <div>
+                <h4 className="text-lg font-semibold text-primary mb-1">Location Confirmed</h4>
+                <p className="text-sm text-gray-600">{addressInput}</p>
+              </div>
             </div>
-            <div>
-              <h4 className="text-lg font-semibold text-primary mb-1">Location Confirmed</h4>
-              <p className="text-sm text-gray-600">{addressInput}</p>
-            </div>
-            </div>
+            {/* Show static map if coordinates are available */}
+            {locationCoords && (
+              <img
+                src={`https://staticmap.openstreetmap.de/staticmap.php?center=${locationCoords.lat},${locationCoords.lon}&zoom=14&size=400x200&markers=${locationCoords.lat},${locationCoords.lon},red-pushpin`}
+                alt="Location Map"
+                className="rounded shadow border"
+                style={{ width: '400px', height: '200px', objectFit: 'cover' }}
+              />
+            )}
           </motion.div>
         )}
       </AnimatePresence>
