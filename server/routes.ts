@@ -351,6 +351,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API key based: Create form and return URL with random domain, default label/language
+  app.post("/api/create-form-url", apiKeyAuthMiddleware, async (req, res) => {
+    try {
+      const userId = req.user?.uuid;
+
+      // Check user credits using Supabase
+      const user = await supabaseService.getUserById(userId!);
+      if (!user || (user.credits || 0) < 1) {
+        return res.status(402).json({
+          error: "Insufficient credits. You need 1 credit to create a form.",
+          creditsRequired: 1,
+          creditsAvailable: user?.credits || 0,
+        });
+      }
+
+      const { prompt } = req.body;
+      if (!prompt) {
+        return res.status(400).json({ error: "Missing required field: prompt" });
+      }
+
+      // Generate form config
+      const formConfig = await generateFormFromPrompt(prompt);
+      if (!formConfig) {
+        return res.status(500).json({ error: "Failed to generate form configuration." });
+      }
+
+      // Assign random domain, use default label/language logic
+      const formId = await supabaseService.createFormConfig(prompt, formConfig, undefined, undefined, userId);
+
+      // Deduct credit after successful generation
+      await supabaseService.deductUserCredits(userId!, 1);
+
+      // Fetch the form to get the actual URL
+      const form = await supabaseService.getFormConfig(formId);
+      return res.json({ url: form.url });
+    } catch (error: any) {
+      console.error("/api/create-form-url error:", error);
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Invalid request data", details: error.errors });
+      }
+      return res.status(500).json({ error: "Failed to create form and return URL." });
+    }
+  });
+
+  // API key based: Update form_console by (label, language, domain)
+  app.post("/api/update-form-console", apiKeyAuthMiddleware, async (req, res) => {
+    try {
+      const { label, language, domain, form_console } = req.body;
+      if (!label || !language || !domain || !form_console) {
+        return res.status(400).json({ error: "Missing required fields: label, language, domain, form_console" });
+      }
+      
+      // Find the form by combination
+      const form = await supabaseService.getFormByProperties(language, label, domain);
+      if (!form) {
+        return res.json({ success: false });
+      }
+      
+      // Update form_console (allow partial/optional fields)
+      await supabaseService.updateFormConsole(form.id, form_console);
+      return res.json({ success: true });
+    } catch (error: any) {
+      console.error("/api/update-form-console error:", error);
+      return res.json({ success: false });
+    }
+  });
+
   // Publish a form configuration
   app.post("/api/publish", async (req, res) => {
     try {
