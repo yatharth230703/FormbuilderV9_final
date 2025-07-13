@@ -212,11 +212,11 @@ export default function LocationStep({ step }: LocationStepProps) {
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
               className={`mt-3 p-3 rounded-lg flex items-start ${
-                validationStatus === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                validationStatus === 'success' ? '' : 'bg-red-50 text-red-700'
               }`}
             >
               {validationStatus === 'success' ? (
-                <CheckCircle className="h-5 w-5 mr-2 flex-shrink-0" />
+                <CheckCircle className="h-5 w-5 mr-2 flex-shrink-0 text-green-600" />
               ) : (
                 <XCircle className="h-5 w-5 mr-2 flex-shrink-0" />
               )}
@@ -236,7 +236,7 @@ export default function LocationStep({ step }: LocationStepProps) {
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
             className="mt-6 flex flex-col items-center justify-center"
           >
-            <div className="flex items-center bg-primary/10 p-6 rounded-xl shadow-sm w-full max-w-md mb-4">
+            <div className="flex items-center p-6 rounded-xl shadow-sm w-full max-w-md mb-4">
               <div className="bg-primary text-white p-4 rounded-full mr-6 flex items-center justify-center">
                 <MapPin className="h-6 w-6" />
               </div>

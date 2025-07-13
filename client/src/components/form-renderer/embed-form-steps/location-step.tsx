@@ -236,7 +236,7 @@ export default function LocationStep({ step }: LocationStepProps) {
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
             className="mt-6 flex flex-col items-center justify-center"
           >
-            <div className="flex items-center bg-primary/10 p-6 rounded-xl shadow-sm w-full max-w-md mb-4">
+            <div className="flex items-center p-6 rounded-xl shadow-sm w-full max-w-md mb-4">
               <div className="bg-primary text-white p-4 rounded-full mr-6 flex items-center justify-center">
                 <MapPin className="h-6 w-6" />
               </div>

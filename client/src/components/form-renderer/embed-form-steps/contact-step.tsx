@@ -146,7 +146,7 @@ export default function ContactStep({ step }: ContactStepProps) {
 
       {/* Contact information section */}
       {formConfig?.ui?.contact && (
-        <div className="mt-6 p-4 bg-primary/5 rounded-lg">
+        <div className="mt-6 p-4 rounded-lg">
           <h4 className="font-medium mb-2">{formConfig.ui.contact.title}</h4>
           <p className="text-sm text-gray-600 mb-3">
             {formConfig.ui.contact.description}
