@@ -61,6 +61,11 @@ export default function DocumentInfoStep({ step }: DocumentInfoStepProps) {
 
   // No need to update response with tempJson HTML anymore
 
+  useEffect(() => {
+    handleGenerateQuotation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
@@ -75,27 +80,12 @@ export default function DocumentInfoStep({ step }: DocumentInfoStepProps) {
       </div>
 
       <div className="max-w-2xl mx-auto">
-        {!showQuotation ? (
-          <div className="text-center">
-            <Button 
-              onClick={handleGenerateQuotation}
-              disabled={isGenerating}
-              className="bg-primary hover:bg-primary/90 text-white px-8 py-3 text-lg"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Generating Quotation...
-                </>
-              ) : (
-                <>
-                  <FileCheck className="mr-2 h-5 w-5" />
-                  Receive Quotation
-                </>
-              )}
-            </Button>
+        {isGenerating ? (
+          <div className="flex flex-col items-center justify-center min-h-[400px]">
+            <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+            <span className="text-lg text-gray-700">Generating Quotation...</span>
           </div>
-        ) : (
+        ) : showQuotation ? (
           <div 
             className="bg-white border border-gray-200 rounded-lg p-6 overflow-auto"
             style={{ 
@@ -121,7 +111,7 @@ export default function DocumentInfoStep({ step }: DocumentInfoStepProps) {
               dangerouslySetInnerHTML={{ __html: quotationHtml }}
             />
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
