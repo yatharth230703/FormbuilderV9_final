@@ -489,19 +489,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let extractedText = "";
 
         // Extract text based on file type
-        if (file.mimetype === "application/pdf") {
-          const pdfData = await parsePdf(file.buffer);
-          extractedText = pdfData.text;
-        } else if (
-          file.mimetype ===
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        ) {
-          const result = await mammoth.extractRawText({ buffer: file.buffer });
-          extractedText = result.value;
-        } else if (file.mimetype === "text/plain") {
-          extractedText = file.buffer.toString("utf-8");
-        } else {
-          return res.status(400).json({ error: "Unsupported file type" });
+        try {
+          if (file.mimetype === "application/pdf") {
+            const pdfData = await parsePdf(file.buffer);
+            extractedText = pdfData.text;
+          } else if (
+            file.mimetype ===
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          ) {
+            const result = await mammoth.extractRawText({ buffer: file.buffer });
+            extractedText = result.value;
+          } else if (file.mimetype === "text/plain") {
+            extractedText = file.buffer.toString("utf-8");
+          } else {
+            return res.status(400).json({ 
+              error: "Unsupported file type. Please upload a PDF, Word document, or text file." 
+            });
+          }
+        } catch (textExtractionError) {
+          console.error("Error extracting text from document:", textExtractionError);
+          if (textExtractionError instanceof Error) {
+            return res.status(400).json({ 
+              error: textExtractionError.message 
+            });
+          }
+          return res.status(500).json({ 
+            error: "Failed to extract text from the document" 
+          });
         }
 
         // Upload document to Supabase Storage
@@ -524,6 +538,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       } catch (error) {
         console.error("Error processing document:", error);
+        if (error instanceof Error) {
+          return res.status(500).json({ 
+            error: `Failed to process document: ${error.message}` 
+          });
+        }
         return res.status(500).json({ error: "Failed to process document" });
       }
     },
