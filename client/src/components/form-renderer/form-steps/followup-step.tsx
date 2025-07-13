@@ -57,7 +57,7 @@ export default function FollowupStep({ step }: FollowupStepProps) {
       <p className="text-gray-500 mb-8 text-center">{step.subtitle}</p>
 
       <div className="grid grid-cols-2 gap-4 mb-6">
-        {step.options.map((option) => (
+        {step.options && step.options.length > 0 ? step.options.map((option) => (
           <div 
             key={option.id}
             className={`border ${selectedOption === option.id ? 'border-primary bg-primary/5' : 'border-gray-200'} rounded-lg p-4 cursor-pointer hover:border-primary hover:bg-gray-50 transition-all`}
@@ -73,7 +73,11 @@ export default function FollowupStep({ step }: FollowupStepProps) {
               </div>
             </div>
           </div>
-        ))}
+        )) : (
+          <div className="col-span-2 text-center py-8 text-gray-500">
+            No options available for this step.
+          </div>
+        )}
       </div>
 
       {selectedOption && (

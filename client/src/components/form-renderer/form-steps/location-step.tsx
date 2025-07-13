@@ -95,11 +95,16 @@ export default function LocationStep({ step }: LocationStepProps) {
     setLocationCoords(null);
 
     try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&postalcode=${encodeURIComponent(postalCode)}`);
+      // Use Google Maps Geocoding API
+      const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'YOUR_API_KEY_HERE';
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(addressInput)}&key=${GOOGLE_MAPS_API_KEY}`
+      );
       const data = await response.json();
-      if (!Array.isArray(data) || data.length === 0) {
+      
+      if (data.status !== 'OK' || !data.results || data.results.length === 0) {
         setValidationStatus('error');
-        setValidationMessage(formConfig?.ui?.location?.notAvailable || 'Sorry, we don\'t serve this area yet. Please check your postal code.');
+        setValidationMessage(formConfig?.ui?.location?.notAvailable || 'Sorry, we couldn\'t find this address. Please check and try again.');
         updateResponse(step.title, {
           fullAddress: addressInput,
           postalCode: postalCode,
@@ -110,12 +115,17 @@ export default function LocationStep({ step }: LocationStepProps) {
         setLocationCoords(null);
         return;
       }
-      // Set resolved address and coordinates from first result
-      setResolvedAddress(data[0].display_name || '');
-      setLocationCoords({ lat: data[0].lat, lon: data[0].lon });
+      
+      // Get the first result from Google Maps
+      const result = data.results[0];
+      setResolvedAddress(result.formatted_address);
+      setLocationCoords({ 
+        lat: result.geometry.location.lat.toString(), 
+        lon: result.geometry.location.lng.toString() 
+      });
     } catch (e) {
       setValidationStatus('error');
-      setValidationMessage('Error validating postal code. Please try again.');
+      setValidationMessage('Error validating address. Please try again.');
       setIsValidating(false);
       setResolvedAddress('');
       setLocationCoords(null);
@@ -238,10 +248,14 @@ export default function LocationStep({ step }: LocationStepProps) {
             {/* Show static map if coordinates are available */}
             {locationCoords && (
               <img
-                src={`https://staticmap.openstreetmap.de/staticmap.php?center=${locationCoords.lat},${locationCoords.lon}&zoom=14&size=400x200&markers=${locationCoords.lat},${locationCoords.lon},red-pushpin`}
+                src={`https://maps.googleapis.com/maps/api/staticmap?center=${locationCoords.lat},${locationCoords.lon}&zoom=14&size=400x200&markers=color:red%7C${locationCoords.lat},${locationCoords.lon}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'YOUR_API_KEY_HERE'}`}
                 alt="Location Map"
                 className="rounded shadow border"
                 style={{ width: '400px', height: '200px', objectFit: 'cover' }}
+                onError={(e) => {
+                  // Hide image if it fails to load (API key issues, etc.)
+                  e.currentTarget.style.display = 'none';
+                }}
               />
             )}
           </motion.div>
