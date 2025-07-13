@@ -21,7 +21,7 @@ CREATE TABLE "form_config" (
 	"label" text,
 	"language" text,
 	"config" json,
-	"portal" text,
+	"domain" text,
 	"user_uuid" uuid,
 	"prompt_history" jsonb
 );
@@ -33,7 +33,7 @@ CREATE TABLE "form_responses" (
 	"label" text,
 	"language" text,
 	"response" json,
-	"portal" text,
+	"domain" text,
 	"form_config_id" bigint,
 	"user_uuid" uuid
 );

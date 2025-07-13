@@ -97,7 +97,7 @@ export default function FormRenderer({
             label: formTitle,
             language: "en",
             response: enhancedResponses,
-            portal: null,
+            domain: null,
             form_config_id: formConfig.id, // <-- add this line!!
           }),
           headers: {

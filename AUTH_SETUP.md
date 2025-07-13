@@ -95,7 +95,7 @@ await supabaseService.createFormConfig(
   label,
   config,
   language,
-  portal,
+  domain,
   userId
 );
 ```

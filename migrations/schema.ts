@@ -28,7 +28,7 @@ export const formConfig = pgTable("form_config", {
         label: text(),
         language: text(),
         config: json(),
-        portal: text(),
+        domain: text(),
         userUuid: uuid("user_uuid"),
         promptHistory: jsonb("prompt_history"),
         formConsole: jsonb("form_console").default('{}'),
@@ -51,7 +51,7 @@ export const formResponses = pgTable("form_responses", {
         label: text(),
         language: text(),
         response: json(),
-        portal: text(),
+        domain: text(),
         // You can use { mode: "bigint" } if numbers are exceeding js number limitations
         formConfigId: bigint("form_config_id", { mode: "number" }),
         userUuid: uuid("user_uuid"),

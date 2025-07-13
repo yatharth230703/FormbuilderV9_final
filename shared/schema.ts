@@ -41,7 +41,7 @@ export const formConfig = pgTable("form_config", {
   label: text("label"),
   language: text("language"),
   config: json("config"),
-  portal: text("portal"),
+  domain: text("domain"),
   user_uuid: text("user_uuid").references(() => users.id), // Renamed to match RLS policies
   form_console: json("form_console").default('{}'),
 });
@@ -58,7 +58,7 @@ export const insertFormConfigSchema = createInsertSchema(formConfig).pick({
   label: true,
   language: true,
   config: true,
-  portal: true,
+  domain: true,
   user_uuid: true,
   form_console: true,
 });
@@ -73,7 +73,7 @@ export const formResponses = pgTable("form_responses", {
   label: text("label"),
   language: text("language"),
   response: json("response"),
-  portal: text("portal"),
+  domain: text("domain"),
   form_config_id: integer("form_config_id").references(() => formConfig.id),
   user_uuid: text("user_uuid"), // Add user_uuid to link responses to users
 });
@@ -89,7 +89,7 @@ export const insertFormResponseSchema = createInsertSchema(formResponses).pick({
   label: true,
   language: true,
   response: true,
-  portal: true,
+  domain: true,
   form_config_id: true,
   user_uuid: true,
 });

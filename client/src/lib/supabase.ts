@@ -20,7 +20,7 @@ export async function saveFormConfig(
   label: string,
   config: FormConfigType,
   language = 'en',
-  portal: string | null = null
+  domain: string | null = null
 ): Promise<{ id: number }> {
   // Still using the API endpoint for form generation, as it involves Gemini API
   const response = await fetch('/api/prompt', {
@@ -49,7 +49,7 @@ export async function saveFormResponse(
   label: string,
   response: Record<string, any>,
   language = 'en',
-  portal: string | null = null,
+  domain: string | null = null,
   form_config_id: number | null = null
 ): Promise<{ id: number }> {
   try {
@@ -61,7 +61,7 @@ export async function saveFormResponse(
           label,
           language,
           response_data: response,
-          portal,
+          domain,
           form_config_id
         }
       ])
@@ -86,7 +86,7 @@ export async function saveFormResponse(
         label,
         language,
         response,
-        portal,
+        domain,
         form_config_id
       })
     });

@@ -35,7 +35,7 @@ const supabase = createSupabaseClient();
  * @param label The form label (prompt)
  * @param config The form configuration object
  * @param language The form language
- * @param portal Optional portal identifier
+ * @param domain Optional domain identifier
  * @param userId Optional user ID to associate with this form
  * @returns The ID of the newly created form configuration
  */
@@ -43,7 +43,7 @@ export async function createFormConfig(
   label: string,
   config: FormConfig,
   language = 'en',
-  portal: string | null = null,
+  domain: string | null = null,
   userId: string | null = null
 ): Promise<number> {
   if (!supabase) {
@@ -58,7 +58,7 @@ export async function createFormConfig(
         label: tempLabel, 
         config,
         language,
-        portal,
+        domain,
         user_uuid: userId
       }
     ])
@@ -185,7 +185,7 @@ export async function getUserFormConfigs(userId: string): Promise<{ id: number; 
  * @param label The form label
  * @param responseData The form response data
  * @param language The form language
- * @param portal Optional portal identifier
+ * @param domain Optional domain identifier
  * @param formConfigId Optional form configuration ID
  * @returns The ID of the newly created form response
  */
@@ -193,7 +193,7 @@ export async function createFormResponse(
   label: string,
   responseData: Record<string, any>,
   language = 'en',
-  portal: string | null = null,
+  domain: string | null = null,
   formConfigId: number | null = null,
   userUuid: string | null = null
 ): Promise<number> {
@@ -208,7 +208,7 @@ export async function createFormResponse(
     const responseObj = {
       label,
       language: language || 'en',
-      portal: portal || null,
+      domain: domain || null,
       form_config_id: formConfigId,
       user_uuid: userUuid
     };
@@ -247,7 +247,7 @@ export async function createFormResponse(
               id: Math.floor(Math.random() * 1000000) + 1000, // Generate a random ID
               label, 
               language: language || 'en',
-              portal: portal || null,
+              domain: domain || null,
               form_config_id: formConfigId,
               user_uuid: userUuid,
               // Use a plain string for the response as a last resort

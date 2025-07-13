@@ -153,8 +153,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "portal": {
-          "name": "portal",
+        "domain": {
+          "name": "domain",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -275,8 +275,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "portal": {
-          "name": "portal",
+        "domain": {
+          "name": "domain",
           "type": "text",
           "primaryKey": false,
           "notNull": false
