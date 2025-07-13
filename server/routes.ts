@@ -442,6 +442,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update form properties (language, label, domain)
+  app.put("/api/forms/:id/properties", async (req, res) => {
+    try {
+      const userId = req.session.user?.supabaseUserId;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const formId = parseInt(req.params.id);
+      if (isNaN(formId)) {
+        return res.status(400).json({ error: "Invalid form ID" });
+      }
+
+      const { language, label, domain, url } = req.body;
+
+      // Validate required fields
+      if (!language || !label || !domain) {
+        return res.status(400).json({ error: "Language, label, and domain are required" });
+      }
+
+      // Validate language
+      if (!["en", "de"].includes(language)) {
+        return res.status(400).json({ error: "Language must be either 'en' or 'de'" });
+      }
+
+      // Check if form exists and belongs to user
+      const form = await supabaseService.getFormConfig(formId);
+      if (!form || form.user_uuid !== userId) {
+        return res.status(404).json({ error: "Form not found" });
+      }
+
+      // Check for unique combination of language, label, and domain
+      const isUnique = await supabaseService.checkUniqueFormProperties(
+        language,
+        label,
+        domain,
+        formId // Exclude current form from check
+      );
+
+      if (!isUnique) {
+        return res.status(409).json({ 
+          error: "This combination of language, label, and domain already exists. Please choose different values." 
+        });
+      }
+
+      // Update form properties
+      await supabaseService.updateFormProperties(formId, {
+        language,
+        label,
+        domain,
+        url,
+      });
+
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating form properties:", error);
+      return res.status(500).json({ error: "Failed to update form properties" });
+    }
+  });
+
+  // Get form by properties (language, label, domain)
+  app.get("/api/forms/by-properties", async (req, res) => {
+    try {
+      const { language, label, domain } = req.query;
+
+      if (!language || !label || !domain) {
+        return res.status(400).json({ error: "Language, label, and domain are required" });
+      }
+
+      const form = await supabaseService.getFormByProperties(
+        language as string,
+        label as string,
+        domain as string
+      );
+
+      if (!form) {
+        return res.status(404).json({ error: "Form not found" });
+      }
+
+      // --- INTEGRATE AUTO-SELECT LOGIC ---
+      let modifiedForm = { ...form };
+      if (form.form_console) {
+        try {
+          console.log(`[Form Config] Running executeFormConfigFunctions for formId ${form.id} with form_console:`, JSON.stringify(form.form_console));
+          modifiedForm.config = await executeFormConfigFunctions(form.config, form.form_console);
+          console.log(`[Form Config] Modified form config after auto-select for formId ${form.id}:`, JSON.stringify(modifiedForm.config));
+        } catch (autoSelectError) {
+          console.error(`[Form Config] Error running executeFormConfigFunctions for formId ${form.id}:`, autoSelectError);
+        }
+      }
+      // --- END AUTO-SELECT LOGIC ---
+
+      return res.json(modifiedForm);
+    } catch (error) {
+      console.error("Error fetching form by properties:", error);
+      return res.status(500).json({ error: "Failed to fetch form" });
+    }
+  });
+
   // Get a specific form by ID
   app.get("/api/forms/:id", async (req, res) => {
     try {

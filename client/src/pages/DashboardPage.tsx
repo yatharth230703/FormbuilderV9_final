@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { UserNav } from "@/components/auth/UserNav";
 import { CreditsDisplay } from "@/components/CreditsDisplay";
+import { FormPropertiesDropdown } from "@/components/FormPropertiesDropdown";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,6 +20,8 @@ interface FormItem {
   label: string;
   createdAt: string;
   config: any;
+  language?: string;
+  domain?: string;
 }
 
 // Helper to format label
@@ -56,6 +59,8 @@ export function DashboardPage() {
           label: form.label || "Untitled Form",
           createdAt: new Date(form.created_at).toLocaleDateString(),
           config: form.config,
+          language: form.language || "en",
+          domain: form.domain || "",
         }));
 
         setForms(formattedForms);
@@ -176,19 +181,48 @@ export function DashboardPage() {
                   key={form.id}
                   className="hover:shadow-md transition-shadow relative"
                 >
-                  {/* Delete button at top right */}
-                  <button
-                    className="absolute top-2 right-2 p-2 rounded hover:bg-red-100 text-red-600"
-                    title="Delete form"
-                    onClick={() => handleDeleteForm(form.id)}
-                    disabled={deletingFormId === form.id}
-                  >
-                    {deletingFormId === form.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash className="h-4 w-4" />
-                    )}
-                  </button>
+                  {/* Settings dropdown at top right */}
+                  <div className="absolute top-2 right-2 flex gap-1">
+                    <FormPropertiesDropdown
+                      formId={form.id}
+                      currentLabel={form.label}
+                      currentLanguage={form.language}
+                      currentDomain={form.domain}
+                      onUpdate={() => {
+                        // Refresh forms after update
+                        const fetchForms = async () => {
+                          try {
+                            const response = await fetch("/api/forms");
+                            const data = await response.json();
+                            const formattedForms = data.map((form: any) => ({
+                              id: form.id,
+                              label: form.label || "Untitled Form",
+                              createdAt: new Date(form.created_at).toLocaleDateString(),
+                              config: form.config,
+                              language: form.language || "en",
+                              domain: form.domain || "",
+                            }));
+                            setForms(formattedForms);
+                          } catch (err) {
+                            console.error("Error refreshing forms:", err);
+                          }
+                        };
+                        fetchForms();
+                      }}
+                    />
+                    <button
+                      className="p-2 rounded hover:bg-red-100 text-red-600"
+                      title="Delete form"
+                      onClick={() => handleDeleteForm(form.id)}
+                      disabled={deletingFormId === form.id}
+                    >
+                      {deletingFormId === form.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg">
                       {formatLabel(form.label)}

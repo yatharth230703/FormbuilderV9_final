@@ -86,31 +86,29 @@ export default function DocumentInfoStep({ step }: DocumentInfoStepProps) {
             <span className="text-base text-gray-700">Generating Quotation...</span>
           </div>
         ) : showQuotation ? (
-          <div 
-            className="bg-white border border-gray-200 rounded-lg p-4 overflow-auto"
-            style={{ 
-              maxHeight: step.config.maxHeight || "400px",
-              minHeight: "300px"
-            }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-2">
-                <FileCheck className="h-4 w-4 text-green-600" />
-                <span className="font-medium text-gray-900 text-sm">Generated Quotation</span>
+          <div className="flex flex-col items-center justify-center min-h-[300px] w-full" style={{ minHeight: "300px", maxHeight: step.config.maxHeight || "400px" }}>
+            <div className="w-full flex flex-col items-center">
+              <div className="w-full bg-gray-100 py-2 mb-8 flex justify-center">
+                <span className="text-5xl font-light tracking-wide text-gray-900 text-center">YOUR ESTIMATED TOTAL</span>
+              </div>
+              <div className="w-full flex justify-center mb-8">
+                <div className="bg-orange-300 rounded border border-gray-400 flex items-center justify-center" style={{ minWidth: 250, minHeight: 90, maxWidth: 400, width: "100%" }}>
+                  <span className="text-2xl text-black text-center font-normal" dangerouslySetInnerHTML={{ __html: quotationHtml }} />
+                </div>
+              </div>
+              <div className="w-full flex flex-col items-center mt-4">
+                <span className="text-base text-black mb-2">(including VAT and Surcharge)</span>
+                <span className="text-lg text-black text-center">Accurate price will be sent to your email by our partner soon (in 12-24hrs)</span>
               </div>
               <Button 
                 variant="outline" 
                 size="sm"
+                className="mt-8 text-xs"
                 onClick={() => setShowQuotation(false)}
-                className="text-xs"
               >
                 Back
               </Button>
             </div>
-            <div 
-              className="quotation-display text-sm"
-              dangerouslySetInnerHTML={{ __html: quotationHtml }}
-            />
           </div>
         ) : null}
       </div>

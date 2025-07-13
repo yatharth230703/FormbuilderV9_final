@@ -100,25 +100,45 @@ export default function EmbedForm() {
         const url = new URL(window.location.href);
         console.log("Full URL:", url.toString());
 
-        // Get the form parameter (or fallback to id for backward compatibility)
-        const formId = url.searchParams.get("form") || url.searchParams.get("id");
-        console.log("Form ID from URL params:", formId);
+        // Get the new parameters
+        const language = url.searchParams.get("language");
+        const label = url.searchParams.get("label");
+        const domain = url.searchParams.get("domain");
+        
+        // Fallback to old form parameter for backward compatibility
+        const oldFormId = url.searchParams.get("form") || url.searchParams.get("id");
+        
+        console.log("URL params:", { language, label, domain, oldFormId });
 
-        if (!formId) {
-          setError("No form ID provided");
+        if (!language && !label && !domain && !oldFormId) {
+          setError("No form parameters provided");
           setLoading(false);
           return;
         }
 
-        // Fetch the form configuration
-        const response = await apiRequest<{
-          id: number;
-          label: string;
-          config: FormConfig;
-          created_at: string;
-        }>({
-          url: `/api/forms/${formId}`,
-        });
+        let response;
+        
+        if (language && label && domain) {
+          // New URL structure
+          response = await apiRequest<{
+            id: number;
+            label: string;
+            config: FormConfig;
+            created_at: string;
+          }>({
+            url: `/api/forms/by-properties?language=${encodeURIComponent(language)}&label=${encodeURIComponent(label)}&domain=${encodeURIComponent(domain)}`,
+          });
+        } else if (oldFormId) {
+          // Old URL structure (backward compatibility)
+          response = await apiRequest<{
+            id: number;
+            label: string;
+            config: FormConfig;
+            created_at: string;
+          }>({
+            url: `/api/forms/${oldFormId}`,
+          });
+        }
 
         if (response && response.config) {
           setFormConfig({

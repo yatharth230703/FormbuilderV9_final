@@ -49,6 +49,10 @@ export async function createFormConfig(
   if (!supabase) {
     throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
   }
+  
+  // Generate a random domain if not provided
+  const finalDomain = domain || `domain_${Math.random().toString(36).substring(2, 8)}`;
+  
   // Insert with a temporary label, then update with the correct label after getting the id
   const tempLabel = 'pending_label';
   const { data, error } = await supabase
@@ -58,7 +62,7 @@ export async function createFormConfig(
         label: tempLabel, 
         config,
         language,
-        domain,
+        domain: finalDomain,
         user_uuid: userId
       }
     ])
@@ -77,10 +81,18 @@ export async function createFormConfig(
     firstTitle = String(config.steps[0].title).replace(/\s+/g, '_').toLowerCase();
   }
   const newLabel = `${firstTitle}_${formId}`;
-  // Update the label
+  
+  // Generate the unique URL
+  const baseUrl = process.env.APP_URL || 'http://localhost:5000';
+  const uniqueUrl = `${baseUrl}/embed?language=${language}&label=${encodeURIComponent(newLabel)}&domain=${encodeURIComponent(finalDomain)}`;
+  
+  // Update the label and URL
   await supabase
     .from('form_config')
-    .update({ label: newLabel })
+    .update({ 
+      label: newLabel,
+      url: uniqueUrl
+    })
     .eq('id', formId);
 
   return formId;
@@ -109,6 +121,47 @@ export async function getFormConfig(id: number): Promise<{ id: number; label: st
 
   // Ensure created_at exists
   if (!data.created_at) {
+    data.created_at = new Date().toISOString();
+  }
+
+  return data;
+}
+
+/**
+ * Gets a form configuration by language, label, and domain from Supabase
+ * @param language The language code
+ * @param label The form label
+ * @param domain The domain identifier
+ * @returns The form configuration
+ */
+export async function getFormByProperties(
+  language: string,
+  label: string,
+  domain: string
+): Promise<{ id: number; label: string; config: FormConfig; created_at: string; user_uuid: string | null; form_console?: any; language: string; domain: string; url?: string } | null> {
+  if (!supabase) {
+    throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+  }
+  
+  const { data, error } = await supabase
+    .from('form_config')
+    .select('*')
+    .eq('language', language)
+    .eq('label', label)
+    .eq('domain', domain)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // No rows found
+      return null;
+    }
+    console.error(`Supabase error getting form by properties:`, error);
+    throw new Error(`Failed to get form by properties from Supabase: ${error.message}`);
+  }
+
+  // Ensure created_at exists
+  if (data && !data.created_at) {
     data.created_at = new Date().toISOString();
   }
 
@@ -526,6 +579,92 @@ export async function updateFormConsole(formId: number, consoleConfig: any): Pro
     console.log(`Updated form console configuration for form ${formId}`);
   } catch (err) {
     console.error('Error in updateFormConsole:', err);
+    throw err;
+  }
+}
+
+/**
+ * Checks if a combination of language, label, and domain is unique
+ * @param language The language code
+ * @param label The form label
+ * @param domain The domain identifier
+ * @param excludeFormId Optional form ID to exclude from the check (for updates)
+ * @returns true if the combination is unique, false otherwise
+ */
+export async function checkUniqueFormProperties(
+  language: string,
+  label: string,
+  domain: string,
+  excludeFormId?: number
+): Promise<boolean> {
+  if (!supabase) {
+    throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+  }
+
+  try {
+    let query = supabase
+      .from('form_config')
+      .select('id')
+      .eq('language', language)
+      .eq('label', label)
+      .eq('domain', domain);
+
+    if (excludeFormId) {
+      query = query.neq('id', excludeFormId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error checking unique form properties:', error);
+      throw new Error(`Failed to check unique form properties: ${error.message}`);
+    }
+
+    // If no data is returned, the combination is unique
+    return !data || data.length === 0;
+  } catch (err) {
+    console.error('Error in checkUniqueFormProperties:', err);
+    throw err;
+  }
+}
+
+/**
+ * Updates form properties (language, label, domain, url)
+ * @param formId The form ID
+ * @param properties Object containing language, label, domain, and url
+ */
+export async function updateFormProperties(
+  formId: number,
+  properties: {
+    language: string;
+    label: string;
+    domain: string;
+    url: string;
+  }
+): Promise<void> {
+  if (!supabase) {
+    throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+  }
+
+  try {
+    const { error } = await supabase
+      .from('form_config')
+      .update({
+        language: properties.language,
+        label: properties.label,
+        domain: properties.domain,
+        url: properties.url,
+      })
+      .eq('id', formId);
+
+    if (error) {
+      console.error('Error updating form properties:', error);
+      throw new Error(`Failed to update form properties: ${error.message}`);
+    }
+
+    console.log(`Updated form properties for form ${formId}`);
+  } catch (err) {
+    console.error('Error in updateFormProperties:', err);
     throw err;
   }
 }
