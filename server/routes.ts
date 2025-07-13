@@ -360,17 +360,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const validatedData = publishSchema.parse(req.body);
+      const { originalFormId } = validatedData;
 
-      const formData = {
-        userId,
-        label: validatedData.label,
-        config: validatedData.config as FormConfig,
-        language: validatedData.language,
-        promptHistory: validatedData.promptHistory,
-      };
-
-      const savedForm = await storage.createFormConfig(formData);
-      return res.json(savedForm);
+      if (originalFormId) {
+        // Update existing form
+        await supabaseService.updateFormConfig(originalFormId, {
+          config: validatedData.config,
+          label: validatedData.label,
+        });
+        // Return the updated form
+        const updatedForm = await supabaseService.getFormConfig(originalFormId);
+        return res.json(updatedForm);
+      } else {
+        // Create new form
+        const formData = {
+          userId,
+          label: validatedData.label,
+          config: validatedData.config as FormConfig,
+          language: validatedData.language,
+        };
+        const savedForm = await storage.createFormConfig(formData);
+        return res.json(savedForm);
+      }
     } catch (error: any) {
       console.error("Error publishing form:", error);
       if (error.name === "ZodError") {
@@ -415,9 +426,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Deduct credit after successful edit
-      await storage.deductUserCredits(userId, 1);
+      await supabaseService.deductUserCredits(userId, 1);
 
-      return res.json(updatedConfig as FormConfig);
+      // Parse the string result before sending
+      let parsedConfig;
+      try {
+        parsedConfig = JSON.parse(updatedConfig);
+      } catch (e) {
+        return res.status(500).json({ error: "Failed to parse updated config" });
+      }
+      return res.json({ config: parsedConfig });
     } catch (error: any) {
       console.error("Error editing form:", error);
       return res.status(500).json({ error: "Failed to edit form" });

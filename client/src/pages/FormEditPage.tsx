@@ -116,13 +116,13 @@ export function FormEditPage() {
       }
       
       // Send the edit request to the server
-      const response = await fetch('/api/edit-json', {
+      const response = await fetch('/api/edit-form', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          json: formData.config,
+          currentConfig: formData.config,
           instruction: prompt,
         }),
       });

@@ -413,10 +413,10 @@ interface LeftPanelProps {
 
     // Call the API to edit the JSON
     const res = await apiRequest<{ config: FormConfig }>({
-      url: "/api/edit-json",
+      url: "/api/edit-form",
       method: "POST",
       body: JSON.stringify({
-        json: formConfig,
+        currentConfig: formConfig,
         instruction: instruction,
       }),
       headers: { "Content-Type": "application/json" },
