@@ -22,6 +22,9 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Production-ready session configuration
+const isProduction = process.env.NODE_ENV === 'production';
+
 // Initialize session middleware with PostgreSQL session store from storage
 app.use(session({
   store: storage.sessionStore,
@@ -32,10 +35,21 @@ app.use(session({
   cookie: {
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     httpOnly: true,
-    secure: false, // Set to true in production with HTTPS
-    sameSite: 'lax'
+    secure: isProduction, // Set to true in production with HTTPS
+    sameSite: isProduction ? 'strict' : 'lax'
   }
 }));
+
+// Security headers for production
+if (isProduction) {
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    next();
+  });
+}
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -46,6 +60,11 @@ app.use((req, res, next) => {
   res.json = function (bodyJson, ...args) {
     capturedJsonResponse = bodyJson;
     return originalResJson.apply(res, [bodyJson, ...args]);
+  };
+
+  const originalResSend = res.send;
+  res.send = function (bodyStr, ...args) {
+    return originalResSend.apply(res, [bodyStr, ...args]);
   };
 
   res.on("finish", () => {
@@ -61,8 +80,6 @@ app.use((req, res, next) => {
       }
 
       log(logLine);
-      // Force flush for Replit console
-      process.stdout.write('');
     }
   });
 

@@ -17,7 +17,7 @@ export function ApiAccessPage() {
   const [, setLocation] = useLocation();
 
   // Dynamically get the current server origin
-  const serverOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000';
+  const serverOrigin = typeof window !== 'undefined' ? window.location.origin : '';
 
   useEffect(() => {
     const fetchApiKey = async () => {
@@ -44,75 +44,84 @@ export function ApiAccessPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-50">
-        <header className="bg-white border-b">
-          <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setLocation("/dashboard")}
-                className="mr-2"
-              >
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Back to Dashboard
-              </Button>
-              <h1 className="text-xl font-bold">API Access</h1>
-            </div>
-            <UserNav />
-          </div>
-        </header>
-
-        <main className="container mx-auto px-4 py-8 space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Your API Key</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Label htmlFor="api-key">Use this key to authorize API requests</Label>
-              <div className="flex mt-2">
-                <Input
-                  id="api-key"
-                  type={showKey ? "text" : "password"}
-                  value={apiKey}
-                  readOnly
-                  className="flex-1 rounded-none"
-                />
+        <div className="bg-white border-b">
+          <div className="px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
                 <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowKey(prev => !prev)}
-                  className="rounded-none"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setLocation("/dashboard")}
                 >
-                  {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Dashboard
                 </Button>
-                <Button
-                  type="button"
-                  onClick={handleCopy}
-                  className="rounded-l-none"
-                >
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </Button>
+                <h1 className="text-2xl font-bold text-gray-900">API Access</h1>
               </div>
-            </CardContent>
-          </Card>
+              <UserNav />
+            </div>
+          </div>
+        </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Generate Form Configuration</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6 text-sm">
-              <div>
-                <h3 className="font-semibold mb-2">🔧 cURL</h3>
-                <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
-{`curl -X POST http://localhost:5000/api/generate-form \\
+        <div className="px-4 sm:px-6 lg:px-8 py-8">
+          <div className="max-w-4xl mx-auto space-y-6">
+            {/* API Key Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Your API Key</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="relative">
+                  <Label htmlFor="apiKey">API Key</Label>
+                  <div className="flex items-center space-x-2 mt-2">
+                    <Input
+                      id="apiKey"
+                      type={showKey ? "text" : "password"}
+                      value={apiKey}
+                      readOnly
+                      className="font-mono text-sm"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowKey(!showKey)}
+                    >
+                      {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopy}
+                      disabled={!apiKey}
+                    >
+                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Use this API key to authenticate your requests. Keep it secure and don't share it publicly.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Form Generation Examples */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Generate Form Configuration</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6 text-sm">
+                <div>
+                  <h3 className="font-semibold mb-2">🔧 cURL</h3>
+                  <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
+{`curl -X POST ${serverOrigin}/api/generate-form \\
   -H "Authorization: Bearer <your_api_key_here>" \\
   -H "Content-Type: application/json" \\
   -d '{"prompt": "${samplePrompt}"}'`}
-                </pre>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-2">🐍 Python (requests)</h3>
-                <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
+                  </pre>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">🐍 Python (requests)</h3>
+                  <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
 {`import requests
 
 headers = {
@@ -121,20 +130,20 @@ headers = {
 }
 
 response = requests.post(
-  "http://localhost:5000/api/generate-form",
+  "${serverOrigin}/api/generate-form",
   headers=headers,
   json={"prompt": "${samplePrompt}"}
 )
 
 print(response.json())`}
-                </pre>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-2">🟦 Node.js (axios)</h3>
-                <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
+                  </pre>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">🟦 Node.js (axios)</h3>
+                  <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
 {`const axios = require("axios");
 
-const res = await axios.post("http://localhost:5000/api/generate-form", {
+const res = await axios.post("${serverOrigin}/api/generate-form", {
   prompt: "${samplePrompt}"
 }, {
   headers: {
@@ -144,36 +153,33 @@ const res = await axios.post("http://localhost:5000/api/generate-form", {
 });
 
 console.log(res.data);`}
-                </pre>
-              </div>
-              <div className="text-xs text-gray-600">
-                <b>Response:</b> Returns the form configuration as a JSON object.<br/>
-                <b>Note:</b> This endpoint requires 1 credit and returns the form config, not a URL.
-              </div>
-            </CardContent>
-          </Card>
+                  </pre>
+                </div>
+                <div className="text-xs text-gray-600">
+                  <b>Response:</b> Returns the form configuration as a JSON object.<br/>
+                  <b>Note:</b> This endpoint requires 1 credit and returns the form config, not a URL.
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* New Endpoint: Create Form and Get URL */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Create Form and Get URL</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6 text-sm">
-              <div>
-                <h3 className="font-semibold mb-2">🔧 cURL</h3>
-                <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
-{`curl -X POST ${serverOrigin}/api/create-form-url \
-  -H "Authorization: Bearer <your_api_key_here>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "Create a feedback form for a university hackathon"
-  }'
-`}
-                </pre>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-2">🐍 Python (requests)</h3>
-                <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
+            {/* New Endpoint: Create Form and Get URL */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Create Form and Get URL</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6 text-sm">
+                <div>
+                  <h3 className="font-semibold mb-2">🔧 cURL</h3>
+                  <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
+{`curl -X POST ${serverOrigin}/api/generate-and-create-form \\
+  -H "Authorization: Bearer <your_api_key_here>" \\
+  -H "Content-Type: application/json" \\
+  -d '{"prompt": "${samplePrompt}"}'`}
+                  </pre>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">🐍 Python (requests)</h3>
+                  <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
 {`import requests
 
 headers = {
@@ -181,27 +187,22 @@ headers = {
   "Content-Type": "application/json"
 }
 
-payload = {
-  "prompt": "Create a feedback form for a university hackathon"
-}
-
 response = requests.post(
-  "${serverOrigin}/api/create-form-url",
+  "${serverOrigin}/api/generate-and-create-form",
   headers=headers,
-  json=payload
+  json={"prompt": "${samplePrompt}"}
 )
 
-print(response.json())  # Returns { url: ... } as a JSON object
-`}
-                </pre>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-2">🟦 Node.js (axios)</h3>
-                <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
+print(response.json())`}
+                  </pre>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">🟦 Node.js (axios)</h3>
+                  <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
 {`const axios = require("axios");
 
-const res = await axios.post("${serverOrigin}/api/create-form-url", {
-  prompt: "Create a feedback form for a university hackathon"
+const res = await axios.post("${serverOrigin}/api/generate-and-create-form", {
+  prompt: "${samplePrompt}"
 }, {
   headers: {
     Authorization: "Bearer <your_api_key_here>",
@@ -209,132 +210,46 @@ const res = await axios.post("${serverOrigin}/api/create-form-url", {
   }
 });
 
-console.log(res.data); // Returns { url: ... } as a JSON object
-`}
-                </pre>
-              </div>
-                              <div className="text-xs text-gray-600">
-                  <b>Response:</b> Returns <code>{`{{ url: ... }}`}</code> as a JSON object.<br/>
-                  <b>Note:</b> The URL is always guaranteed to be correct and functional, as it is fetched from the stored form row.<br/>
+console.log(res.data);`}
+                  </pre>
                 </div>
-            </CardContent>
-          </Card>
-
-          {/* New Endpoint: Update Form Console */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Update Form Console</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6 text-sm">
-              <div>
-                <h3 className="font-semibold mb-2">🔧 cURL</h3>
-                <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
-{`curl -X POST ${serverOrigin}/api/update-form-console \
-  -H "Authorization: Bearer <your_api_key_here>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "label": "feedback_form",
-    "language": "en",
-    "domain": "mydomain",
-    "form_console": {
-      "enable": true,
-      "formConfig": {
-        "trigger": { "option": "document_translation", "slide_no": 0 },
-        "last_updated": "2025-07-13T20:12:59.295Z",
-        "enabled_actions": ["auto_select_first_option"]
-      },
-      "responseConfig": {
-        "trigger": { "option": ["website_translation", "english"], "slide_no": 0 },
-        "last_updated": "2025-07-13T20:12:59.295Z",
-        "brochure_text": "",
-        "enabled_actions": ["send_brochure"]
-      }
-    }
-  }'
-`}
-                </pre>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-2">🐍 Python (requests)</h3>
-                <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
-{`import requests
-
-headers = {
-  "Authorization": "Bearer <your_api_key_here>",
-  "Content-Type": "application/json"
-}
-
-payload = {
-  "label": "feedback_form",
-  "language": "en",
-  "domain": "mydomain",
-  "form_console": {
-    "enable": True,
-    "formConfig": {
-      "trigger": { "option": "document_translation", "slide_no": 0 },
-      "last_updated": "2025-07-13T20:12:59.295Z",
-      "enabled_actions": ["auto_select_first_option"]
-    },
-    "responseConfig": {
-      "trigger": { "option": ["website_translation", "english"], "slide_no": 0 },
-      "last_updated": "2025-07-13T20:12:59.295Z",
-      "brochure_text": "",
-      "enabled_actions": ["send_brochure"]
-    }
-  }
-}
-
-response = requests.post(
-  "${serverOrigin}/api/update-form-console",
-  headers=headers,
-  json=payload
-)
-
-print(response.json())  # Returns { success: true } or { success: false }
-`}
-                </pre>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-2">🟦 Node.js (axios)</h3>
-                <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
-{`const axios = require("axios");
-
-const res = await axios.post("${serverOrigin}/api/update-form-console", {
-  label: "feedback_form",
-  language: "en",
-  domain: "mydomain",
-  form_console: {
-    enable: true,
-    formConfig: {
-      trigger: { option: "document_translation", slide_no: 0 },
-      last_updated: "2025-07-13T20:12:59.295Z",
-      enabled_actions: ["auto_select_first_option"]
-    },
-    responseConfig: {
-      trigger: { option: ["website_translation", "english"], slide_no: 0 },
-      last_updated: "2025-07-13T20:12:59.295Z",
-      brochure_text: "",
-      enabled_actions: ["send_brochure"]
-    }
-  }
-}, {
-  headers: {
-    Authorization: "Bearer <your_api_key_here>",
-    "Content-Type": "application/json"
-  }
-});
-
-console.log(res.data); // Returns { success: true } or { success: false }
-`}
-                </pre>
-              </div>
-                              <div className="text-xs text-gray-600">
-                  <b>Response:</b> Returns <code>{`{{ success: true }}`}</code> on success, <code>{`{{ success: false }}`}</code> on failure (form not found or error).<br/>
-                  <b>Note:</b> You can provide only the fields you want to update in <code>form_console</code>.
+                <div className="text-xs text-gray-600">
+                  <b>Response:</b> Returns the form configuration and a shareable URL.<br/>
+                  <b>Note:</b> This endpoint requires 2 credits and creates a persistent form in the database.
                 </div>
-            </CardContent>
-          </Card>
-        </main>
+              </CardContent>
+            </Card>
+
+            {/* API Documentation */}
+            <Card>
+              <CardHeader>
+                <CardTitle>API Documentation</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 text-sm">
+                <div>
+                  <h3 className="font-semibold">Rate Limits</h3>
+                  <p className="text-gray-600">
+                    • 100 requests per minute<br/>
+                    • 1000 requests per hour<br/>
+                    • Each form generation costs 1-2 credits
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-semibold">Error Handling</h3>
+                  <p className="text-gray-600">
+                    The API returns standard HTTP status codes. Check the response body for detailed error messages.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-semibold">Need Help?</h3>
+                  <p className="text-gray-600">
+                    Contact our support team or check our documentation for more examples and advanced usage.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </ProtectedRoute>
   );

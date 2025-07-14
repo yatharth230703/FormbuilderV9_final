@@ -17,12 +17,29 @@ const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KE
 function createSupabaseClient() {
   try {
     if (!supabaseUrl || !supabaseAnonKey) {
-      console.warn('Supabase credentials missing. Supabase functionality will be unavailable.');
+      console.error('Supabase credentials missing. Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+      if (process.env.NODE_ENV === 'production') {
+        console.error('Application cannot start without Supabase credentials in production.');
+        process.exit(1);
+      }
       return null;
     }
-    return createClient(supabaseUrl,  process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey);
+    
+    // Validate URL format
+    if (!supabaseUrl.startsWith('https://') || !supabaseUrl.includes('.supabase.co')) {
+      console.error('Invalid SUPABASE_URL format. Expected: https://your-project.supabase.co');
+      if (process.env.NODE_ENV === 'production') {
+        process.exit(1);
+      }
+      return null;
+    }
+    
+    return createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey);
   } catch (error) {
     console.error('Error initializing Supabase client:', error);
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
     return null;
   }
 }
@@ -82,8 +99,9 @@ export async function createFormConfig(
   }
   const newLabel = `${firstTitle}_${formId}`;
   
-  // Generate the unique URL
-  const baseUrl = process.env.APP_URL || 'http://localhost:5000';
+  // Generate the unique URL with fallback
+  const baseUrl = process.env.APP_URL || 
+                  (process.env.NODE_ENV === 'production' ? 'https://your-app.replit.app' : 'http://localhost:5000');
   const uniqueUrl = `${baseUrl}/embed?language=${language}&label=${encodeURIComponent(newLabel)}&domain=${encodeURIComponent(finalDomain)}`;
   
   // Update the label and URL
@@ -99,11 +117,11 @@ export async function createFormConfig(
 }
 
 /**
- * Gets a form configuration by ID from Supabase
+ * Fetches a form configuration by ID
  * @param id The form configuration ID
- * @returns The form configuration
+ * @returns The form configuration or null if not found
  */
-export async function getFormConfig(id: number): Promise<{ id: number; label: string; config: FormConfig; created_at: string; user_uuid: string | null; form_console?: any }> {
+export async function getFormConfig(id: number): Promise<FormConfig | null> {
   if (!supabase) {
     throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
   }
@@ -115,13 +133,11 @@ export async function getFormConfig(id: number): Promise<{ id: number; label: st
     .single();
 
   if (error) {
-    console.error(`Supabase error getting form config with ID ${id}:`, error);
-    throw new Error(`Failed to get form config from Supabase: ${error.message}`);
-  }
-
-  // Ensure created_at exists
-  if (!data.created_at) {
-    data.created_at = new Date().toISOString();
+    if (error.code === 'PGRST116') {
+      return null; // Not found
+    }
+    console.error('Supabase error fetching form config:', error);
+    throw new Error(`Failed to fetch form config from Supabase: ${error.message}`);
   }
 
   return data;
@@ -236,99 +252,50 @@ export async function getUserFormConfigs(userId: string): Promise<{ id: number; 
 /**
  * Creates a new form response in Supabase
  * @param label The form label
- * @param responseData The form response data
+ * @param responses The form responses object
  * @param language The form language
  * @param domain Optional domain identifier
- * @param formConfigId Optional form configuration ID
+ * @param formId Optional form ID to associate with this response
+ * @param userUuid Optional user UUID
  * @returns The ID of the newly created form response
  */
 export async function createFormResponse(
   label: string,
-  responseData: Record<string, any>,
+  responses: Record<string, any>,
   language = 'en',
   domain: string | null = null,
-  formConfigId: number | null = null,
+  formId: number | null = null,
   userUuid: string | null = null
 ): Promise<number> {
   if (!supabase) {
     throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
   }
   
-  try {
-    // Try using a different approach to bypass schema cache issues
-    
-    // First, create a simple data object for the response
-    const responseObj = {
-      label,
-      language: language || 'en',
-      domain: domain || null,
-      form_config_id: formConfigId,
-      user_uuid: userUuid
-    };
-    
-    // We're having issues with the response column, so try explicitly adding it
-    const insertObj = {
-      ...responseObj,
-      // Try several different ways to represent the response data
-      response: responseData
-    };
-    
-    console.log('Attempting to save form response with data:');
-    
-    // First attempt using the standard API approach
-    try {
-      const { data, error } = await supabase
-        .from('form_responses')
-        .insert([insertObj])
-        .select('id')
-        .single();
+  const { data, error } = await supabase
+    .from('form_responses')
+    .insert([
+      { 
+        label, 
+        responses,
+        language,
+        domain,
+        form_id: formId,
+        user_uuid: userUuid
+      }
+    ])
+    .select('id')
+    .single();
 
-      if (error) {
-        throw error;
-      }
-      
-      return data.id;
-    } catch (insertError) {
-      console.error('Standard insert failed. Trying alternative approach:', insertError);
-      
-      // Try alternative approach with upsert
-      try {
-        const { data: upsertData, error: upsertError } = await supabase
-          .from('form_responses')
-          .upsert([
-            {
-              id: Math.floor(Math.random() * 1000000) + 1000, // Generate a random ID
-              label, 
-              language: language || 'en',
-              domain: domain || null,
-              form_config_id: formConfigId,
-              user_uuid: userUuid,
-              // Use a plain string for the response as a last resort
-              response: JSON.stringify(responseData)
-            }
-          ])
-          .select('id');
-        
-        if (upsertError) {
-          throw upsertError;
-        }
-        
-        return upsertData?.[0]?.id || 0;
-      } catch (upsertError: any) {
-        console.error('Upsert approach also failed:', upsertError);
-        const errorMessage = upsertError?.message || 'Unknown error';
-        throw new Error(`Failed to create form response: ${errorMessage}`);
-      }
-    }
-  } catch (error: any) {
+  if (error) {
     console.error('Supabase error creating form response:', error);
-    const errorMessage = error?.message || 'Unknown error';
-    throw new Error(`Failed to create form response in Supabase: ${errorMessage}`);
+    throw new Error(`Failed to create form response in Supabase: ${error.message}`);
   }
+
+  return data.id;
 }
 
 /**
- * Gets all form responses from Supabase
+ * Fetches all form responses from Supabase
  * @returns Array of form responses
  */
 export async function getAllFormResponses(): Promise<any[]> {
@@ -350,11 +317,11 @@ export async function getAllFormResponses(): Promise<any[]> {
 }
 
 /**
- * Gets form responses by label from Supabase
+ * Fetches form responses by label
  * @param label The form label
  * @returns Array of form responses
  */
-export async function getFormResponsesByLabel(label: string): Promise<any[]> {
+export async function getFormResponsesByLabel(label: string): Promise<FormResponse[]> {
   if (!supabase) {
     throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
   }
@@ -366,52 +333,61 @@ export async function getFormResponsesByLabel(label: string): Promise<any[]> {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error(`Supabase error getting form responses for label ${label}:`, error);
-    throw new Error(`Failed to get form responses from Supabase: ${error.message}`);
+    console.error('Supabase error fetching form responses:', error);
+    throw new Error(`Failed to fetch form responses from Supabase: ${error.message}`);
   }
 
   return data || [];
 }
 
 /**
- * Deletes a form configuration from Supabase
- * @param id The form configuration ID to delete
- * @returns true if successful, false otherwise
+ * Deletes a form configuration by ID
+ * @param id The form configuration ID
+ * @returns True if deleted successfully, false otherwise
  */
 export async function deleteFormConfig(id: number): Promise<boolean> {
-  console.log('↪ supabaseService.deleteFormConfig called with', id);
-  try {
-    const { error } = await supabase!.from('form_config').delete().eq('id', id);
-    if (error) {
-      console.error('❌ deleteFormConfig error', error);
-      throw error;
-    }
-    console.log('✅ deleteFormConfig succeeded');
-    return true;
-  } catch (err) {
-    console.error('💥 deleteFormConfig threw', err);
+  if (!supabase) {
+    throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+  }
+  
+  const { error } = await supabase
+    .from('form_config')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Supabase error deleting form config:', error);
     return false;
   }
+
+  return true;
 }
 
-// server/services/supabase.ts
-// …at the bottom of the file, after deleteFormConfig
-
 /**
- * Updates an existing form configuration in Supabase
- */
-/**
- * Updates an existing form configuration in Supabase
+ * Updates a form configuration
+ * @param id The form configuration ID
+ * @param updates The fields to update
+ * @returns True if updated successfully, false otherwise
  */
 export async function updateFormConfig(
-  id: number,
-  { config, label, promptHistory }: { config: FormConfig; label?: string; promptHistory?: string[] }
-): Promise<void> {
-  const toUpdate: any = { config };
-  if (label) toUpdate.label = label;
-  if (promptHistory) toUpdate.prompt_history = promptHistory;
-  const { error } = await supabase!.from("form_config").update(toUpdate).eq("id", id);
-  if (error) throw error;
+  id: number, 
+  updates: Partial<{ config: FormConfig; label: string; }>
+): Promise<boolean> {
+  if (!supabase) {
+    throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+  }
+  
+  const { error } = await supabase
+    .from('form_config')
+    .update(updates)
+    .eq('id', id);
+
+  if (error) {
+    console.error('Supabase error updating form config:', error);
+    return false;
+  }
+
+  return true;
 }
 
 /**
@@ -461,32 +437,30 @@ export async function deleteFormResponsesByFormConfigId(formConfigId: number): P
 }
 
 /**
- * Gets user information by ID from Supabase
- * @param userId The user's ID
- * @returns User data including credits
+ * Gets a user by ID
+ * @param id The user ID
+ * @returns The user object or null if not found
  */
-export async function getUserById(userId: string): Promise<any> {
+export async function getUserById(id: string): Promise<any> {
   if (!supabase) {
     throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
   }
   
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('uuid, email, credits, created_at')
-      .eq('uuid', userId)
-      .single();
-      
-    if (error) {
-      console.error('Error fetching user by ID:', error);
-      return null;
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return null; // Not found
     }
-    
-    return data;
-  } catch (err) {
-    console.error('Error in getUserById:', err);
-    return null;
+    console.error('Supabase error fetching user:', error);
+    throw new Error(`Failed to fetch user from Supabase: ${error.message}`);
   }
+
+  return data;
 }
 
 /**
@@ -504,7 +478,7 @@ export async function updateUserCredits(userId: string, credits: number): Promis
     const { error } = await supabase
       .from('users')
       .update({ credits })
-      .eq('uuid', userId);
+      .eq('id', userId);
       
     if (error) {
       console.error('Error updating user credits:', error);
@@ -519,16 +493,16 @@ export async function updateUserCredits(userId: string, credits: number): Promis
 }
 
 /**
- * Deduct credits from a user's account
- * @param userId The user's UUID
- * @param credits Number of credits to deduct
+ * Deducts credits from a user
+ * @param userId The user ID
+ * @param credits The number of credits to deduct
  */
 export async function deductUserCredits(userId: string, credits: number): Promise<void> {
   if (!supabase) {
     throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
   }
-
-  // Get current user credits
+  
+  // Get current user credits first
   const user = await getUserById(userId);
   if (!user) {
     throw new Error('User not found');
@@ -541,18 +515,15 @@ export async function deductUserCredits(userId: string, credits: number): Promis
 
   const newCredits = currentCredits - credits;
 
-  // Update user credits in Supabase
   const { error } = await supabase
     .from('users')
     .update({ credits: newCredits })
-    .eq('uuid', userId);
+    .eq('id', userId);
 
   if (error) {
-    console.error('Supabase error deducting credits:', error);
-    throw new Error(`Failed to deduct credits: ${error.message}`);
+    console.error('Supabase error deducting user credits:', error);
+    throw new Error(`Failed to deduct user credits: ${error.message}`);
   }
-
-  console.log(`Deducted ${credits} credits from user ${userId}. New total: ${newCredits}`);
 }
 
 /**

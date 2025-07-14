@@ -30,6 +30,7 @@ import { sendFormResponseEmail } from "./services/email";
 import { generateQuotation, QuotationRequest } from "./services/quotation-generator";
 import { executeConsoleActions } from "./console-functions/executor";
 import { executeFormConfigFunctions } from "./console-functions/executor";
+import { fileLogger } from "./services/file-logger";
 
 const promptSchema = z.object({
   prompt: z.string().min(1),
@@ -127,7 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-        apiVersion: "2024-04-10",
+        apiVersion: "2025-06-30.basil",
       });
 
       const session = await stripe.checkout.sessions.create({
@@ -767,7 +768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 //         //                  req.body['Your Contact Information 📧']?.email;
 //         console.log("email loop entered");
 // /////////////CHANGEDLOCAL        
-//         fs.appendFileSync('log.txt',JSON.stringify(req.body) + '\n')
+//         fileLogger.log('form-submission', `Form submission data: ${JSON.stringify(req.body)}`);
 
 //         const keys = Object.keys(req.body);
 //         const lastKey = keys[keys.length - 1];

@@ -1,22 +1,18 @@
-import express, { type Express } from "express";
-import fs from "fs";
 import path from "path";
-import { createServer as createViteServer, createLogger } from "vite";
-import { type Server } from "http";
-import viteConfig from "../vite.config";
+import { createServer as createViteServer } from "vite";
+import type { Express } from "express";
+import type { Server } from "http";
+import express from "express";
+import fs from "fs";
 import { nanoid } from "nanoid";
+import viteConfig from "../vite.config";
+import { createLogger } from "vite";
 
 const viteLogger = createLogger();
 
-export function log(message: string, source = "express") {
-  const formattedTime = new Date().toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-
-  console.log(`${formattedTime} [${source}] ${message}`);
+export function log(message: string, source: string = "express") {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] [${source}] ${message}`);
 }
 
 export async function setupVite(app: Express, server: Server) {
@@ -68,18 +64,55 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(import.meta.dirname, "public");
-
+  const distPath = path.resolve(import.meta.dirname, "..", "dist", "public");
+  const indexPath = path.resolve(distPath, "index.html");
+  
+  log(`Serving static files from: ${distPath}`);
+  
+  // Check if build files exist
   if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
-    );
+    log("Build files not found! Please run 'npm run build' first", "static");
+    process.exit(1);
+  }
+  
+  if (!fs.existsSync(indexPath)) {
+    log("index.html not found in build directory!", "static");
+    process.exit(1);
   }
 
-  app.use(express.static(distPath));
+  // Serve static files with proper headers
+  app.use(express.static(distPath, {
+    maxAge: '1y',
+    etag: true,
+    lastModified: true,
+    setHeaders: (res, path) => {
+      // Set security headers for static files
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      
+      // Set appropriate cache headers
+      if (path.endsWith('.js') || path.endsWith('.css')) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      } else if (path.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+      }
+    }
+  }));
 
-  // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+  // Handle SPA routing - serve index.html for all non-API routes
+  app.get("*", (req, res) => {
+    // Don't serve index.html for API routes
+    if (req.path.startsWith("/api")) {
+      return res.status(404).json({ error: "Not Found" });
+    }
+    
+    try {
+      const indexHtml = fs.readFileSync(indexPath, "utf-8");
+      res.status(200).set({ "Content-Type": "text/html" }).end(indexHtml);
+    } catch (error) {
+      log(`Error serving index.html: ${error}`, "static");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
   });
+  
+  log("Static file serving configured for production", "static");
 }
