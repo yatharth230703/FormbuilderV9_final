@@ -15,7 +15,7 @@ interface MultiSelectStepProps {
 }
 
 export default function MultiSelectStep({ step }: MultiSelectStepProps) {
-  const { updateResponse, formResponses, currentStep } = useFormContext();
+  const { updateResponse, formResponses, currentStep, isMobile } = useFormContext();
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
 
   // fetch one icon per option title
@@ -34,13 +34,51 @@ export default function MultiSelectStep({ step }: MultiSelectStepProps) {
     updateResponse(step.title, next);
   };
 
+  const getTileTextClass = (text: string, isMobile: boolean) => {
+    if (isMobile) return "text-base";
+    if (text.length > 40) return "text-sm";
+    if (text.length > 30) return "text-base";
+    if (text.length > 20) return "text-lg";
+    return "text-xl";
+  };
+
+  const formatTileText = (text: string) => {
+    return text
+      .split(" ")
+      .map((word) => {
+        word = word.replace(/([a-z])([A-Z])/g, "$1\u00AD$2");
+        word = word.replace(/([a-zA-Z])-([a-zA-Z])/g, "$1\u00AD$2");
+
+        if (word.length > 5) {
+          const patt = /[^aeiou][aeiou][^aeiou]/gi;
+          let last = 0;
+          let res = "";
+          let m;
+          while ((m = patt.exec(word)) !== null) {
+            const end = m.index + 2;
+            if (end > last) {
+              res += word.substring(last, end) + "\u00AD";
+              last = end;
+            }
+          }
+          res += word.substring(last);
+          word = res || word;
+          if (!word.includes("\u00AD")) {
+            word = word.replace(/(.{5})/g, "$1\u00AD");
+          }
+        }
+        return word;
+      })
+      .join(" ");
+  };
+
   return (
-    <div className="flex-1 flex flex-col py-2 sm:py-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar">
+    <div className="flex-1 flex flex-col py-2 sm:py-2 w-full px-4">
       <h3 className="text-2xl font-bold mb-1 text-center">{step.title}</h3>
       <p className="text-gray-500 mb-1 text-center">{step.subtitle}</p>
       <p className="text-sm text-gray-400 mb-3">Select all that apply</p>
 
-      <div className="grid grid-cols-2 gap-4 max-w-3xl mx-auto">
+      <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 max-w-3xl mx-auto`}>
         {step.options.map((option, idx) => {
           const isActive = selectedOptions.includes(option.id);
           const iconName = option.icon || icons[idx] || "Circle";
@@ -63,14 +101,14 @@ export default function MultiSelectStep({ step }: MultiSelectStepProps) {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-lg">{option.title}</h4>
+                    <h4 className={`font-medium hyphens-auto ${getTileTextClass(option.title, isMobile)}`}>{formatTileText(option.title)}</h4>
                     <Checkbox
                       checked={isActive}
                       onCheckedChange={() => handleToggle(option.id)}
                       className="h-5 w-5 border-gray-300"
                     />
                   </div>
-                  <p className="text-xs text-gray-500">{option.description}</p>
+                  <p className="text-xs text-gray-500 hyphens-auto">{formatTileText(option.description || '')}</p>
                 </div>
               </div>
             </div>

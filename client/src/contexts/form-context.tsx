@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useDeviceDetection } from "@/hooks/useDeviceDetection";
 import { FormConfig, FormStep } from "@shared/types";
 
 interface FormContextType {
@@ -26,6 +27,9 @@ interface FormContextType {
   isStepValid: (stepIndex: number) => boolean;
   updateThemeColor: (colorType: 'primary' | 'secondary' | 'accent', colorValue: string) => void;  // <-- Added
   updateFontFamily: (fontFamily: string) => void;
+  // Device / embedding information
+  isMobile: boolean;
+  isIframe: boolean;
 }
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -40,6 +44,9 @@ export function FormProvider({ children }: { children: ReactNode }) {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isFormComplete, setIsFormComplete] = useState<boolean>(false);
+
+  // Device detection
+  const { isMobile, isIframe } = useDeviceDetection();
 
   // Initialize form config if available
   useEffect(() => {
@@ -297,6 +304,10 @@ useEffect(() => {
         isStepValid,
         updateThemeColor,    
         updateFontFamily 
+        ,
+        // expose device info
+        isMobile,
+        isIframe
       }}
     >
       {children}

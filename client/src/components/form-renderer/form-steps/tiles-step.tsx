@@ -8,8 +8,53 @@ interface TilesStepProps {
   step: TilesStepType;
 }
 
+// Helper: compute text class based on length + mobile
+const getTileTextClass = (text: string, isMobile: boolean) => {
+  if (isMobile) return "text-base";
+  if (text.length > 40) return "text-sm";
+  if (text.length > 30) return "text-base";
+  if (text.length > 20) return "text-lg";
+  return "text-xl";
+};
+
+// Helper: insert soft-hyphens for better wrapping
+const formatTileText = (text: string) => {
+  return text
+    .split(" ")
+    .map((word) => {
+      // camelCase → camel­Case
+      word = word.replace(/([a-z])([A-Z])/g, "$1\u00AD$2");
+      // hyphenated words → break at hyphen
+      word = word.replace(/([a-zA-Z])-([a-zA-Z])/g, "$1\u00AD$2");
+
+      // Long word syllable-ish breaks
+      if (word.length > 5) {
+        const syllablePattern = /[^aeiou][aeiou][^aeiou]/gi;
+        let lastIndex = 0;
+        let result = "";
+        let match;
+        while ((match = syllablePattern.exec(word)) !== null) {
+          const end = match.index + 2;
+          if (end > lastIndex) {
+            result += word.substring(lastIndex, end) + "\u00AD";
+            lastIndex = end;
+          }
+        }
+        result += word.substring(lastIndex);
+        word = result || word;
+
+        // Fallback: break every 5 chars if still no soft hyphen
+        if (!word.includes("\u00AD")) {
+          word = word.replace(/(.{5})/g, "$1\u00AD");
+        }
+      }
+      return word;
+    })
+    .join(" ");
+};
+
 export default function TilesStep({ step }: TilesStepProps) {
-  const { updateResponse, formResponses, currentStep, nextStep } = useFormContext();
+  const { updateResponse, formResponses, currentStep, nextStep, isMobile } = useFormContext();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   // fetch one icon per option title
@@ -51,7 +96,7 @@ export default function TilesStep({ step }: TilesStepProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col py-2 sm:py-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar">
+    <div className="flex-1 flex flex-col py-2 sm:py-2 w-full px-4">
       <h3 className="text-xl font-bold mb-2 text-center">{step.title}</h3>
       <p className="text-gray-500 mb-4 text-center text-sm">{step.subtitle}</p>
 
@@ -75,8 +120,14 @@ export default function TilesStep({ step }: TilesStepProps) {
                   className={`${isActive ? "text-primary" : "text-gray-600"} transition-colors`}
                 />
               </div>
-              <div className="text-base font-semibold">{option.title}</div>
-              <div className="text-sm text-muted-foreground">{option.description}</div>
+              <div
+                className={`font-semibold hyphens-auto ${getTileTextClass(option.title, isMobile)}`}
+              >
+                {formatTileText(option.title)}
+              </div>
+              <div className="text-sm text-muted-foreground hyphens-auto">
+                {formatTileText(option.description || "")}
+              </div>
             </div>
           );
         })}

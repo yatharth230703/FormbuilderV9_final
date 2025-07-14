@@ -14,6 +14,7 @@ import { FormResponsesPage } from "@/pages/FormResponsesPage";
 import { FormPreviewPage } from "@/pages/FormPreviewPage";
 import { FormEditPage } from "@/pages/FormEditPage";
 import FormConsolePage from "@/pages/FormConsolePage";
+import { useIframeResize } from "@/hooks/useIframeResize";
 
 function Router() {
   return (
@@ -36,6 +37,8 @@ function Router() {
 }
 
 function App() {
+  // Dynamically resize when the app is embedded in an iframe
+  useIframeResize();
   useEffect(() => {
     // Set the page title
     document.title = "Forms Engine - Prompt to Form Generator";

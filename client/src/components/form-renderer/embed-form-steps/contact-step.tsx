@@ -16,7 +16,7 @@ interface FormErrors {
 }
 
 export default function ContactStep({ step }: ContactStepProps) {
-  const { updateResponse, formResponses, formConfig } = useFormContext();
+  const { updateResponse, formResponses, formConfig, isMobile } = useFormContext();
   const [contactInfo, setContactInfo] = useState({
     firstName: "",
     lastName: "",
@@ -78,11 +78,11 @@ export default function ContactStep({ step }: ContactStepProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col py-2 sm:py-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar">
+    <div className="flex-1 flex flex-col py-2 sm:py-2 w-full px-4">
       <h3 className="text-2xl font-bold mb-2 text-center">{step.title}</h3>
       <p className="text-gray-500 mb-5 text-center">{step.subtitle}</p>
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 mb-4`}>
         <div>
           <Label htmlFor="firstName" className="block text-sm font-medium mb-1">
             {step.config.labels.firstName}{" "}

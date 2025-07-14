@@ -13,7 +13,7 @@ const GEMINI_API_URL =
 
 const TRANSLATION_PRICING_PROMPT = `FOR TRANSLATION\nItem\nUnit\nTypical Unit Price (€)\nStandard certified translation\nper page\n65-80 € \nCertification stamp (sworn seal)\nper document\n15 € \nExpress service (48 h)\nsurcharge\n+30 % of base translation fee (≈ 20 € on one page) \nTracked domestic shipping\nflat\n5 € \n\n// If Express Service option is chosen then put the +30% surcharge \n// Add domestic shipping surcharge to all\n// Total displayed should be in a range and a sum. \n// Total will be multiplied based on number of pages\n// Add 19% VAT`;
 
-const QUOTATION_SYSTEM_PROMPT = `You are a translation price estimation agent.\n\nYour task is to:\n1. Analyze the provided form responses and document content\n2. Use the following translation pricing structure:\n${TRANSLATION_PRICING_PROMPT}\n3. Calculate the estimated price range for the user's translation request, following all rules in the pricing prompt.\n4. If Express Service is selected, add the 30% surcharge. Always add the domestic shipping fee. Multiply by number of pages if provided. Add 19% VAT.\n\nCRITICAL RULES:\n- Return ONLY 1-2 lines of content, citing the estimated price range (e.g., \"Estimated total: 120-150 € (including VAT and surcharges)\").\n- Do NOT generate a full business quotation, no headers, no lengthy text, no official formatting.\n- Be concise and clear.\n- Output only the price estimate, nothing else.`;
+const QUOTATION_SYSTEM_PROMPT = `You are a translation price estimation agent.\n\nYour task is to:\n1. Analyze the provided form responses and document content\n2. Use the following translation pricing structure:\n${TRANSLATION_PRICING_PROMPT}\n3. Calculate the estimated price range for the user's translation request, following all rules in the pricing prompt.\n4. If Express Service is selected, add the 30% surcharge. Always add the domestic shipping fee. Multiply by number of pages if provided. Add 19% VAT.\n\nCRITICAL RULES:\n- Return ONLY the price range, the from and to value ,absolutely no other text, citing the estimated price range (e.g., \"120-150 €\").\n- Do NOT generate a full business quotation, no headers, no lengthy text, no official formatting.\n- Be concise and clear.\n- Output only the price estimate, nothing else.`;
 
 export interface QuotationRequest {
   formResponses: Record<string, any>;
@@ -144,6 +144,7 @@ Please generate a formal quotation that includes:
 7. Final total amount
 
 The quotation should be professional, clear, and ready for client presentation. If a pricing template was provided, ensure all calculations follow the specified rules (e.g., surcharges, VAT, per-page multipliers).
+ Return ONLY the price range, the from and to value ,absolutely no other text, citing the estimated price range (e.g., \"120-150 €\").\n- Do NOT generate a full business quotation, no headers, no lengthy text, no official formatting.\n- Be concise and clear.\n- Output only the price estimate,the numerical price range nothing else.
   `;
 }
 

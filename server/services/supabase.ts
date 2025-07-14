@@ -276,10 +276,10 @@ export async function createFormResponse(
     .insert([
       { 
         label, 
-        responses,
+        response: responses,
         language,
         domain,
-        form_id: formId,
+        form_config_id: formId,
         user_uuid: userUuid
       }
     ])
@@ -449,7 +449,7 @@ export async function getUserById(id: string): Promise<any> {
   const { data, error } = await supabase
     .from('users')
     .select('*')
-    .eq('id', id)
+    .eq('uuid', id)
     .single();
 
   if (error) {
@@ -478,7 +478,7 @@ export async function updateUserCredits(userId: string, credits: number): Promis
     const { error } = await supabase
       .from('users')
       .update({ credits })
-      .eq('id', userId);
+      .eq('uuid', userId);
       
     if (error) {
       console.error('Error updating user credits:', error);
@@ -518,7 +518,7 @@ export async function deductUserCredits(userId: string, credits: number): Promis
   const { error } = await supabase
     .from('users')
     .update({ credits: newCredits })
-    .eq('id', userId);
+    .eq('uuid', userId);
 
   if (error) {
     console.error('Supabase error deducting user credits:', error);

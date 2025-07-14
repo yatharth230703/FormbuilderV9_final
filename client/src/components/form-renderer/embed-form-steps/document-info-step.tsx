@@ -88,17 +88,25 @@ export default function DocumentInfoStep({ step }: DocumentInfoStepProps) {
         ) : showQuotation ? (
           <div className="flex flex-col items-center justify-center min-h-[300px] w-full" style={{ minHeight: "300px", maxHeight: step.config.maxHeight || "400px" }}>
             <div className="w-full flex flex-col items-center">
-              <div className="w-full bg-gray-100 py-2 mb-8 flex justify-center">
-                <span className="text-5xl font-light tracking-wide text-gray-900 text-center">YOUR ESTIMATED TOTAL</span>
+              <div className="w-full border-2 border-purple-600 rounded-md py-3 mb-3 flex justify-center">
+                <span className="text-4xl font-semibold tracking-wide text-gray-900 text-center">Your Estimated Total</span>
               </div>
-              <div className="w-full flex justify-center mb-8">
-                <div className="bg-orange-300 rounded border border-gray-400 flex items-center justify-center" style={{ minWidth: 250, minHeight: 90, maxWidth: 400, width: "100%" }}>
-                  <span className="text-2xl text-black text-center font-normal" dangerouslySetInnerHTML={{ __html: quotationHtml }} />
+              <div className="w-full text-center mb-5">
+                <span className="text-sm text-gray-700 font-medium">{`{Including VAT and Surcharge}`}</span>
+              </div>
+              <div className="w-full flex justify-center mb-5">
+                <div
+                  className="bg-gradient-to-r from-green-100 to-blue-100 rounded-lg border border-gray-300 shadow flex items-center justify-center"
+                  style={{ minWidth: 250, minHeight: 90, maxWidth: 400, width: "100%" }}
+                >
+                  <span
+                    className="text-3xl text-black text-center font-semibold"
+                    dangerouslySetInnerHTML={{ __html: quotationHtml }}
+                  />
                 </div>
               </div>
-              <div className="w-full flex flex-col items-center mt-4">
-                <span className="text-base text-black mb-2">(including VAT and Surcharge)</span>
-                <span className="text-lg text-black text-center">Accurate price will be sent to your email by our partner soon (in 12-24hrs)</span>
+              <div className="w-full flex justify-center mt-3">
+                <span className="text-base text-gray-800 text-center">Our partners will reach out to you shortly with an accurate quote</span>
               </div>
               <Button 
                 variant="outline" 

@@ -8,8 +8,46 @@ interface TilesStepProps {
   step: TilesStepType;
 }
 
+const getTileTextClass = (text: string, isMobile: boolean) => {
+  if (isMobile) return "text-base";
+  if (text.length > 40) return "text-sm";
+  if (text.length > 30) return "text-base";
+  if (text.length > 20) return "text-lg";
+  return "text-xl";
+};
+
+const formatTileText = (text: string) => {
+  return text
+    .split(" ")
+    .map((word) => {
+      word = word.replace(/([a-z])([A-Z])/g, "$1\u00AD$2");
+      word = word.replace(/([a-zA-Z])-([a-zA-Z])/g, "$1\u00AD$2");
+
+      if (word.length > 5) {
+        const syllable = /[^aeiou][aeiou][^aeiou]/gi;
+        let last = 0;
+        let res = "";
+        let m;
+        while ((m = syllable.exec(word)) !== null) {
+          const end = m.index + 2;
+          if (end > last) {
+            res += word.substring(last, end) + "\u00AD";
+            last = end;
+          }
+        }
+        res += word.substring(last);
+        word = res || word;
+        if (!word.includes("\u00AD")) {
+          word = word.replace(/(.{5})/g, "$1\u00AD");
+        }
+      }
+      return word;
+    })
+    .join(" ");
+};
+
 export default function TilesStep({ step }: TilesStepProps) {
-  const { updateResponse, formResponses, currentStep, nextStep } = useFormContext();
+  const { updateResponse, formResponses, currentStep, nextStep, isMobile } = useFormContext();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   // fetch one icon per option title
@@ -51,7 +89,7 @@ export default function TilesStep({ step }: TilesStepProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col py-2 sm:py-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar">
+    <div className="flex-1 flex flex-col py-2 sm:py-2 w-full px-4">
       <h3 className="text-xl font-bold mb-2 text-center">{step.title}</h3>
       <p className="text-gray-500 mb-4 text-center text-sm">{step.subtitle}</p>
 
@@ -75,8 +113,12 @@ export default function TilesStep({ step }: TilesStepProps) {
                   className={isActive ? "text-primary" : "text-gray-400"} 
                 />
               </div>
-              <div className="text-base font-semibold">{option.title}</div>
-              <div className="text-sm text-muted-foreground">{option.description}</div>
+              <div className={`font-semibold hyphens-auto ${getTileTextClass(option.title, isMobile)}`}>
+                {formatTileText(option.title)}
+              </div>
+              <div className="text-sm text-muted-foreground hyphens-auto">
+                {formatTileText(option.description || "")}
+              </div>
             </div>
           );
         })}

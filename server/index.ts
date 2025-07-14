@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import session from "express-session";
 import { storage } from "./storage";
+import cors from "cors";
 
 import dotenv from 'dotenv';
 dotenv.config();
@@ -19,14 +20,44 @@ declare module 'express-session' {
 }
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// FIRST_EDIT
+// Trust the first proxy (e.g. Replit/Render/Nginx). This is REQUIRED when you
+// use secure cookies behind a reverse proxy; otherwise Express thinks the
+// connection is HTTP and will refuse to set/send the cookie. 1 = trust first
+// hop only.
+app.set('trust proxy', 1);
 
 // Production-ready session configuration
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Set your frontend URL here - updated to match your exact domain
+const allowedOrigin = isProduction
+  ? 'https://formbuilder-v-9-final-partnerscaile.replit.app'
+  : 'http://localhost:5173';
+
+// For debugging: log the CORS configuration
+console.log('CORS configuration:', {
+  isProduction,
+  allowedOrigin,
+  nodeEnv: process.env.NODE_ENV
+});
+
+app.use(cors({
+  origin: allowedOrigin,
+  credentials: true,
+}));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
 // Initialize session middleware with PostgreSQL session store from storage
 app.use(session({
+  // SECOND_EDIT
+  // When running behind a proxy _and_ using secure cookies we must tell
+  // express-session about it, otherwise the secure cookie will not be
+  // accepted. Only enable this flag in production to avoid warnings during
+  // local development.
+  proxy: isProduction,
   store: storage.sessionStore,
   name: 'forms_engine_sid',
   secret: process.env.SESSION_SECRET || 'forms-engine-session-secret', 
@@ -36,9 +67,25 @@ app.use(session({
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     httpOnly: true,
     secure: isProduction, // Set to true in production with HTTPS
-    sameSite: isProduction ? 'strict' : 'lax'
+    sameSite: isProduction ? 'none' : 'lax'
   }
 }));
+
+// Debug middleware to log session and cookie info (AFTER session middleware)
+app.use((req, res, next) => {
+  // Only log API requests to avoid spam
+  if (req.path.startsWith('/api')) {
+    console.log('API Request details:', {
+      method: req.method,
+      path: req.path,
+      origin: req.headers.origin,
+      sessionID: req.sessionID,
+      hasSessionUser: !!(req.session && req.session.user),
+      hasCookies: !!req.headers.cookie
+    });
+  }
+  next();
+});
 
 // Security headers for production
 if (isProduction) {

@@ -1690,10 +1690,10 @@ async function createFormResponse(label, responses, language = "en", domain = nu
   const { data, error } = await supabase.from("form_responses").insert([
     {
       label,
-      responses,
+      response: responses,
       language,
       domain,
-      form_id: formId,
+      form_config_id: formId,
       user_uuid: userUuid
     }
   ]).select("id").single();
@@ -1762,7 +1762,7 @@ async function getUserById(id) {
   if (!supabase) {
     throw new Error("Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.");
   }
-  const { data, error } = await supabase.from("users").select("*").eq("id", id).single();
+  const { data, error } = await supabase.from("users").select("*").eq("uuid", id).single();
   if (error) {
     if (error.code === "PGRST116") {
       return null;
@@ -1785,7 +1785,7 @@ async function deductUserCredits(userId, credits) {
     throw new Error("Insufficient credits");
   }
   const newCredits = currentCredits - credits;
-  const { error } = await supabase.from("users").update({ credits: newCredits }).eq("id", userId);
+  const { error } = await supabase.from("users").update({ credits: newCredits }).eq("uuid", userId);
   if (error) {
     console.error("Supabase error deducting user credits:", error);
     throw new Error(`Failed to deduct user credits: ${error.message}`);
@@ -3626,12 +3626,23 @@ async function registerRoutes(app2) {
 
 // server/index.ts
 import session2 from "express-session";
+import cors from "cors";
 import dotenv9 from "dotenv";
 dotenv9.config();
 var app = express2();
+var isProduction = process.env.NODE_ENV === "production";
+var allowedOrigin = isProduction ? "https://formbuilder-v-9-final-partnerscaile.replit.app" : "http://localhost:5173";
+console.log("CORS configuration:", {
+  isProduction,
+  allowedOrigin,
+  nodeEnv: process.env.NODE_ENV
+});
+app.use(cors({
+  origin: allowedOrigin,
+  credentials: true
+}));
 app.use(express2.json());
 app.use(express2.urlencoded({ extended: false }));
-var isProduction = process.env.NODE_ENV === "production";
 app.use(session2({
   store: storage.sessionStore,
   name: "forms_engine_sid",
@@ -3644,9 +3655,22 @@ app.use(session2({
     httpOnly: true,
     secure: isProduction,
     // Set to true in production with HTTPS
-    sameSite: isProduction ? "strict" : "lax"
+    sameSite: isProduction ? "none" : "lax"
   }
 }));
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api")) {
+    console.log("API Request details:", {
+      method: req.method,
+      path: req.path,
+      origin: req.headers.origin,
+      sessionID: req.sessionID,
+      hasSessionUser: !!(req.session && req.session.user),
+      hasCookies: !!req.headers.cookie
+    });
+  }
+  next();
+});
 if (isProduction) {
   app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
