@@ -156,14 +156,11 @@ export default function EmbedFormRenderer({
   }, [currentStep, formConfig, isFormComplete]);
 
   const nextButtonText = useMemo(() => {
-    if (!formConfig?.ui) return "Continue";
     if (currentStep === totalSteps) {
-      return isSubmitting
-        ? formConfig.ui.buttons.submitting || "Submitting..."
-        : formConfig.ui.buttons.submit || "Submit";
+      return isSubmitting ? "Submitting..." : "Submit";
     }
-    return formConfig.ui.buttons.next || "Continue";
-  }, [currentStep, totalSteps, formConfig, isSubmitting]);
+    return formConfig?.ui?.buttons?.next || "Continue";
+  }, [currentStep, totalSteps, isSubmitting, formConfig]);
 
   if (!formConfig) {
     return (
@@ -176,7 +173,7 @@ export default function EmbedFormRenderer({
   }
 
   return (
-    <div className="w-full h-full overflow-hidden relative flex flex-col bg-white">
+    <div className="w-full relative flex flex-col bg-white">
       
       {/* Progress bar for embed */}
       <div className="p-6 border-b border-gray-200">
@@ -198,8 +195,8 @@ export default function EmbedFormRenderer({
         </div>
       </div>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-auto px-6 py-8 hide-scrollbar">
+      {/* Main Content */}
+      <div className="px-6 py-8">
         <div className="mb-6">{currentStepContent}</div>
       </div>
 

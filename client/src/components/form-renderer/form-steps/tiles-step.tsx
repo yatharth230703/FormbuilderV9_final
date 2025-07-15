@@ -81,19 +81,31 @@ export default function TilesStep({ step }: TilesStepProps) {
     setTimeout(() => nextStep(), 300);
   };
 
-  // New grid logic for 4 and 6 options
+  // Responsive grid logic – default 2 columns on mobile to avoid narrow tiles
+  // and scale up to 3 columns on larger screens when appropriate.
   let gridClasses = "";
-  if (step.options.length === 4) {
-    gridClasses = "grid-cols-2 grid-rows-2";
-  } else if (step.options.length === 6) {
-    gridClasses = "grid-cols-3 grid-rows-2";
-  } else if (step.options.length === 2) {
-    gridClasses = "grid-cols-2 grid-rows-1";
-  } else if (step.options.length === 3) {
-    gridClasses = "grid-cols-3 grid-rows-1";
-  } else {
-    gridClasses = "grid-cols-2"; // fallback
+
+  switch (step.options.length) {
+    case 6:
+      // 6 options → 2 cols (mobile) 3 cols (sm and up)
+      gridClasses = "grid-cols-2 sm:grid-cols-3";
+      break;
+    case 4:
+      // 4 options → 2×2 works well on all sizes
+      gridClasses = "grid-cols-2";
+      break;
+    case 3:
+      // 3 options → 2 cols mobile, 3 cols bigger screens
+      gridClasses = "grid-cols-2 sm:grid-cols-3";
+      break;
+    case 2:
+      gridClasses = "grid-cols-2";
+      break;
+    default:
+      gridClasses = "grid-cols-2";
   }
+
+  const iconSize = isMobile ? 32 : 48;
 
   return (
     <div className="flex-1 flex flex-col py-2 sm:py-2 w-full px-4">
@@ -109,23 +121,21 @@ export default function TilesStep({ step }: TilesStepProps) {
             <div
               key={option.id}
               onClick={() => handleSelect(option.id)}
-              className={`border rounded-xl p-10 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 ease-in-out h-40 w-full ${
+              className={`border rounded-xl p-4 sm:p-6 lg:p-10 grid grid-rows-[auto_1fr_auto] justify-items-center text-center gap-y-2 cursor-pointer transition-all duration-200 ease-in-out h-44 w-full min-w-0 ${
                 isActive ? "border-primary bg-primary/10" : "border-gray-300 hover:border-primary"
               }`}
             >
-              <div className="mb-4">
+              <div>
                 <DynamicIcon 
                   name={iconName} 
-                  size={48} 
-                  className={`${isActive ? "text-primary" : "text-gray-600"} transition-colors`}
+                  size={iconSize} 
+                  className={`${isActive ? "text-primary" : "text-gray-600"} transition-colors`} 
                 />
               </div>
-              <div
-                className={`font-semibold hyphens-auto ${getTileTextClass(option.title, isMobile)}`}
-              >
+              <div className={`font-semibold hyphens-auto ${getTileTextClass(option.title, isMobile)} leading-tight`}>                
                 {formatTileText(option.title)}
               </div>
-              <div className="text-sm text-muted-foreground hyphens-auto">
+              <div className="text-sm text-muted-foreground hyphens-auto leading-snug">
                 {formatTileText(option.description || "")}
               </div>
             </div>

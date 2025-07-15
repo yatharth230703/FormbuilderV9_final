@@ -172,14 +172,11 @@ export default function FormRenderer({
   }, [currentStep, formConfig, isFormComplete]);
 
   const nextButtonText = useMemo(() => {
-    if (!formConfig?.ui) return "Continue";
     if (currentStep === totalSteps) {
-      return isSubmitting
-        ? formConfig.ui.buttons.submitting || "Submitting..."
-        : formConfig.ui.buttons.submit || "Submit";
+      return isSubmitting ? "Submitting..." : "Submit";
     }
-    return formConfig.ui.buttons.next || "Continue";
-  }, [currentStep, totalSteps, formConfig, isSubmitting]);
+    return formConfig?.ui?.buttons?.next || "Continue";
+  }, [currentStep, totalSteps, isSubmitting, formConfig]);
 
   if (!formConfig) {
     return (

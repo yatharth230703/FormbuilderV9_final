@@ -94,7 +94,9 @@
 }
 
 /* === Global Responsive Overrides for Embedded Forms === */
-html, body, #root {
+body.embed-mode,
+html.embed-mode,
+body.embed-mode #root {
   width: 100% !important;
   min-width: 100% !important;
   margin: 0 !important;

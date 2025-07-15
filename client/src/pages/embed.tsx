@@ -94,6 +94,11 @@ export default function EmbedForm() {
   }, []);
 
   useEffect(() => {
+    document.body.classList.add('embed-mode');
+    return () => document.body.classList.remove('embed-mode');
+  }, []);
+
+  useEffect(() => {
     const fetchForm = async () => {
       try {
         // Get the URL directly from window.location
@@ -141,10 +146,7 @@ export default function EmbedForm() {
         }
 
         if (response && response.config) {
-          setFormConfig({
-            ...response.config,
-            id: response.id, // 💥 inject id into config
-          });
+          setFormConfig(response.config); // Do not inject id
           setFormId(response.id); // Set formId state
         } else {
           setError("Form not found");
@@ -248,7 +250,7 @@ export default function EmbedForm() {
 
   return (
     <FormProvider>
-      <div className="w-full h-screen">
+      <div className="w-full">
         {formConfig && (
           <EmbedFormRenderer testMode={false} formConfig={formConfig} formId={formId} />
         )}

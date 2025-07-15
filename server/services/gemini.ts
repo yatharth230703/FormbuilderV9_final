@@ -11,7 +11,7 @@ dotenv.config();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_API_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent";
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 // System prompt that instructs Gemini how to structure the form JSON
 const SYSTEM_PROMPT = `You are a form generation engine that creates multi-step forms based on given prompts.
@@ -1042,7 +1042,7 @@ where each emoji semantically matches the corresponding title.
 Example output: ["🍽️","📍","🛍️",…]
   `.trim();
 
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

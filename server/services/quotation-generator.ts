@@ -9,7 +9,7 @@ dotenv.config();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_API_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent";
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 const TRANSLATION_PRICING_PROMPT = `FOR TRANSLATION\nItem\nUnit\nTypical Unit Price (€)\nStandard certified translation\nper page\n65-80 € \nCertification stamp (sworn seal)\nper document\n15 € \nExpress service (48 h)\nsurcharge\n+30 % of base translation fee (≈ 20 € on one page) \nTracked domestic shipping\nflat\n5 € \n\n// If Express Service option is chosen then put the +30% surcharge \n// Add domestic shipping surcharge to all\n// Total displayed should be in a range and a sum. \n// Total will be multiplied based on number of pages\n// Add 19% VAT`;
 
