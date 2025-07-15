@@ -967,6 +967,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // These endpoints are no longer needed with the new console structure
   // The new structure uses direct configuration rather than AI-processed conditions
 
+  // Proxy for Google Maps Geocoding API to avoid CORS issues
+  app.post("/api/geocode", async (req, res) => {
+    try {
+      const { address } = req.body;
+      if (!address || typeof address !== "string") {
+        return res.status(400).json({ error: "Missing or invalid address" });
+      }
+      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "Google Maps API key not configured on server" });
+      }
+      const fetch = (await import("node-fetch")).default;
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error in /api/geocode proxy:", error);
+      res.status(500).json({ error: "Failed to fetch geocode data" });
+    }
+  });
+
+  // Proxy for Google Maps Static Maps API to avoid exposing API key
+  app.get("/api/staticmap", async (req, res) => {
+    try {
+      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "Google Maps API key not configured on server" });
+      }
+      // Build the Google Static Maps API URL with all query params from the request
+      const params = new URLSearchParams(req.query as any);
+      params.set("key", apiKey);
+      const url = `https://maps.googleapis.com/maps/api/staticmap?${params.toString()}`;
+      const fetch = (await import("node-fetch")).default;
+      const response = await fetch(url);
+      if (!response.ok) {
+        return res.status(500).json({ error: "Failed to fetch static map image" });
+      }
+      res.set("Content-Type", "image/png");
+      response.body.pipe(res);
+    } catch (error) {
+      console.error("Error in /api/staticmap proxy:", error);
+      res.status(500).json({ error: "Failed to fetch static map image" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

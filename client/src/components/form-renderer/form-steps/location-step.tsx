@@ -95,11 +95,12 @@ export default function LocationStep({ step }: LocationStepProps) {
     setLocationCoords(null);
 
     try {
-      // Use Google Maps Geocoding API
-      const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'YOUR_API_KEY_HERE';
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(addressInput)}&key=${GOOGLE_MAPS_API_KEY}`
-      );
+      // Use backend proxy for Google Maps Geocoding API
+      const response = await fetch('/api/geocode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: addressInput })
+      });
       const data = await response.json();
       
       if (data.status !== 'OK' || !data.results || data.results.length === 0) {
@@ -248,7 +249,7 @@ export default function LocationStep({ step }: LocationStepProps) {
             {/* Show static map if coordinates are available */}
             {locationCoords && (
               <img
-                src={`https://maps.googleapis.com/maps/api/staticmap?center=${locationCoords.lat},${locationCoords.lon}&zoom=14&size=400x200&markers=color:red%7C${locationCoords.lat},${locationCoords.lon}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'YOUR_API_KEY_HERE'}`}
+                src={`/api/staticmap?center=${locationCoords.lat},${locationCoords.lon}&zoom=14&size=400x200&markers=color:red%7C${locationCoords.lat},${locationCoords.lon}`}
                 alt="Location Map"
                 className="rounded shadow border"
                 style={{ width: '400px', height: '200px', objectFit: 'cover' }}
