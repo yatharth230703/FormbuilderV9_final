@@ -105,12 +105,10 @@ The engine supports a variety of step types, each designed for a specific purpos
 | `textbox`          | Freeform text input (short or long answer).            |
 | `location`         | Collect a postal code or address, with map preview.    |
 | `documentUpload`   | Allow users to upload files (PDF, DOCX, etc.).         |
-- `documentInfo`     | Display information extracted from an uploaded doc.    |
-- `contact`          | Collect standard contact information (name, email, phone).|
+| `documentInfo`     | Display information extracted from an uploaded doc.    |
+| `contact`          | Collect standard contact information (name, email, phone).|
 
 ---
 
-## Contributing
 
-We welcome contributions! Please feel free to open an issue or submit a pull request. For major changes, please open an issue first to discuss what you would like to change.
 
