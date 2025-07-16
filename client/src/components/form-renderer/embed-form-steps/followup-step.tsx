@@ -56,22 +56,18 @@ export default function FollowupStep({ step }: FollowupStepProps) {
         {step.options && step.options.length > 0 ? step.options.map((option) => (
           <div 
             key={option.id}
-            className={`border ${selectedOption === option.id ? 'border-primary bg-primary/5' : 'border-gray-200'} rounded-lg p-4 cursor-pointer hover:border-primary hover:bg-gray-50 transition-all`}
+            className={`border ${selectedOption === option.id ? 'border-primary bg-primary/5' : 'border-gray-200'} rounded-lg p-6 cursor-pointer hover:border-primary hover:bg-gray-50 transition-all flex flex-col items-center text-center gap-2`}
             onClick={() => handleSelectOption(option.id)}
           >
-            <div className="flex items-start">
-              <div className="bg-primary bg-opacity-10 rounded-full p-2 mr-3">
-                <DynamicIcon 
-                  name={option.icon} 
-                  size={20} 
-                  className="text-primary" 
-                />
-              </div>
-              <div>
-                <h4 className="font-medium text-lg">{option.title}</h4>
-                <p className="text-xs text-gray-500">{option.description}</p>
-              </div>
+            <div className="bg-primary bg-opacity-10 rounded-full p-3 flex items-center justify-center">
+              <DynamicIcon 
+                name={option.icon} 
+                size={24} 
+                className="text-primary" 
+              />
             </div>
+            <h4 className="font-medium text-lg">{option.title}</h4>
+            <p className="text-xs text-gray-500">{option.description}</p>
           </div>
         )) : (
           <div className="col-span-2 text-center py-8 text-gray-500">

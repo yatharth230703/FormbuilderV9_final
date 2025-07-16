@@ -97,7 +97,7 @@ export default function TilesStep({ step }: TilesStepProps) {
   const iconSize = isMobile ? 32 : 48;
 
   return (
-    <div className="flex-1 flex flex-col py-2 sm:py-2 w-full px-4">
+    <div className="h-full flex flex-col items-center justify-center py-2 sm:py-2 w-full px-4">
       <h3 className="text-xl font-bold mb-2 text-center">{step.title}</h3>
       <p className="text-gray-500 mb-4 text-center text-sm">{step.subtitle}</p>
 
@@ -110,7 +110,7 @@ export default function TilesStep({ step }: TilesStepProps) {
             <div
               key={option.id}
               onClick={() => handleSelect(option.id)}
-              className={`border rounded-xl p-4 sm:p-6 lg:p-10 grid grid-rows-[auto_1fr_auto] justify-items-center text-center gap-y-2 cursor-pointer transition-all duration-200 ease-in-out h-44 w-full min-w-0 ${
+              className={`border rounded-xl p-4 sm:p-6 lg:p-10 flex flex-col items-center justify-center text-center gap-y-2 cursor-pointer transition-all duration-200 ease-in-out h-44 w-full min-w-0 ${
                 isActive ? "border-primary bg-primary/10" : "border-gray-300 hover:border-primary"
               }`}
             >

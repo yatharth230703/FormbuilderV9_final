@@ -17,12 +17,12 @@ export default function SubmissionStep({ submission }: SubmissionStepProps) {
   const { resetForm } = useFormContext();
 
   return (
-    <div className="flex-1 flex flex-col py-2 sm:py-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar">
+    <div className="h-full flex flex-col items-center justify-center py-2 sm:py-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar text-center">
       
       <h3 className="text-2xl font-bold mb-2">{submission.title}</h3>
-      <p className="text-gray-500 mb-4">{submission.description}</p>
+      <p className="text-gray-500 mb-8 max-w-xl">{submission.description}</p>
 
-      <div className="w-full max-w-lg">
+      <div className="w-full max-w-lg mx-auto">
         {submission.steps.map((step, index) => (
           <div key={index} className="flex mb-8">
             <div className="mr-4 flex-shrink-0">

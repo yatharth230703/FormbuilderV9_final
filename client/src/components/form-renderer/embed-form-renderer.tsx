@@ -173,7 +173,7 @@ export default function EmbedFormRenderer({
   }
 
   return (
-    <div className="w-full relative flex flex-col bg-white">
+    <div className="w-full min-h-screen flex flex-col bg-white">
       
       {/* Progress bar for embed */}
       <div className="p-6 border-b border-gray-200">
@@ -196,12 +196,12 @@ export default function EmbedFormRenderer({
       </div>
 
       {/* Main Content */}
-      <div className="px-6 py-8">
+      <div className="px-6 py-8 flex-1">
         <div className="mb-6">{currentStepContent}</div>
       </div>
 
       {/* Footer Navigation for embed */}
-      <div className="px-6 py-4 border-t border-gray-200 bg-white">
+      <div className="px-6 py-4 border-t border-gray-200 bg-white mt-auto">
         <div className="flex justify-between items-center">
           <div className="flex gap-3">
             {currentStep > 1 && !isFormComplete && (
