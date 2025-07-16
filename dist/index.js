@@ -31,7 +31,7 @@ Example input: ["Home Page", "Contact Us", "About", "Services"]
 Example output: ["Home", "Mail", "Users", "Settings"]
   `.trim();
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -633,7 +633,7 @@ init_icons();
 import dotenv3 from "dotenv";
 dotenv3.config();
 var GEMINI_API_KEY2 = process.env.GEMINI_API_KEY || "";
-var GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent";
+var GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 var SYSTEM_PROMPT = `You are a form generation engine that creates multi-step forms based on given prompts.
 Output ONLY valid JSON without any explanation or extra text.
 Make sure you extract all keywords from the prompt and include relevant questions that address the user's specific needs. If in the given prompt you feel the need to add a document upload step , add it .This can usually be deduced by looking for keywords like 'upload document' or 'try our service' or 'get a quote'.
@@ -2556,89 +2556,13 @@ import multer from "multer";
 import mammoth from "mammoth";
 
 // server/services/pdf-parser.ts
-var pdfjsLib = null;
-var initializationAttempted = false;
+import pdfParse from "pdf-parse";
 async function parsePdf(buffer) {
-  if (!pdfjsLib && !initializationAttempted) {
-    initializationAttempted = true;
-    try {
-      pdfjsLib = await import("pdfjs-dist");
-      if (process.env.NODE_ENV === "production") {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = null;
-      }
-      console.log("PDF.js library successfully initialized");
-    } catch (error) {
-      console.error("Failed to load pdfjs-dist:", error);
-      throw new Error("PDF parsing is not available - PDF.js failed to load");
-    }
-  }
-  if (!pdfjsLib) {
-    throw new Error("PDF parsing is not available - PDF.js not initialized");
-  }
-  if (!buffer || buffer.length === 0) {
-    throw new Error("Invalid PDF buffer provided");
-  }
-  if (buffer.length < 4 || buffer.toString("ascii", 0, 4) !== "%PDF") {
-    throw new Error("The uploaded file is not a valid PDF document");
-  }
   try {
-    const uint8Array = new Uint8Array(buffer);
-    const loadingTask = pdfjsLib.getDocument({
-      data: uint8Array,
-      verbosity: 0,
-      // Suppress console output
-      useWorkerFetch: false,
-      // Disable worker fetch in production
-      isEvalSupported: false,
-      // Disable eval for security
-      stopAtErrors: false,
-      // Continue processing even if some pages fail
-      maxImageSize: 16777216,
-      // 16MB limit for images
-      cMapUrl: null,
-      // Disable cmap loading
-      cMapPacked: false
-    });
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error("PDF loading timeout")), 3e4);
-    });
-    const pdfDocument = await Promise.race([loadingTask.promise, timeoutPromise]);
-    if (!pdfDocument) {
-      throw new Error("Failed to load PDF document");
-    }
-    let fullText = "";
-    const numPages = pdfDocument.numPages;
-    const maxPages = Math.min(numPages, 50);
-    for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
-      try {
-        const page = await pdfDocument.getPage(pageNum);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.filter((item) => item.str && typeof item.str === "string").map((item) => item.str).join(" ");
-        fullText += pageText + "\n";
-        page.cleanup();
-      } catch (pageError) {
-        console.warn(`Error extracting text from page ${pageNum}:`, pageError);
-      }
-    }
-    await pdfDocument.destroy();
-    if (typeof fullText !== "string") {
-      throw new Error("PDF parsing returned invalid result");
-    }
-    const cleanedText = fullText.replace(/\s+/g, " ").replace(/\n\s*\n/g, "\n").trim();
-    return { text: cleanedText };
+    const data = await pdfParse(buffer);
+    return { text: data.text };
   } catch (error) {
     console.error("Error parsing PDF:", error);
-    if (error instanceof Error) {
-      if (error.message.includes("Invalid PDF") || error.message.includes("not a valid PDF")) {
-        throw new Error("The uploaded file is not a valid PDF document");
-      } else if (error.message.includes("password")) {
-        throw new Error("The PDF is password protected and cannot be processed");
-      } else if (error.message.includes("corrupted")) {
-        throw new Error("The PDF file appears to be corrupted");
-      } else if (error.message.includes("timeout")) {
-        throw new Error("PDF processing timed out - the file may be too large or complex");
-      }
-    }
     throw new Error("Failed to parse PDF document - the file may be corrupted or unsupported");
   }
 }
@@ -2685,7 +2609,7 @@ async function uploadDocumentToStorage(file, fileName, mimeType) {
 import dotenv7 from "dotenv";
 dotenv7.config();
 var GEMINI_API_KEY3 = process.env.GEMINI_API_KEY || "";
-var GEMINI_API_URL2 = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent";
+var GEMINI_API_URL2 = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 var TRANSLATION_PRICING_PROMPT = `FOR TRANSLATION
 Item
 Unit
@@ -2718,7 +2642,7 @@ ${TRANSLATION_PRICING_PROMPT}
 4. If Express Service is selected, add the 30% surcharge. Always add the domestic shipping fee. Multiply by number of pages if provided. Add 19% VAT.
 
 CRITICAL RULES:
-- Return ONLY 1-2 lines of content, citing the estimated price range (e.g., "Estimated total: 120-150 \u20AC (including VAT and surcharges)").
+- Return ONLY the price range, the from and to value ,absolutely no other text, citing the estimated price range (e.g., "120-150 \u20AC").
 - Do NOT generate a full business quotation, no headers, no lengthy text, no official formatting.
 - Be concise and clear.
 - Output only the price estimate, nothing else.`;
@@ -2820,6 +2744,10 @@ Please generate a formal quotation that includes:
 7. Final total amount
 
 The quotation should be professional, clear, and ready for client presentation. If a pricing template was provided, ensure all calculations follow the specified rules (e.g., surcharges, VAT, per-page multipliers).
+ Return ONLY the price range, the from and to value ,absolutely no other text, citing the estimated price range (e.g., "120-150 \u20AC").
+- Do NOT generate a full business quotation, no headers, no lengthy text, no official formatting.
+- Be concise and clear.
+- Output only the price estimate,the numerical price range nothing else.
   `;
 }
 function cleanQuotationHtml(quotationText) {
@@ -3620,6 +3548,47 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: "Internal server error" });
     }
   });
+  app2.post("/api/geocode", async (req, res) => {
+    try {
+      const { address } = req.body;
+      if (!address || typeof address !== "string") {
+        return res.status(400).json({ error: "Missing or invalid address" });
+      }
+      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "Google Maps API key not configured on server" });
+      }
+      const fetch2 = (await import("node-fetch")).default;
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
+      const response = await fetch2(url);
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error in /api/geocode proxy:", error);
+      res.status(500).json({ error: "Failed to fetch geocode data" });
+    }
+  });
+  app2.get("/api/staticmap", async (req, res) => {
+    try {
+      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "Google Maps API key not configured on server" });
+      }
+      const params = new URLSearchParams(req.query);
+      params.set("key", apiKey);
+      const url = `https://maps.googleapis.com/maps/api/staticmap?${params.toString()}`;
+      const fetch2 = (await import("node-fetch")).default;
+      const response = await fetch2(url);
+      if (!response.ok) {
+        return res.status(500).json({ error: "Failed to fetch static map image" });
+      }
+      res.set("Content-Type", "image/png");
+      response.body.pipe(res);
+    } catch (error) {
+      console.error("Error in /api/staticmap proxy:", error);
+      res.status(500).json({ error: "Failed to fetch static map image" });
+    }
+  });
   const httpServer = createServer(app2);
   return httpServer;
 }
@@ -3630,6 +3599,7 @@ import cors from "cors";
 import dotenv9 from "dotenv";
 dotenv9.config();
 var app = express2();
+app.set("trust proxy", 1);
 var isProduction = process.env.NODE_ENV === "production";
 var allowedOrigin = isProduction ? "https://formbuilder-v-9-final-partnerscaile.replit.app" : "http://localhost:5173";
 console.log("CORS configuration:", {
@@ -3644,6 +3614,12 @@ app.use(cors({
 app.use(express2.json());
 app.use(express2.urlencoded({ extended: false }));
 app.use(session2({
+  // SECOND_EDIT
+  // When running behind a proxy _and_ using secure cookies we must tell
+  // express-session about it, otherwise the secure cookie will not be
+  // accepted. Only enable this flag in production to avoid warnings during
+  // local development.
+  proxy: isProduction,
   store: storage.sessionStore,
   name: "forms_engine_sid",
   secret: process.env.SESSION_SECRET || "forms-engine-session-secret",

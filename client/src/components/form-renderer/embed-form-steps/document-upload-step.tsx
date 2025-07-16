@@ -102,7 +102,7 @@ export default function DocumentUploadStep({ step }: DocumentUploadStepProps) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex-1 flex flex-col pt-6 sm:pt-10 pb-2 px-4 space-y-4">
       <div className="space-y-1">
         <h2 className="text-xl font-semibold text-gray-900">
           {step.title}
@@ -114,7 +114,7 @@ export default function DocumentUploadStep({ step }: DocumentUploadStepProps) {
         )}
       </div>
 
-      <div className="max-w-sm mx-auto">
+      <div className="max-w-sm mx-auto mt-6">
         <div
           className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
             dragActive

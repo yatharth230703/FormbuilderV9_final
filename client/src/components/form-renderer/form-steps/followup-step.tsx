@@ -52,11 +52,11 @@ export default function FollowupStep({ step }: FollowupStepProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col py-2 sm:py-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar">
+    <div className="flex-1 flex flex-col pt-6 sm:pt-10 pb-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar">
       <h3 className="text-2xl font-bold mb-2 text-center">{step.title}</h3>
       <p className="text-gray-500 mb-8 text-center">{step.subtitle}</p>
 
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-2 gap-4 mb-6 mt-6">
         {step.options && step.options.length > 0 ? step.options.map((option) => (
           <div 
             key={option.id}

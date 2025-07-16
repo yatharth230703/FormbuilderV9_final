@@ -97,11 +97,13 @@ export default function TilesStep({ step }: TilesStepProps) {
   const iconSize = isMobile ? 32 : 48;
 
   return (
-    <div className="h-full flex flex-col items-center justify-center py-2 sm:py-2 w-full px-4">
+    <div className="h-full flex flex-col items-center justify-start pt-6 sm:pt-10 w-full px-4">
+      {/* Align from the top so the tiles sit closer to the centre of the iframe, while the heading stays near the top */}
       <h3 className="text-xl font-bold mb-2 text-center">{step.title}</h3>
       <p className="text-gray-500 mb-4 text-center text-sm">{step.subtitle}</p>
 
-      <div className={`grid ${gridClasses} gap-4 max-w-5xl mx-auto`}>
+      {/* Extra margin-top pushes the grid of tiles further down */}
+      <div className={`grid ${gridClasses} gap-4 max-w-5xl mx-auto mt-6`}>
         {step.options.map((option, idx) => {
           const iconName = option.icon || icons[idx] || "Circle";
           const isActive = selectedOption === option.id;

@@ -33,7 +33,7 @@ export default function SliderStep({ step }: SliderStepProps) {
   const percentage = ((value - step.min) / (step.max - step.min)) * 100;
 
   return (
-    <div className="flex-1 flex flex-col py-2 sm:py-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar">
+    <div className="flex-1 flex flex-col pt-6 sm:pt-10 pb-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar">
       <h3 className="text-2xl font-bold mb-2 text-center dark:text-white">{step.title}</h3>
       <p className="text-gray-500 dark:text-gray-400 mb-8 text-center">{step.subtitle}</p>
 

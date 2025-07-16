@@ -37,11 +37,11 @@ export default function TextboxStep({ step }: TextboxStepProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col py-2 sm:py-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar">
+    <div className="flex-1 flex flex-col pt-6 sm:pt-10 pb-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar">
       <h3 className="text-2xl font-bold mb-2 text-center">{step.title}</h3>
       <p className="text-gray-500 mb-5 text-center">{step.subtitle}</p>
 
-      <div className="w-full max-w-3xl mx-auto">
+      <div className="w-full max-w-3xl mx-auto mt-6">
         <Textarea
           placeholder={step.placeholder}
           rows={step.rows}

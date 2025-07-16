@@ -1,123 +1,72 @@
 # Authentication Setup Guide
 
-This guide explains how to set up and use the authentication system for the Forms Engine application.
-
 ## Overview
 
-The application uses Supabase Authentication for user management with email/password login. It includes:
+The application's authentication is built on **Supabase Auth**, providing a secure and scalable solution for user management. It integrates a traditional email/password login system with a session-based approach on the server, while leveraging Supabase's powerful features for database security.
 
-- User registration and login
-- Role-based access control (admin vs. regular users)
-- Row Level Security (RLS) policies for data protection
-- Direct SQL queries to avoid schema cache issues
+The key components of the authentication system are:
+- **User Registration & Login**: Standard email and password sign-up and sign-in.
+- **Session Management**: Handled by Express server using `express-session` for stateful user sessions.
+- **Supabase Integration**: User creation and authentication are delegated to Supabase Auth.
+- **Role-Based Access**: The `users` table includes an `is_admin` flag for role differentiation.
+- **Row-Level Security (RLS)**: Data access is controlled by RLS policies defined directly in the database schema using Drizzle ORM.
 
 ## Prerequisites
 
-1. A Supabase project with the following tables:
-   - `users` (with `auth_user_id` field to link with Supabase Auth)
-   - `form_config`
-   - `form_responses`
+- A Supabase project.
+- All necessary environment variables are set up as described in `ENVIRONMENT_SETUP.md`, specifically:
+  - `DATABASE_URL`
+  - `SUPABASE_URL`
+  - `SUPABASE_ANON_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `SESSION_SECRET`
 
-2. Environment variables for Supabase access:
-   - `SUPABASE_URL` - Your Supabase project URL
-   - `SUPABASE_ANON_KEY` - Your Supabase anonymous key
-   - `SUPABASE_SERVICE_ROLE_KEY` - Your Supabase service role key (for admin operations)
+## Setup and Configuration
 
-## Setting Up Supabase
+### 1. Supabase Auth Configuration
+In your Supabase project dashboard:
+1.  Navigate to **Authentication** > **Providers**.
+2.  Ensure the **Email** provider is enabled.
+3.  (Optional) Customize the email templates for verification, password reset, etc.
+4.  Navigate to **Authentication** > **URL Configuration** and set your application's URL for email redirects.
 
-### 1. Create necessary tables
+### 2. Database Schema and RLS Policies
+The database schema, including tables and Row-Level Security (RLS) policies, is managed by Drizzle ORM.
 
-The database schema is already defined in `shared/schema.ts`. Make sure your Supabase tables match this schema.
+The definitions can be found in `migrations/schema.ts`. Key tables include:
+- `users`: Stores public user data, linked to `auth.users` via a UUID.
+- `form_config`: Contains RLS policies to ensure users can only access their own forms.
+- `form_responses`: Contains RLS policies so users can only view responses for their own forms.
 
-### 2. Apply Row Level Security (RLS) Policies
+**There is no separate SQL file to run.** The policies are defined in code and applied with the database migration command.
 
-Execute the SQL in `supabase_rls_policies.sql` in your Supabase SQL editor to apply the RLS policies:
-
-- Admins can only view/manage their own form configurations
-- Admins can only view responses related to their forms
-- Public users can submit form responses but not read any data
-
-### 3. Configure Authentication
-
-In your Supabase dashboard:
-
-1. Go to Authentication > Settings
-2. Enable Email provider
-3. Configure email templates if desired
-4. Set your site URL for redirects
-
-## Using Authentication in the Application
-
-### Client-Side
-
-The application uses React Context for authentication state management:
-
-```javascript
-import { useAuth } from '@/contexts/AuthContext';
-
-function MyComponent() {
-  const { user, login, register, logout, isLoading } = useAuth();
-  
-  // Use these functions and state as needed
-}
+To set up your database, run the Drizzle Kit push command, which will synchronize your schema with the database:
+```bash
+npm run db:push
 ```
 
-### Protected Routes
-
-Wrap routes requiring authentication with the ProtectedRoute component:
-
-```javascript
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-
-<ProtectedRoute>
-  <YourProtectedComponent />
-</ProtectedRoute>
-```
-
-For admin-only routes:
-
-```javascript
-<ProtectedRoute requireAdmin={true}>
-  <AdminComponent />
-</ProtectedRoute>
-```
-
-### Server-Side
-
-The server automatically associates created forms with the authenticated user:
-
-```javascript
-// In routes.ts
-const userId = req.session.user?.supabaseUserId || null;
-
-// This ID is used when creating form configurations
-await supabaseService.createFormConfig(
-  label,
-  config,
-  language,
-  domain,
-  userId
-);
-```
+This command will create the tables and apply the RLS policies defined in the schema file.
 
 ## Authentication Flow
 
-1. User registers or logs in
-2. Server creates/validates credentials with Supabase Auth
-3. Server stores session data
-4. Client uses protected routes based on auth state
-5. Database RLS policies automatically enforce access control
+1.  **Client-Side (UI)**: The user interacts with the `LoginForm` or `RegisterForm` component.
+2.  **API Request**: The client sends the user's credentials to the server's `/api/auth/login` or `/api/auth/register` endpoints.
+3.  **Server-Side (Express)**:
+    -   The server receives the request and uses the `Supabase` service to communicate with Supabase Auth.
+    -   For registration, a new user is created in Supabase's `auth.users` table, and a corresponding entry is made in the public `users` table.
+    -   For login, credentials are validated against Supabase Auth.
+4.  **Session Creation**: Upon successful authentication, the server creates a session for the user, storing user details (like Supabase user ID and email) in the session object.
+5.  **Context and Protected Routes**:
+    -   The `AuthContext` on the client-side fetches the user's session data to manage the application's auth state.
+    -   `ProtectedRoute` components wrap routes that require authentication, redirecting unauthenticated users.
+6.  **Authenticated Requests & Data Access**:
+    -   For subsequent API requests, the user's session is automatically validated.
+    -   When accessing data, Supabase's RLS policies automatically filter the results based on the authenticated user's UID, ensuring they can only access data they own.
 
-## Troubleshooting
+## Key Files & Components
 
-- Check browser console for client-side errors
-- Verify server logs for authentication issues
-- Ensure environment variables are correctly set
-- Verify Supabase RLS policies are properly applied
-
-## Further Customization
-
-- Customize email templates in Supabase dashboard
-- Add social login providers through Supabase Auth
-- Implement password reset functionality
-- Add multi-factor authentication (MFA)
+-   **`server/auth.ts`**: Contains the Express routes for `/login`, `/register`, `/logout`.
+-   **`server/services/supabase-auth.ts`**: Service functions for interacting with Supabase Auth.
+-   **`client/src/contexts/AuthContext.tsx`**: React context for managing auth state in the UI.
+-   **`client/src/components/auth/`**: Contains all auth-related UI components (`LoginForm`, `RegisterForm`, `ProtectedRoute`).
+-   **`migrations/schema.ts`**: The single source of truth for the database schema and RLS policies.

@@ -1,261 +1,86 @@
-# Production Deployment Guide for Replit
+# Production Deployment Guide
 
-This guide will walk you through deploying the FormBuilder application to production on Replit.
+This guide provides a general workflow for deploying the FormBuilder application to a production environment on platforms like Vercel, Netlify, Render, or a traditional Virtual Private Server (VPS).
 
-## Prerequisites
+## 1. Prerequisites
 
-Before starting deployment, ensure you have:
-- [ ] A Replit account
-- [ ] All required environment variables (see `ENVIRONMENT_SETUP.md`)
-- [ ] A Supabase project with proper tables
-- [ ] API keys for required services
+Before deploying, ensure you have completed the following:
+-   **Environment Setup**: All required environment variables are gathered. See `ENVIRONMENT_SETUP.md` for a complete list.
+-   **Supabase Project**: Your Supabase project is created, and you have the database connection string and API keys.
+-   **Third-Party Services**: You have API keys for all required services (Google, Resend, Stripe).
 
-## Step 1: Environment Configuration
+## 2. Environment Configuration
 
-### 1.1 Set Environment Variables
-1. In your Replit project, click on "Secrets" in the left sidebar
-2. Add all the required environment variables listed in `ENVIRONMENT_SETUP.md`
-3. Make sure to set `NODE_ENV=production`
+In your chosen hosting provider's dashboard (e.g., Vercel, Netlify), you must set the environment variables required by the application.
 
-### 1.2 Configure APP_URL
-Set your APP_URL to match your Replit deployment URL:
-```
-APP_URL=https://your-replit-name.your-username.repl.co
-```
+### Key Variables for Production:
+-   `NODE_ENV`: Set this to `production`.
+-   `DATABASE_URL`: Your production database connection string.
+-   `APP_URL`: The public URL of your deployed application (e.g., `https://your-app.com`).
+-   `SESSION_SECRET`: A long, random, and secret string for session security.
+-   All other API keys (`SUPABASE_*`, `GEMINI_API_KEY`, `GOOGLE_MAPS_API_KEY`, `RESEND_API_KEY`, `STRIPE_SECRET_KEY`).
 
-## Step 2: Database Setup
+## 3. Database Setup
 
-### 2.1 PostgreSQL (Local Database)
-Your Replit project should automatically provision a PostgreSQL database. If not:
-1. Go to the Database tab in Replit
-2. Enable PostgreSQL
-3. Copy the DATABASE_URL from the connection details
+Your production database must be migrated to the latest schema.
 
-### 2.2 Supabase Setup
-1. Make sure your Supabase project is properly configured
-2. Run database migrations to create required tables
-3. Set up Row Level Security (RLS) policies
-4. Test the connection with your environment variables
+1.  **Connect to Production DB**: Point your `DATABASE_URL` environment variable locally to your production database instance. **Be extremely careful when doing this.**
+2.  **Push Schema Changes**: Run the `db:push` command to apply any pending migrations.
+    ```bash
+    npm run db:push
+    ```
+3.  **Restore DB Connection**: Revert your local `DATABASE_URL` to your development database.
 
-## Step 3: Build Configuration
+It is critical that your production database schema is up-to-date with the definitions in `migrations/schema.ts`.
 
-### 3.1 Build Process
-The application uses a two-step build process:
-1. **Client build**: `vite build` - builds the React frontend
-2. **Server build**: `esbuild` - bundles the Express server
+## 4. Build and Deployment
 
-### 3.2 Static File Serving
-In production, the server serves static files from `dist/public/`
+The project is configured to build both the client-side assets (Vite) and the server-side code (esbuild) into a `dist` directory.
 
-## Step 4: Deployment
+### Build & Start Commands:
 
-### 4.1 Deploy to Replit
-1. **Push your code** to your Replit project
-2. **Set environment variables** in Replit Secrets
-3. **Run the build command**:
-   ```bash
-   npm run build
-   ```
-4. **Start the production server**:
-   ```bash
-   npm start
-   ```
+-   **Build Command**: The command your hosting provider should run to build the application.
+    ```bash
+    npm run build
+    ```
+-   **Start Command**: The command to run the production server after the build is complete.
+    ```bash
+    npm run start
+    ```
 
-### 4.2 Automated Deployment
-The `.replit` file is configured to automatically:
-- Build the application on deployment
-- Start the production server
-- Serve on port 5000
+The `start` script executes the bundled server entrypoint: `node dist/index.js`.
 
-## Step 5: Verification
+### Static File Serving
+In production, the Express server is configured to serve the static frontend files (HTML, CSS, JS) from the `dist/public` directory. Ensure your hosting provider can run a Node.js server to handle this. For platforms that are serverless-first (like Vercel), you may need to adjust the configuration to properly handle the Express server.
 
-### 5.1 Health Checks
-After deployment, verify:
-1. **Application starts** without errors
-2. **Database connection** is working
-3. **API endpoints** respond correctly
-4. **Form generation** works with AI service
-5. **File uploads** function properly
-6. **Static files** are served correctly
+## 5. Deployment Checklist
 
-### 5.2 Test Core Features
-- [ ] User authentication
-- [ ] Form generation from prompts
-- [ ] Form rendering and submission
-- [ ] File upload and processing
-- [ ] Email notifications (if configured)
-- [ ] Payment processing (if configured)
+Before going live, verify the following:
+-   [ ] All production environment variables are set correctly in your hosting provider.
+-   [ ] The `NODE_ENV` is set to `production`.
+-   [ ] `APP_URL` points to the correct public domain.
+-   [ ] The production database has been migrated successfully.
+-   [ ] The build command (`npm run build`) completes without errors.
+-   [ ] The start command (`npm run start`) launches the server successfully.
+-   [ ] User authentication (register, login, logout) is working.
+-   [ ] Core features like form generation, submission, and file uploads are functional.
+-   [ ] Security headers and secure cookies are in place (most modern providers handle this).
 
-## Step 6: Production Optimizations
+## 6. Monitoring and Maintenance
 
-### 6.1 Performance
-- Static files are served with proper caching headers
-- Session storage uses PostgreSQL for persistence
-- PDF processing is optimized for production environments
+-   **Logs**: Regularly check your hosting provider's logs for any runtime errors or warnings.
+-   **Updates**: To deploy updates, push your code changes to your connected Git repository. Your provider should automatically trigger a new build and deployment. You may need to run database migrations manually if the schema has changed.
 
-### 6.2 Security
-- HTTPS is enforced (automatically by Replit)
-- Security headers are set for all responses
-- Session cookies are configured securely
-- Input validation and sanitization
+## Common Production Issues
 
-### 6.3 Error Handling
-- Comprehensive error logging
-- Graceful degradation for optional features
-- User-friendly error messages
+-   **Static Files Not Loading (404s)**:
+    -   **Cause**: The server might not be correctly configured to serve static files.
+    -   **Solution**: Verify that the Express static middleware is pointing to the correct directory (`dist/public`) and that the build process places files there.
 
-## Step 7: Monitoring and Maintenance
+-   **Database Connection Errors**:
+    -   **Cause**: Incorrect `DATABASE_URL` or network policies blocking access.
+    -   **Solution**: Double-check the connection string. Ensure your hosting provider's IP address is whitelisted in your database's network settings if required.
 
-### 7.1 Logs
-Monitor application logs for:
-- Error messages
-- Performance issues
-- Security concerns
-- User activity
-
-### 7.2 Updates
-To update your deployment:
-1. Make changes to your code
-2. Push to Replit
-3. Run `npm run build`
-4. Restart the application
-
-## Common Issues and Solutions
-
-### Issue: Build Fails
-**Solution**: 
-- Check that all environment variables are set
-- Ensure all dependencies are installed
-- Verify Node.js version compatibility
-
-### Issue: Database Connection Errors
-**Solution**:
-- Verify DATABASE_URL is correct
-- Check Supabase credentials
-- Ensure database is running
-
-### Issue: Static Files Not Loading
-**Solution**:
-- Verify build completed successfully
-- Check file permissions
-- Ensure `dist/public` directory exists
-
-### Issue: PDF Upload Not Working
-**Solution**:
-- This is expected in some environments
-- Other file types (DOC, TXT) should still work
-- Check file size limits
-
-### Issue: Form Generation Fails
-**Solution**:
-- Verify GEMINI_API_KEY is set correctly
-- Check API quota limits
-- Test with simpler prompts
-
-## Performance Optimization
-
-### 6.1 Caching Strategy
-- Static assets cached for 1 year
-- HTML files cached with validation
-- API responses not cached (dynamic content)
-
-### 6.2 Resource Limits
-- PDF processing limited to 50 pages
-- File upload limited to 10MB
-- Session timeout set to 30 days
-
-## Security Best Practices
-
-### 7.1 Environment Variables
-- Never commit secrets to version control
-- Use strong, unique session secrets
-- Regularly rotate API keys
-
-### 7.2 Input Validation
-- All user inputs are validated
-- File uploads are type-checked
-- SQL injection prevention
-
-### 7.3 Session Security
-- HTTPOnly cookies
-- Secure cookie flags in production
-- CSRF protection
-
-## Backup and Recovery
-
-### 8.1 Database Backups
-- Supabase handles automatic backups
-- Export important data regularly
-- Keep migration files version controlled
-
-### 8.2 Code Backups
-- Keep code in version control
-- Tag releases for rollback capability
-- Document configuration changes
-
-## Scaling Considerations
-
-### 9.1 Current Limitations
-- Single server instance
-- File storage on server filesystem
-- Session storage in PostgreSQL
-
-### 9.2 Future Scaling Options
-- Move to cloud file storage (AWS S3, etc.)
-- Implement horizontal scaling
-- Add caching layer (Redis)
-- Use CDN for static assets
-
-## Troubleshooting Commands
-
-```bash
-# Check if build was successful
-ls -la dist/public
-
-# Test database connection
-npm run check
-
-# View recent logs
-tail -f server.log
-
-# Restart application
-npm start
-
-# Full rebuild
-rm -rf dist && npm run build
-```
-
-## Support
-
-If you encounter issues:
-1. Check the console logs for specific errors
-2. Verify all environment variables are correctly set
-3. Test individual components separately
-4. Review the deployment checklist
-5. Check Replit status page for service issues
-
-## Deployment Checklist
-
-Before going live:
-- [ ] All environment variables configured
-- [ ] Database tables created and migrated
-- [ ] API keys tested and working
-- [ ] Build process completes successfully
-- [ ] Application starts without errors
-- [ ] All core features tested
-- [ ] Security headers configured
-- [ ] Error handling tested
-- [ ] Performance optimizations applied
-- [ ] Monitoring configured
-- [ ] Backup strategy in place
-
-## Post-Deployment
-
-After successful deployment:
-1. Monitor application performance
-2. Watch for error logs
-3. Test user workflows
-4. Gather user feedback
-5. Plan for future updates
-
-Remember: Keep your environment variables secure and never share them publicly! 
+-   **CORS Errors**:
+    -   **Cause**: The server's CORS policy doesn't include your frontend's domain.
+    -   **Solution**: The `server/index.ts` file configures CORS. Ensure your `APP_URL` is correct, as it's often used to configure the allowed origin. 

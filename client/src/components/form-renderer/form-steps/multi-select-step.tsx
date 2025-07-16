@@ -68,12 +68,12 @@ export default function MultiSelectStep({ step }: MultiSelectStepProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col py-2 sm:py-2 w-full px-4">
+    <div className="flex-1 flex flex-col pt-6 sm:pt-10 pb-2 w-full px-4">
       <h3 className="text-2xl font-bold mb-1 text-center">{step.title}</h3>
       <p className="text-gray-500 mb-1 text-center">{step.subtitle}</p>
       <p className="text-sm text-gray-400 mb-3">Select all that apply</p>
 
-      <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 max-w-3xl mx-auto`}>
+      <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 max-w-3xl mx-auto mt-6`}>
         {step.options.map((option, idx) => {
           const isActive = selectedOptions.includes(option.id);
           const iconName = option.icon ?? icons[idx] ?? "Circle";

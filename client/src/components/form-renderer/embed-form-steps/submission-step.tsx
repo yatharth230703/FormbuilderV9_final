@@ -17,7 +17,7 @@ export default function SubmissionStep({ submission }: SubmissionStepProps) {
   const { resetForm } = useFormContext();
 
   return (
-    <div className="h-full flex flex-col items-center justify-center py-2 sm:py-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar text-center">
+    <div className="h-full flex flex-col items-center justify-center pt-6 sm:pt-10 pb-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar text-center">
       
       <h3 className="text-2xl font-bold mb-2">{submission.title}</h3>
       <p className="text-gray-500 mb-8 max-w-xl">{submission.description}</p>
