@@ -193,7 +193,7 @@ export default function LocationStep({ step }: LocationStepProps) {
         {/* Show resolved address if available */}
         {resolvedAddress && validationStatus === 'success' && (
           <div className="mt-2 text-sm text-blue-700 bg-blue-50 rounded p-2">
-            <span className="font-medium">Resolved Address:</span> {resolvedAddress}
+            <span className="font-medium">Address:</span> {resolvedAddress}
           </div>
         )}
 
@@ -205,22 +205,16 @@ export default function LocationStep({ step }: LocationStepProps) {
         )}
 
         <AnimatePresence mode="wait">
-          {validationStatus && (
+          {validationStatus === 'error' && (
             <motion.div 
               key={validationStatus}
               initial={{ opacity: 0, height: 0, y: 10 }}
               animate={{ opacity: 1, height: 'auto', y: 0 }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className={`mt-3 p-3 rounded-lg flex items-start ${
-                validationStatus === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-              }`}
+              className="mt-3 p-3 rounded-lg flex items-start bg-red-50 text-red-700"
             >
-              {validationStatus === 'success' ? (
-                <CheckCircle className="h-5 w-5 mr-2 flex-shrink-0" />
-              ) : (
-                <XCircle className="h-5 w-5 mr-2 flex-shrink-0" />
-              )}
+              <XCircle className="h-5 w-5 mr-2 flex-shrink-0" />
               <span className="text-sm">{validationMessage}</span>
             </motion.div>
           )}
