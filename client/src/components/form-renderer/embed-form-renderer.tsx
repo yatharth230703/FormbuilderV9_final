@@ -217,8 +217,7 @@ export default function EmbedFormRenderer({
             )}
           </div>
 
-          {!isFormComplete &&
-            formConfig.steps[currentStep - 1]?.type !== "tiles" && (
+          {!isFormComplete && (
               <Button
                 className="bg-primary text-white hover:bg-primary/90 transition-all duration-200 flex items-center px-6 py-2"
                 onClick={handleNextStep}

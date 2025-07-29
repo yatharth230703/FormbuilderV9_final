@@ -71,7 +71,6 @@ export default function TilesStep({ step }: TilesStepProps) {
   const handleSelect = (id: string) => {
     setSelectedOption(id);
     updateResponse(step.title, id);
-    setTimeout(() => nextStep(), 300);
   };
 
   // Responsive grid logic – default 2 columns on mobile, scale up on larger screens.
