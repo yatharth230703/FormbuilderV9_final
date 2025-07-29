@@ -120,16 +120,16 @@ export default function RightPanel() {
   };
 
   return (
-    <div className="w-full md:w-[90%] h-full flex flex-col bg-gray-100 p-2 md:p-6">
+    <div className="w-full md:flex-1 h-full flex flex-col bg-gray-100 p-2 md:p-4">
       {/* 16:9 preview */}
       <div className="flex-1 flex items-center justify-center">
-        <div className="w-full max-w-5xl aspect-[16/9] bg-white rounded-xl shadow-lg overflow-hidden relative">
+        <div className="w-full max-w-7xl aspect-[16/9] bg-white rounded-xl shadow-lg overflow-hidden relative">
           <FormRenderer testMode={testMode} />
         </div>
       </div>
 
       {/* Controls */}
-      <div className="w-full max-w-5xl mx-auto mt-4 flex items-center justify-between">
+      <div className="w-full max-w-7xl mx-auto mt-4 flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Button
             variant="ghost"

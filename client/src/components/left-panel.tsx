@@ -496,7 +496,7 @@ interface LeftPanelProps {
   };
 
   return (
-    <div className="w-full md:w-[30%] h-full flex flex-col border-r border-gray-200 bg-white p-4 overflow-hidden">
+    <div className="w-full md:w-[25%] h-full flex flex-col border-r border-gray-200 bg-white p-4 overflow-hidden">
       {/* Header */}
       <div className="py-4 mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-primary flex items-center">

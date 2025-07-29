@@ -1,5 +1,6 @@
 import { useMemo, useEffect } from "react";
 import { useFormContext } from "@/contexts/form-context";
+import { useLocation } from "wouter";
 import TilesStep from "./form-steps/tiles-step.tsx";
 import MultiSelectStep from "./form-steps/multi-select-step";
 import SliderStep from "./form-steps/slider-step";
@@ -25,6 +26,7 @@ export default function FormRenderer({
   testMode = false,
   formConfig: propFormConfig,
 }: FormRendererProps) {
+  const [location] = useLocation();
   const {
     formConfig: contextFormConfig,
     setFormConfig,
@@ -118,14 +120,24 @@ export default function FormRenderer({
       });
     } catch (error) {
       console.error("Error submitting form:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? `Failed to submit the form: ${error.message}`
-            : "Failed to submit the form",
-        variant: "destructive",
-      });
+      
+      // Check if we're on the buildform route
+      if (location === "/buildform") {
+        toast({
+          title: "Preview Mode",
+          description: "THIS IS A PREVIEW, CAN NOT SUBMIT FORM",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description:
+            error instanceof Error
+              ? `Failed to submit the form: ${error.message}`
+              : "Failed to submit the form",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
