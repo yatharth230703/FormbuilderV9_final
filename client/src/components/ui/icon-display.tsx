@@ -19,6 +19,13 @@ export function IconDisplay({
   const { iconMode } = useFormContext();
   const [fallbackEmoji, setFallbackEmoji] = useState<string | null>(null);
 
+  console.log("🎨 ICON DISPLAY - Rendering:", {
+    iconName,
+    emoji,
+    iconMode,
+    fallbackEmoji
+  });
+
   // Generate fallback emoji if none is provided and we're in emoji mode
   useEffect(() => {
     if (iconMode === 'emoji' && !emoji && !fallbackEmoji) {
@@ -182,7 +189,6 @@ export function IconDisplay({
         'Palette': '🎨',
         'TrendingUp': '📈',
         'Globe': '🌍',
-        'HelpCircle': '❓',
         'LifeBuoy': '🛟',
         'ShoppingCart': '🛒',
         'FileText': '📝',
@@ -196,6 +202,7 @@ export function IconDisplay({
 
   switch (iconMode) {
     case 'lucide':
+      console.log("🎨 ICON DISPLAY - Rendering Lucide icon:", iconName);
       return (
         <DynamicIcon 
           name={iconName} 
@@ -205,6 +212,7 @@ export function IconDisplay({
       );
     case 'emoji':
       const emojiToShow = emoji || fallbackEmoji;
+      console.log("🎨 ICON DISPLAY - Rendering emoji:", { emoji, fallbackEmoji, emojiToShow });
       return emojiToShow ? (
         <span 
           className={className}
@@ -214,8 +222,10 @@ export function IconDisplay({
         </span>
       ) : null;
     case 'none':
+      console.log("🎨 ICON DISPLAY - Rendering no icon");
       return null;
     default:
+      console.log("🎨 ICON DISPLAY - Rendering default Lucide icon:", iconName);
       return (
         <DynamicIcon 
           name={iconName} 

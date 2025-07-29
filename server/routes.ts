@@ -42,6 +42,7 @@ const publishSchema = z.object({
   config: z.object({}).passthrough(),
   language: z.string().default("en"),
   promptHistory: z.array(z.string()).optional(),
+  iconMode: z.enum(['lucide', 'emoji', 'none']).optional(),
 });
 
 // Configure multer for file uploads
@@ -439,15 +440,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = publishSchema.parse(req.body);
       const { originalFormId } = validatedData;
+      
+      console.log("🔍 PUBLISH API - Received data:", {
+        originalFormId,
+        label: validatedData.label,
+        iconMode: validatedData.iconMode,
+        hasConfig: !!validatedData.config
+      });
 
       if (originalFormId) {
         // Update existing form
+        console.log("🔄 PUBLISH API - Updating existing form:", {
+          formId: originalFormId,
+          iconMode: validatedData.iconMode || 'lucide'
+        });
+        
         await supabaseService.updateFormConfig(originalFormId, {
           config: validatedData.config,
           label: validatedData.label,
+          iconMode: validatedData.iconMode || 'lucide',
         });
+        
         // Return the updated form
         const updatedForm = await supabaseService.getFormConfig(originalFormId);
+        console.log("✅ PUBLISH API - Updated form retrieved:", {
+          formId: (updatedForm as any)?.id,
+          iconMode: (updatedForm as any)?.iconMode
+        });
         return res.json(updatedForm);
       } else {
         // Create new form
@@ -456,6 +475,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           label: validatedData.label,
           config: validatedData.config as FormConfig,
           language: validatedData.language,
+          iconMode: validatedData.iconMode || 'lucide',
         };
         const savedForm = await storage.createFormConfig(formData);
         return res.json(savedForm);
@@ -517,6 +537,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error editing form:", error);
       return res.status(500).json({ error: "Failed to edit form" });
+    }
+  });
+
+  // Update form icon mode
+  app.put("/api/forms/icon-mode", async (req, res) => {
+    try {
+      const userId = req.session.user?.supabaseUserId;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { formId, iconMode } = req.body;
+      
+      console.log("🎨 ICON MODE API - Received request:", {
+        userId,
+        formId,
+        iconMode,
+        body: req.body
+      });
+      
+      if (!formId || !iconMode || !['lucide', 'emoji', 'none'].includes(iconMode)) {
+        console.log("❌ ICON MODE API - Invalid request:", { formId, iconMode });
+        return res.status(400).json({ error: "Invalid formId or iconMode" });
+      }
+
+      console.log("🔄 ICON MODE API - Updating form config...");
+      const success = await supabaseService.updateFormConfig(formId, {
+        iconMode: iconMode
+      });
+
+      console.log("✅ ICON MODE API - Update result:", { success });
+
+      if (success) {
+        return res.json({ success: true });
+      } else {
+        return res.status(500).json({ error: "Failed to update icon mode" });
+      }
+    } catch (error: any) {
+      console.error("❌ ICON MODE API - Error:", error);
+      return res.status(500).json({ error: "Failed to update icon mode" });
     }
   });
 

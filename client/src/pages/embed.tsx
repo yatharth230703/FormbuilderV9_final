@@ -171,6 +171,7 @@ export default function EmbedForm() {
             label: string;
             config: FormConfig;
             created_at: string;
+            iconMode?: string;
           }>({
             url: `/api/forms/by-properties?language=${encodeURIComponent(language)}&label=${encodeURIComponent(label)}&domain=${encodeURIComponent(domain)}`,
           });
@@ -181,15 +182,32 @@ export default function EmbedForm() {
             label: string;
             config: FormConfig;
             created_at: string;
+            iconMode?: string;
           }>({
             url: `/api/forms/${oldFormId}`,
           });
         }
 
         if (response && response.config) {
+          console.log("📄 EMBED PAGE - Form loaded:", {
+            id: response.id,
+            label: response.label,
+            iconMode: response.iconMode,
+            hasConfig: !!response.config
+          });
+          
           setFormConfig(response.config); // Do not inject id
           setFormId(response.id); // Set formId state
+          
+          // Set icon mode from database if available
+          if (response.iconMode && ['lucide', 'emoji', 'none'].includes(response.iconMode)) {
+            console.log("🎨 EMBED PAGE - Setting icon mode from database:", response.iconMode);
+            setIconMode(response.iconMode as 'lucide' | 'emoji' | 'none');
+          } else {
+            console.log("⚠️ EMBED PAGE - No valid icon mode in response, using default");
+          }
         } else {
+          console.log("❌ EMBED PAGE - Form not found");
           setError("Form not found");
         }
       } catch (err) {

@@ -61,7 +61,8 @@ export async function createFormConfig(
   config: FormConfig,
   language = 'en',
   domain: string | null = null,
-  userId: string | null = null
+  userId: string | null = null,
+  iconMode: string = 'lucide'
 ): Promise<number> {
   if (!supabase) {
     throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
@@ -80,7 +81,8 @@ export async function createFormConfig(
         config,
         language,
         domain: finalDomain,
-        user_uuid: userId
+        user_uuid: userId,
+        icon_mode: iconMode  // Already correct snake_case
       }
     ])
     .select('id')
@@ -126,6 +128,8 @@ export async function getFormConfig(id: number): Promise<FormConfig | null> {
     throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
   }
   
+  console.log("🗄️ SUPABASE - getFormConfig called for ID:", id);
+  
   const { data, error } = await supabase
     .from('form_config')
     .select('*')
@@ -134,13 +138,27 @@ export async function getFormConfig(id: number): Promise<FormConfig | null> {
 
   if (error) {
     if (error.code === 'PGRST116') {
+      console.log("❌ SUPABASE - Form config not found for ID:", id);
       return null; // Not found
     }
-    console.error('Supabase error fetching form config:', error);
+    console.error('❌ SUPABASE - Error fetching form config:', error);
     throw new Error(`Failed to fetch form config from Supabase: ${error.message}`);
   }
 
-  return data;
+  // Map snake_case database fields to camelCase for frontend
+  const mappedData = {
+    ...data,
+    iconMode: (data as any)?.icon_mode || 'lucide' // Map icon_mode to iconMode
+  };
+
+  console.log("✅ SUPABASE - Form config retrieved:", {
+    id: mappedData?.id,
+    label: mappedData?.label,
+    iconMode: mappedData?.iconMode,
+    hasConfig: !!mappedData?.config
+  });
+
+  return mappedData;
 }
 
 /**
@@ -181,7 +199,13 @@ export async function getFormByProperties(
     data.created_at = new Date().toISOString();
   }
 
-  return data;
+  // Map snake_case database fields to camelCase for frontend
+  const mappedData = {
+    ...data,
+    iconMode: (data as any)?.icon_mode || 'lucide' // Map icon_mode to iconMode
+  };
+
+  return mappedData;
 }
 
 /**
@@ -371,22 +395,30 @@ export async function deleteFormConfig(id: number): Promise<boolean> {
  */
 export async function updateFormConfig(
   id: number, 
-  updates: Partial<{ config: FormConfig; label: string; }>
+  updates: Partial<{ config: FormConfig; label: string; iconMode: string; }>
 ): Promise<boolean> {
+  // Convert camelCase to snake_case for database columns
+  const dbUpdates: any = {};
+  if (updates.config) dbUpdates.config = updates.config;
+  if (updates.label) dbUpdates.label = updates.label;
+  if (updates.iconMode) dbUpdates.icon_mode = updates.iconMode; // Convert to snake_case
   if (!supabase) {
     throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
   }
   
+  console.log("🗄️ SUPABASE - updateFormConfig called:", { id, updates, dbUpdates });
+  
   const { error } = await supabase
     .from('form_config')
-    .update(updates)
+    .update(dbUpdates)
     .eq('id', id);
 
   if (error) {
-    console.error('Supabase error updating form config:', error);
+    console.error('❌ SUPABASE - Error updating form config:', error);
     return false;
   }
 
+  console.log("✅ SUPABASE - Form config updated successfully");
   return true;
 }
 

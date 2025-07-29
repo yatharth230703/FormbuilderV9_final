@@ -44,6 +44,7 @@ export const formConfig = pgTable("form_config", {
   domain: text("domain"),
   user_uuid: text("user_uuid").references(() => users.id), // Renamed to match RLS policies
   form_console: json("form_console").default('{}'),
+  iconMode: text("icon_mode").default('lucide'), // Added icon mode column
 });
 
 export const formConfigRelations = relations(formConfig, ({ one, many }) => ({
@@ -61,6 +62,7 @@ export const insertFormConfigSchema = createInsertSchema(formConfig).pick({
   domain: true,
   user_uuid: true,
   form_console: true,
+  iconMode: true,
 });
 
 export type InsertFormConfig = z.infer<typeof insertFormConfigSchema>;

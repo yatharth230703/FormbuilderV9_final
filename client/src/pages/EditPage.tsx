@@ -25,6 +25,7 @@ interface FormData {
   domain: string;
   user_uuid: string | null;
   promptHistory?: string[];
+  iconMode?: string;
 }
 
 type EditMode = 'manual' | 'ai' | null;
@@ -36,7 +37,7 @@ export default function EditPage() {
   const formId = params.id;
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { iconMode } = useFormContext();
+  const { iconMode, setIconMode } = useFormContext();
   
   const [editMode, setEditMode] = useState<EditMode>(null);
   const [formData, setFormData] = useState<FormData | null>(null);
@@ -58,25 +59,50 @@ export default function EditPage() {
   // Update form data when fetched
   useEffect(() => {
     if (formDetails && typeof formDetails === 'object') {
+      console.log("📄 EDIT PAGE - Form details loaded:", {
+        id: formDetails.id,
+        label: formDetails.label,
+        iconMode: formDetails.iconMode,
+        hasConfig: !!formDetails.config
+      });
+      
       setFormData(formDetails as FormData);
       setCurrentConfig(formDetails.config);
+      
+      // Set the icon mode from the database
+      if (formDetails.iconMode) {
+        console.log("🎨 EDIT PAGE - Setting icon mode from database:", formDetails.iconMode);
+        setIconMode(formDetails.iconMode);
+      } else {
+        console.log("⚠️ EDIT PAGE - No icon mode in form details, using default");
+      }
     }
-  }, [formDetails]);
+  }, [formDetails, setIconMode]);
 
   // Save form configuration mutation
   const saveFormMutation = useMutation({
-    mutationFn: (config: FormConfig) => 
-      apiRequest('/api/publish', {
+    mutationFn: (config: FormConfig) => {
+      const requestBody = {
+        originalFormId: formData?.id,
+        label: formData?.label || 'Untitled Form',
+        config: config,
+        language: formData?.language || 'en',
+        promptHistory: formData?.promptHistory || [],
+        iconMode: iconMode
+      };
+      
+      console.log("💾 EDIT PAGE - Saving form configuration:", {
+        formId: formData?.id,
+        iconMode: iconMode,
+        requestBody
+      });
+      
+      return apiRequest('/api/publish', {
         method: 'POST',
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          originalFormId: formData?.id,
-          label: formData?.label || 'Untitled Form',
-          config: config,
-          language: formData?.language || 'en',
-          promptHistory: formData?.promptHistory || []
-        })
-      }),
+        body: JSON.stringify(requestBody)
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/forms/${formId}`] });
       setIframeKey(prev => prev + 1); // Force iframe refresh
