@@ -108,7 +108,7 @@ export default function TilesStep({ step }: TilesStepProps) {
 
   return (
     <div className="h-full flex flex-col items-center justify-start pt-6 sm:pt-10 w-full px-4">
-      <h3 className="text-xl font-bold mb-2 text-center">{step.title}</h3>
+      <h3 className="text-2xl font-bold mb-2 text-center">{step.title}</h3>
       <p className="text-gray-500 mb-4 text-center text-sm">{step.subtitle}</p>
 
       <div className={`grid ${gridClasses} gap-4 max-w-5xl mx-auto mt-6`}>
