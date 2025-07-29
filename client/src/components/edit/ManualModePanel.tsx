@@ -18,7 +18,7 @@ interface ManualModePanelProps {
 export default function ManualModePanel({ formConfig, onConfigUpdate }: ManualModePanelProps) {
   const { toast } = useToast();
   const [localConfig, setLocalConfig] = useState<FormConfig | null>(formConfig);
-  const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set([0]));
+  const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     setLocalConfig(formConfig);
@@ -153,15 +153,7 @@ export default function ManualModePanel({ formConfig, onConfigUpdate }: ManualMo
     });
   };
 
-  const toggleStepExpansion = (stepIndex: number) => {
-    const newExpanded = new Set(expandedSteps);
-    if (newExpanded.has(stepIndex)) {
-      newExpanded.delete(stepIndex);
-    } else {
-      newExpanded.add(stepIndex);
-    }
-    setExpandedSteps(newExpanded);
-  };
+
 
   if (!localConfig) {
     return (
@@ -220,7 +212,7 @@ export default function ManualModePanel({ formConfig, onConfigUpdate }: ManualMo
             <span className="text-sm text-gray-500">{localConfig.steps.length} steps</span>
           </div>
           
-          <Accordion type="multiple" value={Array.from(expandedSteps).map(String)}>
+          <Accordion type="single" collapsible>
             {localConfig.steps.map((step, stepIndex) => (
               <AccordionItem key={stepIndex} value={stepIndex.toString()}>
                 <AccordionTrigger className="hover:no-underline">
