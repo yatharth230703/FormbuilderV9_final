@@ -73,25 +73,8 @@ export default function TilesStep({ step }: TilesStepProps) {
     updateResponse(step.title, id);
   };
 
-  // Responsive grid logic – default 2 columns on mobile, scale up on larger screens.
-  let gridClasses = "";
-
-  switch (step.options.length) {
-    case 6:
-      gridClasses = "grid-cols-2 sm:grid-cols-3";
-      break;
-    case 4:
-      gridClasses = "grid-cols-2";
-      break;
-    case 3:
-      gridClasses = "grid-cols-2 sm:grid-cols-3";
-      break;
-    case 2:
-      gridClasses = "grid-cols-2";
-      break;
-    default:
-      gridClasses = "grid-cols-2";
-  }
+  // Force exactly 4 options - always use 2x2 grid
+  const gridClasses = "grid-cols-2";
 
   const iconSize = isMobile ? 32 : 48;
 
@@ -103,7 +86,7 @@ export default function TilesStep({ step }: TilesStepProps) {
 
       {/* Extra margin-top pushes the grid of tiles further down */}
       <div className={`grid ${gridClasses} gap-4 max-w-5xl mx-auto mt-6`}>
-        {step.options.map((option, idx) => {
+        {step.options.slice(0, 4).map((option, idx) => {
           const iconName = option.icon || icons[idx] || "Circle";
           const isActive = selectedOption === option.id;
 

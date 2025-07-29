@@ -25,12 +25,12 @@ CRITICAL RULES FOR TITLES AND QUESTIONS:
 4. Use distinct icons for each step
 5. Ensure each option within tiles/multiSelect steps has a unique title
 6. Make sure that the tiles step is always having only and exclusively 4 options . No other amount of options ,only 4 .
-6. Make each step focus on a distinct aspect of information gathering
-7. Make sure the 'type' key strictly has one of the following values from the list , absolutely nothing else: [ tiles, multiSelect, slider, followup, textbox, location, documentUpload ,documentInfo ,  contact]
-8. Always make sure whenever a document upload step is added , a document info step is added right after it. So if the document upload step is at index 3 , the document info step should be at index 4.
-9. If and only if there is a document upload step involved,  make sure that the previous steps are asking questions / contain content that is relevant to the document upload step and the document that needs to be uploaded. Let us say for example , if the document upload step is asking for a resume , make sure that the previous steps are asking questions like 'What is your current job title?' , 'What is your current company?' etc. Or if the document upload step is asking for a business plan , make sure that the previous steps are asking questions like 'What is your business idea?' , 'What is your business model?' etc.
-10. Please make sure that the steps before the document upload step are the only ones that ask document upload related questions, rest can be generic based on prompt.
-11. Always check if a number/amount of slides or questions is given. If so , generate the exact amount of slides asked , else generate about 7-8 slides.
+7. Make each step focus on a distinct aspect of information gathering
+8. Make sure the 'type' key strictly has one of the following values from the list , absolutely nothing else: [ tiles, multiSelect, slider, followup, textbox, location, documentUpload ,documentInfo ,  contact]
+9. Always make sure whenever a document upload step is added , a document info step is added right after it. So if the document upload step is at index 3 , the document info step should be at index 4.
+10. If and only if there is a document upload step involved,  make sure that the previous steps are asking questions / contain content that is relevant to the document upload step and the document that needs to be uploaded. Let us say for example , if the document upload step is asking for a resume , make sure that the previous steps are asking questions like 'What is your current job title?' , 'What is your current company?' etc. Or if the document upload step is asking for a business plan , make sure that the previous steps are asking questions like 'What is your business idea?' , 'What is your business model?' etc.
+11. Please make sure that the steps before the document upload step are the only ones that ask document upload related questions, rest can be generic based on prompt.
+12. Always check if a number/amount of slides or questions is given. If so , generate the exact amount of slides asked , else generate about 7-8 slides.
 
 
 The following form configuration is to be used as a reference for any configs that you generate. Focus largely on structure and keynames, values are placeholders:
