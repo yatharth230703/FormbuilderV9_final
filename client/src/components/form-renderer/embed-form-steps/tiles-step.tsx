@@ -73,8 +73,8 @@ export default function TilesStep({ step }: TilesStepProps) {
     updateResponse(step.title, id);
   };
 
-  // Force exactly 4 options - always use 2x2 grid
-  const gridClasses = "grid-cols-2";
+  // Force exactly 4 options - responsive grid: 2x2 on mobile, 1x4 on larger screens
+  const gridClasses = "grid-cols-2 md:grid-cols-4";
 
   const iconSize = isMobile ? 32 : 48;
 
@@ -85,7 +85,7 @@ export default function TilesStep({ step }: TilesStepProps) {
       <p className="text-gray-500 mb-4 text-center text-sm">{step.subtitle}</p>
 
       {/* Extra margin-top pushes the grid of tiles further down */}
-      <div className={`grid ${gridClasses} gap-4 max-w-5xl mx-auto mt-6`}>
+      <div className={`grid ${gridClasses} gap-6 max-w-7xl mx-auto mt-6 w-full px-2`}>
         {step.options.slice(0, 4).map((option, idx) => {
           const iconName = option.icon || icons[idx] || "Circle";
           const isActive = selectedOption === option.id;
@@ -94,7 +94,7 @@ export default function TilesStep({ step }: TilesStepProps) {
             <div
               key={option.id}
               onClick={() => handleSelect(option.id)}
-              className={`border rounded-xl p-4 sm:p-6 lg:p-10 flex flex-col items-center justify-center text-center gap-y-2 cursor-pointer transition-all duration-200 ease-in-out h-44 w-full min-w-0 ${
+              className={`border rounded-xl p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center text-center gap-y-2 cursor-pointer transition-all duration-200 ease-in-out h-64 w-full min-w-0 ${
                 isActive ? "border-primary bg-primary/10" : "border-gray-300 hover:border-primary"
               }`}
             >

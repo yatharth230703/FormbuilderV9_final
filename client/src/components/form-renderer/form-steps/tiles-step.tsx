@@ -80,29 +80,8 @@ export default function TilesStep({ step }: TilesStepProps) {
     updateResponse(step.title, id);
   };
 
-  // Responsive grid logic – default 2 columns on mobile to avoid narrow tiles
-  // and scale up to 3 columns on larger screens when appropriate.
-  let gridClasses = "";
-
-  switch (step.options.length) {
-    case 6:
-      // 6 options → 2 cols (mobile) 3 cols (sm and up)
-      gridClasses = "grid-cols-2 sm:grid-cols-3";
-      break;
-    case 4:
-      // 4 options → 2×2 works well on all sizes
-      gridClasses = "grid-cols-2";
-      break;
-    case 3:
-      // 3 options → 2 cols mobile, 3 cols bigger screens
-      gridClasses = "grid-cols-2 sm:grid-cols-3";
-      break;
-    case 2:
-      gridClasses = "grid-cols-2";
-      break;
-    default:
-      gridClasses = "grid-cols-2";
-  }
+  // Force exactly 4 options - responsive grid: 2x2 on mobile, 1x4 on larger screens
+  const gridClasses = "grid-cols-2 md:grid-cols-4";
 
   const iconSize = isMobile ? 32 : 48;
 
@@ -111,8 +90,8 @@ export default function TilesStep({ step }: TilesStepProps) {
       <h3 className="text-2xl font-bold mb-2 text-center">{step.title}</h3>
       <p className="text-gray-500 mb-4 text-center text-sm">{step.subtitle}</p>
 
-      <div className={`grid ${gridClasses} gap-4 max-w-5xl mx-auto mt-6`}>
-        {step.options.map((option, idx) => {
+      <div className={`grid ${gridClasses} gap-6 max-w-7xl mx-auto mt-6 w-full px-2`}>
+        {step.options.slice(0, 4).map((option, idx) => {
           const iconName = option.icon ?? icons[idx] ?? "Circle";
           const isActive = selectedOption === option.id;
 
@@ -120,7 +99,7 @@ export default function TilesStep({ step }: TilesStepProps) {
             <div
               key={option.id}
               onClick={() => handleSelect(option.id)}
-              className={`border rounded-xl p-4 sm:p-6 lg:p-10 flex flex-col items-center justify-center text-center gap-y-2 cursor-pointer transition-all duration-200 ease-in-out h-44 w-full min-w-0 ${
+              className={`border rounded-xl p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center text-center gap-y-2 cursor-pointer transition-all duration-200 ease-in-out h-64 w-full min-w-0 ${
                 isActive ? "border-primary bg-primary/10" : "border-gray-300 hover:border-primary"
               }`}
             >
