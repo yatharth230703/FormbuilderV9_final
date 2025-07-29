@@ -958,7 +958,12 @@ export async function generateFormFromPrompt(
         });
 
         if (flatTitles.length) {
-          const flatIcons = await generateIconsFromOptions(flatTitles);
+          // Generate both Lucide icons and emojis
+          const [flatIcons, flatEmojis] = await Promise.all([
+            generateIconsFromOptions(flatTitles),
+            generateEmojisFromOptions(flatTitles)
+          ]);
+          
           let idx = 0;
 
           // stitch them back _onto_ each option – preserve everything else on `step`
@@ -966,13 +971,15 @@ export async function generateFormFromPrompt(
             if (Array.isArray((step as any).options)) {
               (step as any).options = (step as any).options.map((opt: any) => ({
                 ...opt,
-                icon: flatIcons[idx++] || "Circle",
+                icon: flatIcons[idx] || "Circle",
+                emoji: flatEmojis[idx] || "❓",
               }));
+              idx++;
             }
           });
         }
       } catch (err) {
-        console.warn("Icon augmentation failed, proceeding without it", err);
+        console.warn("Icon/emoji augmentation failed, proceeding without it", err);
       }
 
       // Validate and deduplicate the form configuration

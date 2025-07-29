@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useFormContext } from "@/contexts/form-context";
 import { FollowupStep as FollowupStepType } from "@shared/types";
-import * as LucideIcons from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { IconDisplay } from "@/components/ui/icon-display";
 
 interface FollowupStepProps {
   step: FollowupStepType;
@@ -45,11 +45,8 @@ export default function FollowupStep({ step }: FollowupStepProps) {
     }
   };
 
-  // Dynamically render the Lucide icon
-  const renderIcon = (iconName: string) => {
-    const Icon = (LucideIcons as any)[iconName] || LucideIcons.HelpCircle;
-    return <Icon className="h-5 w-5" />;
-  };
+  // Get icon mode from context
+  const { iconMode } = useFormContext();
 
   return (
     <div className="flex-1 flex flex-col pt-6 sm:pt-10 pb-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar">
@@ -64,7 +61,12 @@ export default function FollowupStep({ step }: FollowupStepProps) {
             onClick={() => handleSelectOption(option.id)}
           >
             <div className="bg-primary bg-opacity-10 rounded-full p-3 text-primary flex items-center justify-center">
-              {renderIcon(option.icon)}
+              <IconDisplay 
+                iconName={option.icon}
+                emoji={option.emoji}
+                size={20}
+                className="text-primary"
+              />
             </div>
             <h4 className="font-medium text-lg">{option.title}</h4>
             <p className="text-xs text-gray-500">{option.description}</p>

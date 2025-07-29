@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useFormContext } from "@/contexts/form-context";
 import { FollowupStep as FollowupStepType } from "@shared/types";
-import { DynamicIcon } from "@/components/ui/dynamic-icon";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { IconDisplay } from "@/components/ui/icon-display";
 
 interface FollowupStepProps {
   step: FollowupStepType;
@@ -60,10 +60,11 @@ export default function FollowupStep({ step }: FollowupStepProps) {
             onClick={() => handleSelectOption(option.id)}
           >
             <div className="bg-primary bg-opacity-10 rounded-full p-3 flex items-center justify-center">
-              <DynamicIcon 
-                name={option.icon} 
-                size={24} 
-                className="text-primary" 
+              <IconDisplay 
+                iconName={option.icon}
+                emoji={option.emoji}
+                size={24}
+                className="text-primary"
               />
             </div>
             <h4 className="font-medium text-lg">{option.title}</h4>

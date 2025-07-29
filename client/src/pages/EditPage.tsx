@@ -13,6 +13,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { FormConfig } from "@shared/types";
 import ManualModePanel from "../components/edit/ManualModePanel";
 import AIModePanel from "../components/edit/AIModePanel";
+import { IconModeToggle } from "@/components/ui/icon-mode-toggle";
+import { useFormContext } from "@/contexts/form-context";
 
 interface FormData {
   id: number;
@@ -34,12 +36,18 @@ export default function EditPage() {
   const formId = params.id;
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { iconMode } = useFormContext();
   
   const [editMode, setEditMode] = useState<EditMode>(null);
   const [formData, setFormData] = useState<FormData | null>(null);
   const [currentConfig, setCurrentConfig] = useState<FormConfig | null>(null);
   const [saving, setSaving] = useState(false);
   const [iframeKey, setIframeKey] = useState(0); // For forcing iframe refresh
+
+  // Force iframe refresh when icon mode changes
+  useEffect(() => {
+    setIframeKey(prev => prev + 1);
+  }, [iconMode]);
 
   // Fetch form data
   const { data: formDetails, isLoading: formLoading, error: formError } = useQuery({
@@ -162,21 +170,28 @@ export default function EditPage() {
         {/* Main content */}
         <main className="container mx-auto px-4 py-8">
           {/* Mode Selection Buttons */}
-          <div className="mb-6 flex gap-4">
-            <Button
-              variant={editMode === 'manual' ? 'default' : 'outline'}
-              onClick={() => setEditMode('manual')}
-              className="flex-1"
-            >
-              MANUAL MODE
-            </Button>
-            <Button
-              variant={editMode === 'ai' ? 'default' : 'outline'}
-              onClick={() => setEditMode('ai')}
-              className="flex-1"
-            >
-              AI MODE
-            </Button>
+          <div className="mb-6 flex flex-col gap-4">
+            <div className="flex gap-4">
+              <Button
+                variant={editMode === 'manual' ? 'default' : 'outline'}
+                onClick={() => setEditMode('manual')}
+                className="flex-1"
+              >
+                MANUAL MODE
+              </Button>
+              <Button
+                variant={editMode === 'ai' ? 'default' : 'outline'}
+                onClick={() => setEditMode('ai')}
+                className="flex-1"
+              >
+                AI MODE
+              </Button>
+            </div>
+            
+            {/* Icon Mode Toggle */}
+            <div className="flex justify-center">
+              <IconModeToggle />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -208,10 +223,10 @@ export default function EditPage() {
               <Card className="p-0">
                 <div className="relative" style={{ height: 'calc(100vh - 150px)', overflow: 'hidden' }}>
                   <iframe
-                    src={`/embed?form=${formData.id}`}
+                    src={`/embed?form=${formData.id}&iconMode=${iconMode}`}
                     className="w-full h-full border-0"
                     title="Form Preview"
-                    key={`${formData.id}-${iframeKey}`} // Force re-render when form changes or after save
+                    key={`${formData.id}-${iframeKey}-${iconMode}`} // Force re-render when form changes, after save, or icon mode changes
                     style={{ 
                       height: '100%',
                       minHeight: '600px',

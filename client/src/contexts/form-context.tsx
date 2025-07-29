@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { useDeviceDetection } from "@/hooks/useDeviceDetection";
 import { FormConfig, FormStep } from "@shared/types";
 
+type IconMode = 'lucide' | 'emoji' | 'none';
+
 interface FormContextType {
   formConfig: FormConfig | null;
   setFormConfig: (config: FormConfig) => void;
@@ -25,8 +27,11 @@ interface FormContextType {
   setIsFormComplete: (isComplete: boolean) => void;
   validateCurrentStep: () => boolean;
   isStepValid: (stepIndex: number) => boolean;
-  updateThemeColor: (colorType: 'primary' | 'secondary' | 'accent', colorValue: string) => void;  // <-- Added
+  updateThemeColor: (colorType: 'primary' | 'secondary' | 'accent', colorValue: string) => void;
   updateFontFamily: (fontFamily: string) => void;
+  // Icon mode management
+  iconMode: IconMode;
+  setIconMode: (mode: IconMode) => void;
   // Device / embedding information
   isMobile: boolean;
   isIframe: boolean;
@@ -44,6 +49,7 @@ export function FormProvider({ children }: { children: ReactNode }) {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isFormComplete, setIsFormComplete] = useState<boolean>(false);
+  const [iconMode, setIconMode] = useState<IconMode>('lucide');
 
   // Device detection
   const { isMobile, isIframe } = useDeviceDetection();
@@ -323,7 +329,9 @@ useEffect(() => {
         validateCurrentStep,
         isStepValid,
         updateThemeColor,    
-        updateFontFamily 
+        updateFontFamily,
+        iconMode,
+        setIconMode 
         ,
         // expose device info
         isMobile,

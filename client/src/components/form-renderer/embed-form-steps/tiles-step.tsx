@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useFormContext } from "@/contexts/form-context";
 import { TilesStep as TilesStepType } from "@shared/types";
-import { useIcons } from "@/hooks/use-icons";
-import { DynamicIcon } from "@/components/ui/dynamic-icon";
+import { IconDisplay } from "@/components/ui/icon-display";
 
 interface TilesStepProps {
   step: TilesStepType;
@@ -50,8 +49,7 @@ export default function TilesStep({ step }: TilesStepProps) {
   const { updateResponse, formResponses, currentStep, nextStep, isMobile } = useFormContext();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
-  // fetch one icon per option title
-  const icons = useIcons(step.options.map((o) => o.title));
+  // Icons are now stored in the form configuration
   
 
   useEffect(() => {
@@ -87,7 +85,7 @@ export default function TilesStep({ step }: TilesStepProps) {
       {/* Extra margin-top pushes the grid of tiles further down */}
       <div className={`grid ${gridClasses} gap-6 max-w-7xl mx-auto mt-6 w-full px-2`}>
         {step.options.slice(0, 4).map((option, idx) => {
-          const iconName = option.icon || icons[idx] || "Circle";
+          const iconName = option.icon || "Circle";
           const isActive = selectedOption === option.id;
 
           return (
@@ -99,8 +97,9 @@ export default function TilesStep({ step }: TilesStepProps) {
               }`}
             >
               <div>
-                <DynamicIcon 
-                  name={iconName} 
+                <IconDisplay 
+                  iconName={iconName}
+                  emoji={option.emoji}
                   size={iconSize} 
                   className={isActive ? "text-primary" : "text-gray-400"} 
                 />

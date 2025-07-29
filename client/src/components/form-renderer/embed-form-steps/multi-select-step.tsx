@@ -7,8 +7,7 @@ import { useState, useEffect } from "react";
 import { useFormContext } from "@/contexts/form-context";
 import { MultiSelectStep as MultiSelectStepType } from "@shared/types";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useIcons } from "@/hooks/use-icons";
-import { DynamicIcon } from "@/components/ui/dynamic-icon";
+import { IconDisplay } from "@/components/ui/icon-display";
 
 interface MultiSelectStepProps {
   step: MultiSelectStepType;
@@ -18,8 +17,7 @@ export default function MultiSelectStep({ step }: MultiSelectStepProps) {
   const { updateResponse, formResponses, currentStep, isMobile } = useFormContext();
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
 
-  // fetch one icon per option title
-  const icons = useIcons(step.options.map((o) => o.title));
+  // Icons are now stored in the form configuration
 
   useEffect(() => {
     const saved = formResponses[step.title];
@@ -82,7 +80,7 @@ export default function MultiSelectStep({ step }: MultiSelectStepProps) {
       <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 max-w-3xl mx-auto mt-6`}>
         {step.options.map((option, idx) => {
           const isActive = selectedOptions.includes(option.id);
-          const iconName = option.icon || icons[idx] || "Circle";
+          const iconName = option.icon || "Circle";
 
           return (
             <div
@@ -94,8 +92,9 @@ export default function MultiSelectStep({ step }: MultiSelectStepProps) {
             >
               <div className="flex items-start">
                 <div className="flex items-center justify-center rounded-full p-2 mr-3">
-                  <DynamicIcon 
-                    name={iconName} 
+                  <IconDisplay 
+                    iconName={iconName}
+                    emoji={option.emoji}
                     size={32} 
                     className={isActive ? "text-primary" : "text-gray-400"} 
                   />

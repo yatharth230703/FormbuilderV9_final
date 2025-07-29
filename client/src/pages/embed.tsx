@@ -1,16 +1,51 @@
-import { useEffect, useState } from "react";
-import { FormProvider } from "@/contexts/form-context";
+import { useEffect, useState, ReactNode } from "react";
+import { FormProvider, useFormContext } from "@/contexts/form-context";
 import EmbedFormRenderer from "@/components/form-renderer/embed-form-renderer";
 import { FormConfig } from "@shared/types";
 import { apiRequest } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import "../index.css"; // Ensure styles are loaded
 
+// Custom FormProvider that initializes with a specific icon mode
+function FormProviderWithIconMode({ 
+  children, 
+  iconMode 
+}: { 
+  children: ReactNode; 
+  iconMode: 'lucide' | 'emoji' | 'none'; 
+}) {
+  const [initialIconMode, setInitialIconMode] = useState(iconMode);
+  
+  // Update icon mode when prop changes
+  useEffect(() => {
+    setInitialIconMode(iconMode);
+  }, [iconMode]);
+
+  return (
+    <FormProvider>
+      <IconModeInitializer iconMode={initialIconMode} />
+      {children}
+    </FormProvider>
+  );
+}
+
+// Component to set the initial icon mode in the form context
+function IconModeInitializer({ iconMode }: { iconMode: 'lucide' | 'emoji' | 'none' }) {
+  const { setIconMode } = useFormContext();
+  
+  useEffect(() => {
+    setIconMode(iconMode);
+  }, [iconMode, setIconMode]);
+  
+  return null;
+}
+
 export default function EmbedForm() {
   const [formConfig, setFormConfig] = useState<FormConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formId, setFormId] = useState<number | null>(null);
+  const [iconMode, setIconMode] = useState<'lucide' | 'emoji' | 'none'>('lucide');
 
   // Set theme for embedded forms
   useEffect(() => {
@@ -109,11 +144,17 @@ export default function EmbedForm() {
         const language = url.searchParams.get("language");
         const label = url.searchParams.get("label");
         const domain = url.searchParams.get("domain");
+        const iconModeParam = url.searchParams.get("iconMode") as 'lucide' | 'emoji' | 'none' | null;
         
         // Fallback to old form parameter for backward compatibility
         const oldFormId = url.searchParams.get("form") || url.searchParams.get("id");
         
-        console.log("URL params:", { language, label, domain, oldFormId });
+        console.log("URL params:", { language, label, domain, oldFormId, iconModeParam });
+        
+        // Set icon mode from URL parameter
+        if (iconModeParam && ['lucide', 'emoji', 'none'].includes(iconModeParam)) {
+          setIconMode(iconModeParam);
+        }
 
         if (!language && !label && !domain && !oldFormId) {
           setError("No form parameters provided");
@@ -249,13 +290,13 @@ export default function EmbedForm() {
   }
 
   return (
-    <FormProvider>
+    <FormProviderWithIconMode iconMode={iconMode}>
       <div className="w-full">
         {formConfig && (
           <EmbedFormRenderer testMode={false} formConfig={formConfig} formId={formId} />
         )}
       </div>
       <Toaster />
-    </FormProvider>
+    </FormProviderWithIconMode>
   );
 }

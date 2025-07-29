@@ -4,6 +4,7 @@ import Home from "@/pages/home";
 import { useEffect } from "react";
 import { AdminProvider } from "@/contexts/admin-context";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { FormProvider } from "@/contexts/form-context";
 import { Toaster } from "@/components/ui/toaster";
 import { ApiAccessPage } from "@/pages/api-access"; // ✅ adjust path if needed
 import LandingPage from "@/pages/LandingPage";
@@ -67,8 +68,10 @@ function App() {
   return (
     <AuthProvider>
       <AdminProvider>
-        <Router />
-        <Toaster />
+        <FormProvider>
+          <Router />
+          <Toaster />
+        </FormProvider>
       </AdminProvider>
     </AuthProvider>
   );
