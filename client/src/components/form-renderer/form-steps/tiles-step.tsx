@@ -99,7 +99,7 @@ export default function TilesStep({ step }: TilesStepProps) {
             <div
               key={option.id}
               onClick={() => handleSelect(option.id)}
-              className={`border rounded-xl p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center text-center gap-y-2 cursor-pointer transition-all duration-200 ease-in-out h-64 w-full min-w-0 ${
+              className={`border rounded-xl p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center text-center gap-y-2 cursor-pointer transition-all duration-200 ease-in-out aspect-square w-full min-w-0 ${
                 isActive ? "border-primary bg-primary/10" : "border-gray-300 hover:border-primary"
               }`}
             >
