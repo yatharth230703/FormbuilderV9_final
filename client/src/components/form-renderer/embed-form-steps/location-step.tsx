@@ -271,14 +271,7 @@ export default function LocationStep({ step }: LocationStepProps) {
           transition={{ delay: 0.5, duration: 0.5 }}
           className="mt-8 text-center text-sm text-gray-500 space-y-2"
         >
-          <p className="font-medium">Please enter your complete address including:</p>
-          <div className="text-xs space-y-1">
-            <p>• Street number and name</p>
-            <p>• City or town</p>
-            <p>• State or province</p>
-            <p>• Postal code (required for service verification)</p>
-          </div>
-          <p className="mt-3 text-xs italic">Example: 123 Main Street, Springfield, IL, 62701</p>
+          <p className="font-medium">Please enter your pincode</p>
         </motion.div>
       )}
     </div>
