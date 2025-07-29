@@ -237,8 +237,7 @@ export function DashboardPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          window._initialFormConfig = form.config;
-                          setLocation("/buildform");
+                          setLocation(`/edit/${form.id}`);
                         }}
                       >
                         Edit

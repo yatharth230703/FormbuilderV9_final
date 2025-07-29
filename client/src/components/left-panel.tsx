@@ -156,8 +156,6 @@ interface LeftPanelProps {
           colors: {
             ...formConfig.theme.colors,
             primary: primaryColor,
-            secondary: secondaryColor,
-            accent: accentColor,
             text: {
               dark: "#1e293b", // slate-800
               light: "#ffffff",
@@ -192,12 +190,7 @@ interface LeftPanelProps {
         ...formConfig,
         theme: {
           ...formConfig.theme,
-          font: {
-            ...formConfig.theme.font,
-            family: fontFamily,
-            size: "medium", // or let users pick later
-            weight: "400"   // or make dynamic later
-          }
+          // Note: Font configuration is handled separately via CSS variables
         }
       });
     }

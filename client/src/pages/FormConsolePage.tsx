@@ -101,13 +101,13 @@ export default function FormConsolePage() {
   const { data: forms, isLoading: formsLoading } = useQuery({
     queryKey: ["/api/forms"],
     enabled: !!user,
-  });
+  }) as { data: any[] | undefined, isLoading: boolean };
 
   // Fetch selected form details
   const { data: formDetails, isLoading: formDetailsLoading, error: formDetailsError } = useQuery({
     queryKey: [`/api/forms/${selectedFormId}`],
     enabled: !!selectedFormId,
-  });
+  }) as { data: any | undefined, isLoading: boolean, error: any };
   
   // Log any errors
   React.useEffect(() => {
@@ -120,7 +120,7 @@ export default function FormConsolePage() {
   const { data: consoleData, isLoading: consoleLoading } = useQuery({
     queryKey: ["/api/console", selectedFormId],
     enabled: !!selectedFormId,
-  });
+  }) as { data: any | undefined, isLoading: boolean };
 
   // Update form details when data changes
   useEffect(() => {
@@ -141,8 +141,8 @@ export default function FormConsolePage() {
 
   // Load console configuration when data is available
   useEffect(() => {
-    if (consoleData) {
-      const config = consoleData.consoleConfig || {};
+    if (consoleData && typeof consoleData === 'object') {
+      const config = (consoleData as any).consoleConfig || {};
       setConsoleEnabled(config.enable || false);
       
       // Form Config
