@@ -176,35 +176,6 @@ export default function ManualModePanel({ formConfig, onConfigUpdate }: ManualMo
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto">
-        {/* Theme Configuration */}
-        <Accordion type="single" collapsible defaultValue="theme">
-          <AccordionItem value="theme">
-            <AccordionTrigger>Theme Configuration</AccordionTrigger>
-            <AccordionContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Primary Color</Label>
-                <Input
-                  type="color"
-                  value={localConfig.theme.colors.primary}
-                  onChange={(e) => {
-                    const newConfig = {
-                      ...localConfig,
-                      theme: {
-                        ...localConfig.theme,
-                        colors: {
-                          ...localConfig.theme.colors,
-                          primary: e.target.value
-                        }
-                      }
-                    };
-                    updateConfig(newConfig);
-                  }}
-                />
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-
         {/* Steps Configuration */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
