@@ -2,6 +2,7 @@ import { useMemo, useEffect } from "react";
 import { useFormContext } from "@/contexts/form-context";
 import TilesStep from "./embed-form-steps/tiles-step";
 import MultiSelectStep from "./embed-form-steps/multi-select-step";
+import DropdownStep from "./embed-form-steps/dropdown-step";
 import SliderStep from "./embed-form-steps/slider-step";
 import FollowupStep from "./embed-form-steps/followup-step";
 import TextboxStep from "./embed-form-steps/textbox-step";
@@ -136,6 +137,8 @@ export default function EmbedFormRenderer({
         return <TilesStep step={step} />;
       case "multiSelect":
         return <MultiSelectStep step={step} />;
+      case "dropdown":
+        return <DropdownStep step={step} />;
       case "slider":
         return <SliderStep step={step} />;
       case "followup":

@@ -168,6 +168,13 @@ useEffect(() => {
         // At least one selection required
         return Array.isArray(stepResponse) && stepResponse.length > 0;
 
+      case 'dropdown':
+        // Required by default, should have a selection
+        if (step.validation?.required) {
+          return !!stepResponse;
+        }
+        return true;
+
       case 'slider':
         // Slider always has a value (defaultValue)
         return true;

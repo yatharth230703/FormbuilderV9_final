@@ -61,7 +61,7 @@ export interface FormConfig {
   };
 }
 
-export type StepType = 'tiles' | 'multiSelect' | 'slider' | 'followup' | 'textbox' | 'location' | 'contact';
+export type StepType = 'tiles' | 'multiSelect' | 'slider' | 'followup' | 'textbox' | 'location' | 'contact' | 'dropdown';
 
 export interface BaseFormStep {
   type: StepType;
@@ -89,6 +89,18 @@ export interface MultiSelectStep extends BaseFormStep {
     description: string;
     icon: string;
   }[];
+}
+
+export interface DropdownStep extends BaseFormStep {
+  type: 'dropdown';
+  options: {
+    id: string;
+    title: string;
+  }[];
+  placeholder?: string;
+  validation?: {
+    required: boolean;
+  };
 }
 
 export interface SliderStep extends BaseFormStep {
@@ -188,6 +200,7 @@ export interface DocumentInfoStep extends BaseFormStep {
 export type FormStep = 
   | TilesStep 
   | MultiSelectStep 
+  | DropdownStep
   | SliderStep 
   | FollowupStep 
   | TextboxStep 

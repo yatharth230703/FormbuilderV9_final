@@ -3,6 +3,7 @@ import { useFormContext } from "@/contexts/form-context";
 import { useLocation } from "wouter";
 import TilesStep from "./form-steps/tiles-step.tsx";
 import MultiSelectStep from "./form-steps/multi-select-step";
+import DropdownStep from "./form-steps/dropdown-step";
 import SliderStep from "./form-steps/slider-step";
 import FollowupStep from "./form-steps/followup-step";
 import TextboxStep from "./form-steps/textbox-step";
@@ -75,8 +76,9 @@ export default function FormRenderer({
 
   const handleSubmit = async () => {
     if (!formConfig) return;
+    //as any kyu bola isne ??
     console.log('Form Config at submit time:', formConfig); // <-- ADD THIS
-    console.log('Form Config ID at submit time:', formConfig?.id); // <-- ADD THIS
+    console.log('Form Config ID at submit time:', (formConfig as any)?.id); // <-- ADD THIS
     setIsSubmitting(true);
 
     try {
@@ -100,7 +102,7 @@ export default function FormRenderer({
             language: "en",
             response: enhancedResponses,
             domain: null,
-            form_config_id: formConfig.id, // <-- add this line!!
+            form_config_id: (formConfig as any).id || null,
           }),
           headers: {
             "Content-Type": "application/json",
@@ -164,6 +166,8 @@ export default function FormRenderer({
         return <TilesStep step={step} />;
       case "multiSelect":
         return <MultiSelectStep step={step} />;
+      case "dropdown":
+        return <DropdownStep step={step} />;
       case "slider":
         return <SliderStep step={step} />;
       case "followup":
