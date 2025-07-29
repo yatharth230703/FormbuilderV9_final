@@ -221,11 +221,7 @@ export default function FormRenderer({
 
       {/* Fixed Footer Navigation */}
       <div
-        className={`px-6 py-4 flex justify-between items-center ${
-          formConfig.steps[currentStep - 1]?.type !== "tiles"
-            ? "bg-white dark:bg-slate-900 border-t dark:border-slate-800"
-            : ""
-        }`}
+        className="px-6 py-4 flex justify-between items-center bg-white dark:bg-slate-900 border-t dark:border-slate-800"
       >
         <div className="flex gap-2">
           {currentStep > 1 && !isFormComplete && (
@@ -241,8 +237,7 @@ export default function FormRenderer({
             </Button>
           )}
         </div>
-        {!isFormComplete &&
-          formConfig.steps[currentStep - 1]?.type !== "tiles" && (
+        {!isFormComplete && (
             <Button
               className="bg-primary text-white hover:bg-primary/90 transition-colors flex items-center"
               onClick={handleNextStep}

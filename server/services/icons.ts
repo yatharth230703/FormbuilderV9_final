@@ -68,30 +68,64 @@ Example output: ["Home", "Mail", "Users", "Settings"]
           temperature: 0.1,
           topP: 0.8,
           topK: 40,
-          maxOutputTokens: 256
+          maxOutputTokens: 8192,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "ARRAY",
+            items: { type: "STRING" }
+          }
         }
       })
     });
-
+// made changes in the react agent to always return json 
     if (!res.ok) {
       console.error("Icon API error:", await res.text());
       throw new Error("Failed to generate icons");
     }
 
     const payload = await res.json();
-    const text = payload.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    
-    // Extract JSON array from response
-    const match = text.match(/\[[\s\S]*?\]/);
-    if (!match) {
+    // Gemini may return the JSON array either in the `json` field (when using
+    // `responseMimeType: "application/json"`) **or** as a text string that can
+    // be wrapped in code-fences / contain extra prose. Handle all cases
+    // defensively before giving up.
+    const part: any = payload?.candidates?.[0]?.content?.parts?.[0] ?? {};
+    let iconsRaw: unknown = null;
+
+    // 1) Preferred: structured JSON returned directly
+    if (Array.isArray(part.json)) {
+      iconsRaw = part.json;
+    } else {
+      // 2) Fallback: JSON delivered as text (possibly wrapped in ```json fences)
+      let text = (part.text || "").trim();
+      if (text.startsWith("```")) {
+        // Remove any ```json / ``` wrappers
+        text = text.replace(/```json|```/gi, "").trim();
+      }
+      // Attempt to parse the whole string first
+      try {
+        iconsRaw = JSON.parse(text);
+      } catch {
+        // If that fails, search the first JSON array inside the text
+        const match = text.match(/\[[\s\S]*?\]/);
+        if (match) {
+          try {
+            iconsRaw = JSON.parse(match[0]);
+          } catch {
+            /* ignore – will be handled below */
+          }
+        }
+      }
+    }
+
+    if (!Array.isArray(iconsRaw)) {
       throw new Error("Invalid icon response format");
     }
-    
-    let icons = JSON.parse(match[0]) as string[];
+
+    let icons = iconsRaw as string[];
     
     // Validate and fallback for invalid icons
     icons = icons.map((icon, index) => {
-      if (typeof icon !== 'string' || !LUCIDE_ICONS.includes(icon)) {
+      if (typeof icon !== "string" || !LUCIDE_ICONS.includes(icon)) {
         console.warn(`Invalid icon "${icon}" for "${optionTitles[index]}", using fallback`);
         return getDefaultIconForTitle(optionTitles[index]);
       }
