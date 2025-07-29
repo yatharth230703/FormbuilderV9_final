@@ -89,11 +89,19 @@ export function isFormComplete(config: FormConfig, responses: Record<string, any
   // A real implementation would check each step type's required fields
   
   // Make sure we have at least one response for each step
-  return config.steps.every(step => 
-    responses[step.title] !== undefined && 
-    responses[step.title] !== null && 
-    responses[step.title] !== ''
-  );
+  return config.steps.every(step => {
+    const response = responses[step.title];
+    
+    // Contact steps are optional - if no response, it's still complete
+    if (step.type === 'contact') {
+      return true; // Contact steps are always considered complete (optional)
+    }
+    
+    // For other steps, check if response exists and is not empty
+    return response !== undefined && 
+           response !== null && 
+           response !== '';
+  });
 }
 
 /**

@@ -56,22 +56,22 @@ export default function ContactStep({ step }: ContactStepProps) {
     // Clear the error for this field
     delete newErrors[field];
 
-    // Email validation
+    // Email validation - only validate format if email is provided
     if (field === "email" && value && !validateEmail(value)) {
       newErrors.email =
         formConfig?.ui?.messages?.enterValidEmail ||
         "Please enter a valid email address";
     }
 
-    // Required fields
-    if (!value.trim()) {
-      // Only set required error if field is empty and was touched
-      if (field === "email" || field === "firstName") {
-        newErrors[field] =
-          formConfig?.ui?.messages?.thisFieldRequired ||
-          "This field is required";
-      }
-    }
+    // Remove required field validation - all fields are now optional
+    // if (!value.trim()) {
+    //   // Only set required error if field is empty and was touched
+    //   if (field === "email" || field === "firstName") {
+    //     newErrors[field] =
+    //       formConfig?.ui?.messages?.thisFieldRequired ||
+    //       "This field is required";
+    //   }
+    // }
 
     setErrors(newErrors);
     updateResponse(step.title, newContactInfo);
@@ -87,8 +87,7 @@ export default function ContactStep({ step }: ContactStepProps) {
         <div className="flex-1 space-y-4">
           <div>
             <Label htmlFor="firstName" className="block text-sm font-medium mb-1">
-              {step.config.labels.firstName}{" "}
-              <span className="text-red-500">*</span>
+              {step.config.labels.firstName}
             </Label>
             <Input
               id="firstName"
@@ -117,7 +116,7 @@ export default function ContactStep({ step }: ContactStepProps) {
           </div>
           <div>
             <Label htmlFor="email" className="block text-sm font-medium mb-1">
-              {step.config.labels.email} <span className="text-red-500">*</span>
+              {step.config.labels.email}
             </Label>
             <Input
               id="email"

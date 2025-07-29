@@ -198,13 +198,26 @@ useEffect(() => {
         return true;
 
       case 'contact':
-        // Contact is usually required and needs valid email
-        if (!stepResponse || typeof stepResponse !== 'object') return false;
+        // Contact step is now optional - if no response, it's valid
+        if (!stepResponse || typeof stepResponse !== 'object') return true;
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const { firstName, email } = stepResponse as any;
 
-        return !!firstName && !!email && emailRegex.test(email);
+        // If any contact info is provided, validate it properly
+        if (firstName || email) {
+          // If email is provided, it must be valid
+          if (email && !emailRegex.test(email)) {
+            return false;
+          }
+          // If firstName is provided, email is also required
+          if (firstName && !email) {
+            return false;
+          }
+        }
+
+        // If no contact info is provided, it's still valid (optional)
+        return true;
 
       case 'documentUpload':
         // Document upload should always have a response (even if placeholder)

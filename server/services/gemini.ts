@@ -279,7 +279,7 @@ const demoFormConfig: FormConfig = {
   steps: [
     {
       type: "tiles",
-      title: "What are you looking for?",
+      title: "This is a DEMO FORM CONFIG , if you were not expecting this , please try again.",
       subtitle: "Select the option that best describes your needs",
       options: [
         {
@@ -552,6 +552,40 @@ function ensureTilesOptionCount(config: FormConfig): FormConfig {
     }
     return step;
   });
+  return config;
+}
+
+/**
+ * Reorders the final steps to ensure location and contact are at the end
+ * @param config The form configuration to reorder
+ * @returns The reordered form configuration
+ */
+function reorderFinalSteps(config: FormConfig): FormConfig {
+  const steps = config.steps;
+
+  if (!Array.isArray(steps)) return config;
+
+  const contactStepIndex = steps.findIndex((s) => s.type === "contact");
+  const locationStepIndex = steps.findIndex((s) => s.type === "location");
+
+  const contactStep =
+    contactStepIndex !== -1 ? steps.splice(contactStepIndex, 1)[0] : null;
+  const locationStep =
+    locationStepIndex !== -1
+      ? steps.splice(
+          locationStepIndex < contactStepIndex
+            ? locationStepIndex
+            : locationStepIndex - 1,
+          1,
+        )[0]
+      : null;
+
+  // Now push them to the right place
+  if (locationStep) steps.push(locationStep);
+  if (contactStep) steps.push(contactStep);
+
+  config.steps = steps;
+
   return config;
 }
 
@@ -874,35 +908,6 @@ export async function generateFormFromPrompt(
 
       if (!formConfig.submission) {
         formConfig.submission = demoFormConfig.submission;
-      }
-
-      function reorderFinalSteps(config: FormConfig): FormConfig {
-        const steps = config.steps;
-
-        if (!Array.isArray(steps)) return config;
-
-        const contactStepIndex = steps.findIndex((s) => s.type === "contact");
-        const locationStepIndex = steps.findIndex((s) => s.type === "location");
-
-        const contactStep =
-          contactStepIndex !== -1 ? steps.splice(contactStepIndex, 1)[0] : null;
-        const locationStep =
-          locationStepIndex !== -1
-            ? steps.splice(
-                locationStepIndex < contactStepIndex
-                  ? locationStepIndex
-                  : locationStepIndex - 1,
-                1,
-              )[0]
-            : null;
-
-        // Now push them to the right place
-        if (locationStep) steps.push(locationStep);
-        if (contactStep) steps.push(contactStep);
-
-        config.steps = steps;
-
-        return config;
       }
 
       formConfig = reorderFinalSteps(formConfig);
