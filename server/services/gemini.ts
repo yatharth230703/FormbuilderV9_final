@@ -24,6 +24,7 @@ CRITICAL RULES FOR TITLES AND QUESTIONS:
 3. Avoid semantically similar questions (e.g., "What's your budget?" vs "How much can you spend?")
 4. Use distinct icons for each step
 5. Ensure each option within tiles/multiSelect steps has a unique title
+6. Make sure that the tiles step is always having only and exclusively 4 options . No other amount of options ,only 4 .
 6. Make each step focus on a distinct aspect of information gathering
 7. Make sure the 'type' key strictly has one of the following values from the list , absolutely nothing else: [ tiles, multiSelect, slider, followup, textbox, location, documentUpload ,documentInfo ,  contact]
 8. Always make sure whenever a document upload step is added , a document info step is added right after it. So if the document upload step is at index 3 , the document info step should be at index 4.
@@ -946,7 +947,14 @@ export async function generateFormFromPrompt(
       // Remove emojis from option titles before returning
       formConfig = cleanOptionTitles(formConfig);
       formConfig = ensureTilesOptionCount(formConfig);
-      return validateAndDeduplicateForm(formConfig);
+      formConfig = validateAndDeduplicateForm(formConfig);
+      
+      // Log the final JSON configuration being sent to frontend
+      console.log("=== FINAL FORM CONFIGURATION SENT TO FRONTEND ===");
+      console.log(JSON.stringify(formConfig, null, 2));
+      console.log("=== END FORM CONFIGURATION ===");
+      
+      return formConfig;
     } catch (parseError) {
       console.error("Error parsing Gemini response as JSON:", parseError);
       console.warn("Using demo form configuration due to parsing error");

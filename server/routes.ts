@@ -304,6 +304,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Deduct credit after successful generation
       await supabaseService.deductUserCredits(userId!, 1);
 
+      // Log the final JSON configuration being sent to frontend
+      console.log("=== FINAL FORM CONFIGURATION SENT TO FRONTEND ===");
+      console.log(JSON.stringify({ id: savedFormId, config: formConfig }, null, 2));
+      console.log("=== END FORM CONFIGURATION ===");
+
       return res.json({ id: savedFormId, config: formConfig });
     } catch (error: any) {
       console.error("Error generating form:", error);
@@ -339,6 +344,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       await supabaseService.deductUserCredits(userId!, 1);
+
+      // Log the final JSON configuration being sent to frontend
+      console.log("=== FINAL FORM CONFIGURATION SENT TO FRONTEND (API KEY) ===");
+      console.log(JSON.stringify(formConfig, null, 2));
+      console.log("=== END FORM CONFIGURATION ===");
 
       return res.json(formConfig);
     } catch (error: any) {
