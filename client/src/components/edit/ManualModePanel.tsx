@@ -5,6 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  SearchableSelect, 
+  SearchableSelectContent, 
+  SearchableSelectItem, 
+  SearchableSelectTrigger, 
+  SearchableSelectValue 
+} from "@/components/ui/searchable-select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { FormConfig, FormStep } from "@shared/types";
 import { Edit, Plus, Trash2, Copy } from "lucide-react";
@@ -19,10 +26,19 @@ export default function ManualModePanel({ formConfig, onConfigUpdate }: ManualMo
   const { toast } = useToast();
   const [localConfig, setLocalConfig] = useState<FormConfig | null>(formConfig);
   const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set());
+  const [stepTypeSearch, setStepTypeSearch] = useState<string>("");
 
   useEffect(() => {
     setLocalConfig(formConfig);
   }, [formConfig]);
+
+  const handleStepTypeSearchChange = (value: string) => {
+    setStepTypeSearch(value);
+  };
+
+  const clearStepTypeSearch = () => {
+    setStepTypeSearch("");
+  };
 
   const updateConfig = (newConfig: FormConfig) => {
     setLocalConfig(newConfig);
@@ -224,26 +240,58 @@ export default function ManualModePanel({ formConfig, onConfigUpdate }: ManualMo
                   {/* Step Type */}
                   <div className="space-y-2">
                     <Label>Step Type</Label>
-                    <Select
+                    <SearchableSelect
                       value={step.type}
                       onValueChange={(value) => updateStepField(stepIndex, 'type', value)}
+                      onOpenChange={(open) => {
+                        if (!open) {
+                          clearStepTypeSearch();
+                        }
+                      }}
                     >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="tiles">Tiles</SelectItem>
-                        <SelectItem value="multiSelect">Multi Select</SelectItem>
-                        <SelectItem value="dropdown">Dropdown</SelectItem>
-                        <SelectItem value="slider">Slider</SelectItem>
-                        <SelectItem value="followup">Followup</SelectItem>
-                        <SelectItem value="textbox">Textbox</SelectItem>
-                        <SelectItem value="location">Location</SelectItem>
-                        <SelectItem value="contact">Contact</SelectItem>
-                        <SelectItem value="documentUpload">Document Upload</SelectItem>
-                        <SelectItem value="documentInfo">Document Info</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      <SearchableSelectTrigger>
+                        <SearchableSelectValue />
+                      </SearchableSelectTrigger>
+                      <SearchableSelectContent
+                        searchPlaceholder="Search step types..."
+                        onSearchChange={handleStepTypeSearchChange}
+                        searchValue={stepTypeSearch}
+                      >
+                        {(() => {
+                          const options = [
+                            { value: "tiles", label: "Tiles" },
+                            { value: "multiSelect", label: "Multi Select" },
+                            { value: "dropdown", label: "Dropdown" },
+                            { value: "slider", label: "Slider" },
+                            { value: "followup", label: "Followup" },
+                            { value: "textbox", label: "Textbox" },
+                            { value: "location", label: "Location" },
+                            { value: "contact", label: "Contact" },
+                            { value: "documentUpload", label: "Document Upload" },
+                            { value: "documentInfo", label: "Document Info" }
+                          ];
+                          
+                          const filteredOptions = options.filter(option => 
+                            !stepTypeSearch || 
+                            option.label.toLowerCase().includes(stepTypeSearch.toLowerCase())
+                          );
+                          
+                          if (filteredOptions.length === 0) {
+                            return (
+                              <div className="px-2 py-1.5 text-sm text-muted-foreground text-center">
+                                No step types found matching "{stepTypeSearch}"
+                              </div>
+                            );
+                          }
+                          
+                          return filteredOptions.map(option => (
+                            <SearchableSelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SearchableSelectItem>
+                          ));
+                        })()}
+                      </SearchableSelectContent>
+                    </SearchableSelect>
                   </div>
 
                   {/* Step Title */}
