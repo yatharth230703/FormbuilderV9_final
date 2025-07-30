@@ -44,6 +44,7 @@ export default function EditPage() {
   const [currentConfig, setCurrentConfig] = useState<FormConfig | null>(null);
   const [saving, setSaving] = useState(false);
   const [iframeKey, setIframeKey] = useState(0); // For forcing iframe refresh
+  const [iframeHeight, setIframeHeight] = useState('600px'); // Default height
 
   // Force iframe refresh when icon mode changes
   useEffect(() => {
@@ -78,6 +79,27 @@ export default function EditPage() {
       }
     }
   }, [formDetails, setIconMode]);
+
+  // Listen for height messages from the iframe
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // IMPORTANT: In a real production app, you should validate event.origin
+      // to ensure messages are coming from a trusted source.
+      if (event.data && event.data.type === 'form-resize') {
+        // Add a small buffer (e.g., 15px) to prevent scrollbars from appearing
+        // due to sub-pixel rendering or other minor layout shifts.
+        const newHeight = event.data.height + 15;
+        setIframeHeight(`${newHeight}px`);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    // Cleanup listener on component unmount
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, []); // Empty dependency array ensures this runs only once
 
   // Save form configuration mutation
   const saveFormMutation = useMutation({
@@ -246,20 +268,17 @@ export default function EditPage() {
 
             {/* Right Panel - Form Preview */}
             <div className="lg:col-span-2">
-              <Card className="p-0">
-                <div className="relative" style={{ height: 'calc(100vh - 150px)', overflow: 'hidden' }}>
-                  <iframe
-                    src={`/embed?form=${formData.id}&iconMode=${iconMode}`}
-                    className="w-full h-full border-0"
-                    title="Form Preview"
-                    key={`${formData.id}-${iframeKey}-${iconMode}`} // Force re-render when form changes, after save, or icon mode changes
-                    style={{ 
-                      height: '100%',
-                      minHeight: '600px',
-                      maxHeight: 'calc(100vh - 150px)'
-                    }}
-                  />
-                </div>
+              <Card className="p-0 overflow-hidden">
+                <iframe
+                  src={`/embed?form=${formData.id}&iconMode=${iconMode}`}
+                  className="w-full border-0"
+                  title="Form Preview"
+                  key={`${formData.id}-${iframeKey}-${iconMode}`}
+                  style={{
+                    height: iframeHeight,
+                    transition: 'height 0.2s ease-out'
+                  }}
+                />
               </Card>
             </div>
           </div>

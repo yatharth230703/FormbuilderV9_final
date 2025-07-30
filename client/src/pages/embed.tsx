@@ -1,4 +1,4 @@
-import { useEffect, useState, ReactNode } from "react";
+import { useEffect, useState, ReactNode, useRef } from "react";
 import { FormProvider, useFormContext } from "@/contexts/form-context";
 import EmbedFormRenderer from "@/components/form-renderer/embed-form-renderer";
 import { FormConfig } from "@shared/types";
@@ -46,6 +46,7 @@ export default function EmbedForm() {
   const [error, setError] = useState<string | null>(null);
   const [formId, setFormId] = useState<number | null>(null);
   const [iconMode, setIconMode] = useState<'lucide' | 'emoji' | 'none'>('lucide');
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Set theme for embedded forms
   useEffect(() => {
@@ -288,6 +289,30 @@ export default function EmbedForm() {
     }
   }, [formConfig]);
 
+  // ResizeObserver to measure content height and send to parent
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || loading) return;
+
+    const sendHeight = () => {
+      const height = container.scrollHeight;
+      // Post message to the parent window
+      window.parent.postMessage({ type: 'form-resize', height: height }, '*');
+    };
+
+    // Use ResizeObserver to automatically send height on content change
+    const resizeObserver = new ResizeObserver(sendHeight);
+    resizeObserver.observe(container);
+
+    // Send initial height
+    sendHeight();
+
+    // Cleanup on component unmount
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [loading]); // Dependency on `loading` ensures it runs after the form is ready
+
   if (loading) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-slate-50">
@@ -309,7 +334,7 @@ export default function EmbedForm() {
 
   return (
     <FormProviderWithIconMode iconMode={iconMode}>
-      <div className="w-full">
+      <div className="w-full" ref={containerRef}>
         {formConfig && (
           <EmbedFormRenderer testMode={false} formConfig={formConfig} formId={formId} />
         )}

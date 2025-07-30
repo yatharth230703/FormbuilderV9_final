@@ -176,7 +176,7 @@ export default function EmbedFormRenderer({
   }
 
   return (
-    <div className="w-full min-h-screen flex flex-col bg-white">
+    <div className="w-full h-full flex flex-col bg-white">
       
       {/* Progress bar for embed */}
       <div className="p-6 border-b border-gray-200">
