@@ -32,7 +32,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 // Set your frontend URL here - updated to match your exact domain
 const allowedOrigin = isProduction
-  ? 'https://formbuilder-v-9-final-partnerscaile.replit.app'
+  ? (process.env.APP_URL || 'https://formbuilder-v-9-final-2-partnerscaile.replit.app')
   : 'http://localhost:5173';
 
 // For debugging: log the CORS configuration
