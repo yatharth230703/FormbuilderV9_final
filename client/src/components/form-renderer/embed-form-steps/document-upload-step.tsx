@@ -102,7 +102,7 @@ export default function DocumentUploadStep({ step }: DocumentUploadStepProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col pt-6 sm:pt-10 pb-2 px-4 space-y-4">
+    <div className="flex-1 flex flex-col pt-6 sm:pt-10 pb-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar space-y-4">
       <div className="space-y-1">
         <h2 className="text-xl font-semibold text-gray-900">
           {step.title}

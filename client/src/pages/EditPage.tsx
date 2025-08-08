@@ -44,7 +44,7 @@ export default function EditPage() {
   const [currentConfig, setCurrentConfig] = useState<FormConfig | null>(null);
   const [saving, setSaving] = useState(false);
   const [iframeKey, setIframeKey] = useState(0); // For forcing iframe refresh
-  const [iframeHeight, setIframeHeight] = useState('600px'); // Default height
+  const [iframeHeight] = useState('800px'); // Fixed like Preview page to prevent movement
 
   // Force iframe refresh when icon mode changes
   useEffect(() => {
@@ -80,26 +80,13 @@ export default function EditPage() {
     }
   }, [formDetails, setIconMode]);
 
-  // Listen for height messages from the iframe
+  // In the edit page, keep preview height fixed like the Preview page to avoid bounce.
+  // We intentionally ignore resize messages from the iframe here.
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      // IMPORTANT: In a real production app, you should validate event.origin
-      // to ensure messages are coming from a trusted source.
-      if (event.data && event.data.type === 'form-resize') {
-        // Add a small buffer (e.g., 15px) to prevent scrollbars from appearing
-        // due to sub-pixel rendering or other minor layout shifts.
-        const newHeight = event.data.height + 15;
-        setIframeHeight(`${newHeight}px`);
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-
-    // Cleanup listener on component unmount
-    return () => {
-      window.removeEventListener('message', handleMessage);
-    };
-  }, []); // Empty dependency array ensures this runs only once
+    const noop = () => {};
+    window.addEventListener('message', noop);
+    return () => window.removeEventListener('message', noop);
+  }, []);
 
   // Save form configuration mutation
   const saveFormMutation = useMutation({

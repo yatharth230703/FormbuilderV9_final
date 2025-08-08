@@ -294,10 +294,14 @@ export default function EmbedForm() {
     const container = containerRef.current;
     if (!container || loading) return;
 
+    const BASE_MIN_HEIGHT = 800; // keep footer position stable across steps
+    // Track the maximum height we've sent to avoid shrinking the iframe
+    let maxHeightSent = BASE_MIN_HEIGHT;
     const sendHeight = () => {
       const height = container.scrollHeight;
+      maxHeightSent = Math.max(BASE_MIN_HEIGHT, maxHeightSent, height);
       // Post message to the parent window
-      window.parent.postMessage({ type: 'form-resize', height: height }, '*');
+      window.parent.postMessage({ type: 'form-resize', height: maxHeightSent }, '*');
     };
 
     // Use ResizeObserver to automatically send height on content change
@@ -334,7 +338,7 @@ export default function EmbedForm() {
 
   return (
     <FormProviderWithIconMode iconMode={iconMode}>
-      <div className="w-full" ref={containerRef}>
+      <div className="w-full min-h-screen" ref={containerRef}>
         {formConfig && (
           <EmbedFormRenderer testMode={false} formConfig={formConfig} formId={formId} />
         )}

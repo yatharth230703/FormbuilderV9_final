@@ -176,7 +176,7 @@ export default function EmbedFormRenderer({
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-white">
+    <div className="w-full h-screen overflow-hidden relative flex flex-col bg-white">
       
       {/* Progress bar for embed */}
       <div className="p-6 border-b border-gray-200">
@@ -198,15 +198,14 @@ export default function EmbedFormRenderer({
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="px-6 py-8 flex-1">
+      {/* Main Content - scroll only inside content area (matches build form) */}
+      <div className="flex-1 overflow-auto px-6 pt-12 pb-4 hide-scrollbar">
         <div className="mb-6">{currentStepContent}</div>
       </div>
 
-      {/* Footer Navigation for embed */}
-      <div className="px-6 py-4 border-t border-gray-200 bg-white mt-auto">
-        <div className="flex justify-between items-center">
-          <div className="flex gap-3">
+      {/* Fixed Footer Navigation (matches build form footer behavior) */}
+      <div className="px-6 py-4 flex justify-between items-center bg-white border-t border-gray-200">
+        <div className="flex gap-3">
             {currentStep > 1 && !isFormComplete && (
               <Button
                 variant="ghost"
@@ -232,7 +231,6 @@ export default function EmbedFormRenderer({
                 )}
               </Button>
             )}
-        </div>
       </div>
     </div>
   );
