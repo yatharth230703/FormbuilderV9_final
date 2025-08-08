@@ -35,7 +35,7 @@ const allowedOrigin = isProduction
   ? (process.env.APP_URL || 'https://formbuilder-v-9-final-2-partnerscaile.replit.app')
   : 'http://localhost:5173';
 
-// For debugging: log the CORS configuration
+// For debugging: log the CORS configuration 
 console.log('CORS configuration:', {
   isProduction,
   allowedOrigin,
@@ -91,7 +91,7 @@ app.use((req, res, next) => {
 if (isProduction) {
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Content-Security-Policy', `frame-ancestors 'self' ${allowedOrigin}`);
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     next();
