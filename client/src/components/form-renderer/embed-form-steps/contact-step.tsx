@@ -147,7 +147,7 @@ export default function ContactStep({ step }: ContactStepProps) {
 
         {/* Contact information section - right side */}
         {formConfig?.ui?.contact && (
-          <div className="lg:w-80 p-4 rounded-lg bg-purple-50">
+          <div className="lg:w-80 p-4 rounded-lg bg-primary/10">
             <h4 className="font-medium mb-2">{formConfig.ui.contact.title}</h4>
             <p className="text-sm text-gray-600 mb-3">
               {formConfig.ui.contact.description}

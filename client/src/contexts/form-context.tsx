@@ -193,11 +193,11 @@ useEffect(() => {
           'value' in stepResponse;
 
       case 'textbox':
-        // Check if required and if it meets minLength
+        // Only require non-empty text if marked required; ignore minLength
         if (step.validation?.required) {
           return !!stepResponse && 
             typeof stepResponse === 'string' && 
-            (!step.validation.minLength || stepResponse.length >= step.validation.minLength);
+            stepResponse.trim().length > 0;
         }
         return true;
 

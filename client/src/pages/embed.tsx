@@ -70,6 +70,35 @@ export default function EmbedForm() {
       return `#${darkerR.toString(16).padStart(2, '0')}${darkerG.toString(16).padStart(2, '0')}${darkerB.toString(16).padStart(2, '0')}`;
     };
 
+    // Helper: convert HEX -> HSL string "H S% L%" for Tailwind CSS variables
+    const hexToHslString = (hex: string): string => {
+      const clean = hex.replace('#', '');
+      const r = parseInt(clean.substring(0, 2), 16) / 255;
+      const g = parseInt(clean.substring(2, 4), 16) / 255;
+      const b = parseInt(clean.substring(4, 6), 16) / 255;
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      let h = 0;
+      let s = 0;
+      const l = (max + min) / 2;
+      if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case r:
+            h = (g - b) / d + (g < b ? 6 : 0);
+            break;
+          case g:
+            h = (b - r) / d + 2;
+            break;
+          default:
+            h = (r - g) / d + 4;
+        }
+        h /= 6;
+      }
+      return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+    };
+
     // Load saved custom theme or set defaults
     const savedPrimary = localStorage.getItem('custom-theme-primary') || "#3b82f6";
     const savedSecondary = localStorage.getItem('custom-theme-secondary') || "#a855f7";
@@ -94,6 +123,12 @@ export default function EmbedForm() {
       .hover\\:bg-primary-dark:hover { background-color: var(--color-primary-dark); }
     `;
     document.head.appendChild(styleEl);
+
+    // Also set Tailwind CSS variable --primary so utilities like bg-primary/10 use the chosen color
+    try {
+      const hsl = hexToHslString(savedPrimary);
+      document.documentElement.style.setProperty("--primary", hsl);
+    } catch {}
 
     // Add font styles for all supported fonts
     const fontLinks = [
@@ -258,8 +293,35 @@ export default function EmbedForm() {
       document.documentElement.style.setProperty('--color-foreground', '#1e293b'); // Always dark slate
       document.documentElement.style.setProperty('--font-primary', savedFont);
 
-      // Set primary color in the correct HSL format (for shadcn components)
-      document.documentElement.style.setProperty("--primary", "141 73% 43%");
+      // Set primary color in HSL so Tailwind "primary" tokens (e.g., bg-primary/10) match the chosen theme
+      const hexToHslString = (hex: string): string => {
+        const clean = hex.replace('#', '');
+        const r = parseInt(clean.substring(0, 2), 16) / 255;
+        const g = parseInt(clean.substring(2, 4), 16) / 255;
+        const b = parseInt(clean.substring(4, 6), 16) / 255;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        let h = 0;
+        let s = 0;
+        const l = (max + min) / 2;
+        if (max !== min) {
+          const d = max - min;
+          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+          switch (max) {
+            case r:
+              h = (g - b) / d + (g < b ? 6 : 0);
+              break;
+            case g:
+              h = (b - r) / d + 2;
+              break;
+            default:
+              h = (r - g) / d + 4;
+          }
+          h /= 6;
+        }
+        return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+      };
+      document.documentElement.style.setProperty("--primary", hexToHslString(savedPrimary));
 
       // Apply other theme colors from form config
       if (colors.text) {

@@ -6,7 +6,6 @@
 import { useState, useEffect } from "react";
 import { useFormContext } from "@/contexts/form-context";
 import { MultiSelectStep as MultiSelectStepType } from "@shared/types";
-import { Checkbox } from "@/components/ui/checkbox";
 import { IconDisplay } from "@/components/ui/icon-display";
 
 interface MultiSelectStepProps {
@@ -74,7 +73,7 @@ export default function MultiSelectStep({ step }: MultiSelectStepProps) {
     <div className="flex-1 flex flex-col pt-6 sm:pt-10 pb-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar">
       <h3 className="text-2xl font-bold mb-1 text-center">{step.title}</h3>
       <p className="text-gray-500 mb-1 text-center">{step.subtitle}</p>
-      <p className="text-sm text-gray-400 mb-3">Select all that apply</p>
+      
 
       {/* Extra top margin so the option tiles sit a bit lower */}
       <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 max-w-3xl mx-auto mt-6`}>
@@ -100,13 +99,8 @@ export default function MultiSelectStep({ step }: MultiSelectStepProps) {
                   />
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center">
                     <h4 className={`font-medium hyphens-auto ${getTileTextClass(option.title, isMobile)}`}>{formatTileText(option.title)}</h4>
-                    <Checkbox
-                      checked={isActive}
-                      onCheckedChange={() => handleToggle(option.id)}
-                      className="h-5 w-5 border-gray-300"
-                    />
                   </div>
                   <p className="text-xs text-gray-500 hyphens-auto">{formatTileText(option.description || '')}</p>
                 </div>

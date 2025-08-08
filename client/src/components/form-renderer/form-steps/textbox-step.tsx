@@ -24,11 +24,9 @@ export default function TextboxStep({ step }: TextboxStepProps) {
     const newValue = e.target.value;
     setValue(newValue);
 
-    // Validate if required
+    // Validate if required (ignore minLength)
     if (step.validation?.required && !newValue.trim()) {
       setError('This field is required');
-    } else if (step.validation?.minLength && newValue.length < step.validation.minLength) {
-      setError(`Please enter at least ${step.validation.minLength} characters`);
     } else {
       setError(null);
     }
@@ -54,11 +52,7 @@ export default function TextboxStep({ step }: TextboxStepProps) {
           <p className="mt-2 text-sm text-red-500">{error}</p>
         )}
 
-        {step.validation?.minLength && (
-          <p className="mt-2 text-xs text-gray-500">
-            {value.length}/{step.validation.minLength} characters minimum
-          </p>
-        )}
+        
       </div>
     </div>
   );

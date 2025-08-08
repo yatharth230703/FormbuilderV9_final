@@ -72,27 +72,7 @@ export default function SliderStep({ step }: SliderStepProps) {
             className="w-full"
           />
 
-          {/* Visual indicators for specific values */}
-          <div className="w-full flex justify-between mt-4 px-2">
-            <div className="grid grid-cols-5 gap-4 max-w-3xl mx-auto">
-              {[0, 1, 2, 3, 4].map((i) => {
-                const tickValue = step.min + ((step.max - step.min) / 4) * i;
-                const isActive = value >= tickValue;
-                return (
-                  <div key={i} className="flex flex-col items-center">
-                    <div 
-                      className={`h-1 w-1 rounded-full ${isActive ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}
-                    />
-                    {i === 0 || i === 4 ? (
-                      <span className="text-xs mt-1 text-gray-500 dark:text-gray-400">
-                        {i === 0 ? 'Min' : 'Max'}
-                      </span>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          
         </div>
       </div>
     </div>

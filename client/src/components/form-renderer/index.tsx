@@ -59,11 +59,6 @@ export default function FormRenderer({
   const handleNextStep = () => {
     const isValid = validateCurrentStep();
     if (!isValid) {
-      toast({
-        title: "Validation Error",
-        description: "Please complete this step before continuing",
-        variant: "destructive",
-      });
       return;
     }
 
