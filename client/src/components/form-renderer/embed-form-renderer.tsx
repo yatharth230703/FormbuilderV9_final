@@ -160,6 +160,13 @@ export default function EmbedFormRenderer({
     return formConfig?.ui?.buttons?.next || "Continue";
   }, [currentStep, totalSteps, isSubmitting, formConfig]);
 
+  // Check if current step is a tiles step (single correct type that auto-advances)
+  const isCurrentStepTiles = useMemo(() => {
+    if (!formConfig?.steps) return false;
+    const step = formConfig.steps[currentStep - 1];
+    return step?.type === "tiles";
+  }, [currentStep, formConfig]);
+
   if (!formConfig) {
     return (
       <div className="aspect-[16/9] relative flex items-center justify-center bg-gray-50">
@@ -214,7 +221,7 @@ export default function EmbedFormRenderer({
             )}
           </div>
 
-          {!isFormComplete && (
+          {!isFormComplete && !isCurrentStepTiles && (
               <Button
                 className="bg-primary text-white hover:bg-primary/90 transition-all duration-200 flex items-center px-6 py-2"
                 onClick={handleNextStep}

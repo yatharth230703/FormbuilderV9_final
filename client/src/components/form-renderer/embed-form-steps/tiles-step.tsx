@@ -66,9 +66,17 @@ export default function TilesStep({ step }: TilesStepProps) {
     }
   }, [formResponses, step.title, currentStep, step.options, updateResponse]);
 
+
+
   const handleSelect = (id: string) => {
     setSelectedOption(id);
     updateResponse(step.title, id);
+    
+    // Directly trigger the advance with a delay
+    setTimeout(() => {
+      console.log('DIRECT TIMER FIRED - CALLING NEXTSTEP');
+      nextStep();
+    }, 500);
   };
 
   // Force exactly 4 options - responsive grid: 2x2 on mobile, 1x4 on larger screens

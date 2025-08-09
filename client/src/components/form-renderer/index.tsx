@@ -189,6 +189,13 @@ export default function FormRenderer({
     return formConfig?.ui?.buttons?.next || "Continue";
   }, [currentStep, totalSteps, isSubmitting, formConfig]);
 
+  // Check if current step is a tiles step (single correct type that auto-advances)
+  const isCurrentStepTiles = useMemo(() => {
+    if (!formConfig?.steps) return false;
+    const step = formConfig.steps[currentStep - 1];
+    return step?.type === "tiles";
+  }, [currentStep, formConfig]);
+
   if (!formConfig) {
     return (
       <div className="aspect-[16/9] relative flex items-center justify-center bg-gray-50">
@@ -236,7 +243,7 @@ export default function FormRenderer({
             </Button>
           )}
         </div>
-        {!isFormComplete && (
+        {!isFormComplete && !isCurrentStepTiles && (
             <Button
               className="bg-primary text-white hover:bg-primary/90 transition-colors flex items-center"
               onClick={handleNextStep}
