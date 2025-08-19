@@ -190,13 +190,6 @@ export default function LocationStep({ step }: LocationStepProps) {
             )}
           </Button>
         </div>
-        {/* Show resolved address if available */}
-        {resolvedAddress && validationStatus === 'success' && (
-          <div className="mt-2 text-sm text-blue-700 bg-blue-50 rounded p-2">
-            <span className="font-medium">Address:</span> {resolvedAddress}
-          </div>
-        )}
-
         {/* Show extracted postal code if found */}
         {extractedPostalCode && !validationStatus && (
           <div className="mt-2 text-sm text-gray-600">
@@ -231,27 +224,20 @@ export default function LocationStep({ step }: LocationStepProps) {
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
             className="mt-6 flex flex-col items-center justify-center"
           >
-            <div className="flex items-center p-6 rounded-xl shadow-sm w-full max-w-md mb-4">
-              <div className="bg-primary text-white p-4 rounded-full mr-6 flex items-center justify-center">
-                <MapPin className="h-6 w-6" />
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-primary mb-1">Location Confirmed</h4>
-                <p className="text-sm text-gray-600">{addressInput}</p>
-              </div>
-            </div>
             {/* Show static map if coordinates are available */}
             {locationCoords && (
-              <img
-                src={`/api/staticmap?center=${locationCoords.lat},${locationCoords.lon}&zoom=14&size=400x200&markers=color:red%7C${locationCoords.lat},${locationCoords.lon}`}
-                alt="Location Map"
-                className="rounded shadow border"
-                style={{ width: '400px', height: '200px', objectFit: 'cover' }}
-                onError={(e) => {
-                  // Hide image if it fails to load (API key issues, etc.)
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
+              <div className="w-full max-w-4xl">
+                <img
+                  src={`/api/staticmap?center=${locationCoords.lat},${locationCoords.lon}&zoom=14&size=800x400&markers=color:red%7C${locationCoords.lat},${locationCoords.lon}`}
+                  alt="Location Map"
+                  className="w-full h-auto rounded-lg shadow-lg border border-gray-200"
+                  style={{ maxHeight: '300px', objectFit: 'cover' }}
+                  onError={(e) => {
+                    // Hide image if it fails to load (API key issues, etc.)
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
             )}
           </motion.div>
         )}
