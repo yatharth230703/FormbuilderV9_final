@@ -56,22 +56,19 @@ export default function ContactStep({ step }: ContactStepProps) {
     // Clear the error for this field
     delete newErrors[field];
 
+    // Required field validation for firstName, lastName, and email
+    if ((field === "firstName" || field === "lastName" || field === "email") && !value.trim()) {
+      newErrors[field] =
+        formConfig?.ui?.messages?.thisFieldRequired ||
+        "This field is required";
+    }
+
     // Email validation - only validate format if email is provided
     if (field === "email" && value && !validateEmail(value)) {
       newErrors.email =
         formConfig?.ui?.messages?.enterValidEmail ||
         "Please enter a valid email address";
     }
-
-    // Remove required field validation - all fields are now optional
-    // if (!value.trim()) {
-    //   // Only set required error if field is empty and was touched
-    //   if (field === "email" || field === "firstName") {
-    //     newErrors[field] =
-    //       formConfig?.ui?.messages?.thisFieldRequired ||
-    //       "This field is required";
-    //   }
-    // }
 
     setErrors(newErrors);
     updateResponse(step.title, newContactInfo);
@@ -87,7 +84,7 @@ export default function ContactStep({ step }: ContactStepProps) {
         <div className="flex-1 space-y-4">
           <div>
             <Label htmlFor="firstName" className="block text-sm font-medium mb-1">
-              {step.config.labels.firstName}
+              {step.config.labels.firstName} <span className="text-red-500">*</span>
             </Label>
             <Input
               id="firstName"
@@ -103,7 +100,7 @@ export default function ContactStep({ step }: ContactStepProps) {
           </div>
           <div>
             <Label htmlFor="lastName" className="block text-sm font-medium mb-1">
-              {step.config.labels.lastName}
+              {step.config.labels.lastName} <span className="text-red-500">*</span>
             </Label>
             <Input
               id="lastName"
@@ -111,12 +108,15 @@ export default function ContactStep({ step }: ContactStepProps) {
               value={contactInfo.lastName}
               onChange={(e) => handleInputChange("lastName", e.target.value)}
               placeholder={step.config.placeholders.lastName}
-              className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className={`w-full p-3 border ${errors.lastName ? "border-red-500" : "border-gray-200"} rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent`}
             />
+            {errors.lastName && (
+              <p className="mt-1 text-xs text-red-500">{errors.lastName}</p>
+            )}
           </div>
           <div>
             <Label htmlFor="email" className="block text-sm font-medium mb-1">
-              {step.config.labels.email}
+              {step.config.labels.email} <span className="text-red-500">*</span>
             </Label>
             <Input
               id="email"

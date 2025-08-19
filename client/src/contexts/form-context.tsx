@@ -211,25 +211,22 @@ useEffect(() => {
         return true;
 
       case 'contact':
-        // Contact step is now optional - if no response, it's valid
-        if (!stepResponse || typeof stepResponse !== 'object') return true;
+        // Contact step now requires firstName, lastName, and email
+        if (!stepResponse || typeof stepResponse !== 'object') return false;
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const { firstName, email } = stepResponse as any;
+        const { firstName, lastName, email } = stepResponse as any;
 
-        // If any contact info is provided, validate it properly
-        if (firstName || email) {
-          // If email is provided, it must be valid
-          if (email && !emailRegex.test(email)) {
-            return false;
-          }
-          // If firstName is provided, email is also required
-          if (firstName && !email) {
-            return false;
-          }
+        // All three fields are required
+        if (!firstName || !lastName || !email) {
+          return false;
         }
 
-        // If no contact info is provided, it's still valid (optional)
+        // Email must be valid
+        if (!emailRegex.test(email)) {
+          return false;
+        }
+
         return true;
 
       case 'documentUpload':
