@@ -73,6 +73,7 @@ export async function createFormConfig(
   
   // Insert with a temporary label, then update with the correct label after getting the id
   const tempLabel = 'pending_label';
+  
   const { data, error } = await supabase
     .from('form_config')
     .insert([
@@ -94,26 +95,36 @@ export async function createFormConfig(
   }
 
   const formId = data.id;
-  // Get the first step's title
-  let firstTitle = 'untitled';
-  if (config && Array.isArray(config.steps) && config.steps.length > 0 && config.steps[0].title) {
-    firstTitle = String(config.steps[0].title).replace(/\s+/g, '_').toLowerCase();
-  }
-  const newLabel = `${firstTitle}_${formId}`;
+  
+  // Use the provided label directly
+  const finalLabel = label;
+  
+  console.log("💾 SUPABASE - createFormConfig received:", {
+    label: label,
+    finalLabel: finalLabel,
+    language: language,
+    domain: finalDomain,
+    iconMode: iconMode,
+    formId: formId
+  });
   
   // Generate the unique URL with fallback
   const baseUrl = process.env.APP_URL || 
-                  (process.env.NODE_ENV === 'production' ? 'https://your-app.replit.app' : 'http://localhost:5000');
-  const uniqueUrl = `${baseUrl}/embed?language=${language}&label=${encodeURIComponent(newLabel)}&domain=${encodeURIComponent(finalDomain)}`;
+                  (process.env.NODE_ENV === 'production' ? 'https://formbuilder-v-9-final-2-partnerscaile.replit.app' : 'http://localhost:5000');
+  const uniqueUrl = `${baseUrl}/embed?language=${language}&label=${encodeURIComponent(finalLabel)}&domain=${encodeURIComponent(finalDomain)}`;
+  
+  console.log("💾 SUPABASE - Generated URL:", uniqueUrl);
   
   // Update the label and URL
   await supabase
     .from('form_config')
     .update({ 
-      label: newLabel,
+      label: finalLabel,
       url: uniqueUrl
     })
     .eq('id', formId);
+    
+  console.log("💾 SUPABASE - Updated form with label:", finalLabel);
 
   return formId;
 }
@@ -172,7 +183,7 @@ export async function getFormByProperties(
   language: string,
   label: string,
   domain: string
-): Promise<{ id: number; label: string; config: FormConfig; created_at: string; user_uuid: string | null; form_console?: any; language: string; domain: string; url?: string } | null> {
+): Promise<{ id: number; label: string; config: FormConfig; created_at: string; user_uuid: string | null; form_console?: any; language: string; domain: string; url?: string; iconMode?: string } | null> {
   if (!supabase) {
     throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
   }

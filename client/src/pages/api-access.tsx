@@ -169,12 +169,27 @@ console.log(res.data);`}
               </CardHeader>
               <CardContent className="space-y-6 text-sm">
                 <div>
-                  <h3 className="font-semibold mb-2">🔧 cURL</h3>
+                  <h3 className="font-semibold mb-2">🔧 cURL (Basic)</h3>
                   <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
 {`curl -X POST ${serverOrigin}/api/create-form-url \\
   -H "Authorization: Bearer <your_api_key_here>" \\
   -H "Content-Type: application/json" \\
   -d '{"prompt": "${samplePrompt}"}'`}
+                  </pre>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">🔧 cURL (With Custom Properties)</h3>
+                  <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
+{`curl -X POST ${serverOrigin}/api/create-form-url \\
+  -H "Authorization: Bearer <your_api_key_here>" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "prompt": "${samplePrompt}",
+    "domain": "my_custom_domain",
+    "label": "feedback_form_v1",
+    "language": "en",
+    "icon_mode": "emoji"
+  }'`}
                   </pre>
                 </div>
                 <div>
@@ -187,10 +202,24 @@ headers = {
   "Content-Type": "application/json"
 }
 
+# Basic request
 response = requests.post(
   "${serverOrigin}/api/create-form-url",
   headers=headers,
   json={"prompt": "${samplePrompt}"}
+)
+
+# Request with custom properties
+response = requests.post(
+  "${serverOrigin}/api/create-form-url",
+  headers=headers,
+  json={
+    "prompt": "${samplePrompt}",
+    "domain": "my_custom_domain",
+    "label": "feedback_form_v1", 
+    "language": "en",
+    "icon_mode": "emoji"
+  }
 )
 
 print(response.json())`}
@@ -201,6 +230,7 @@ print(response.json())`}
                   <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
 {`const axios = require("axios");
 
+// Basic request
 const res = await axios.post("${serverOrigin}/api/create-form-url", {
   prompt: "${samplePrompt}"
 }, {
@@ -210,12 +240,63 @@ const res = await axios.post("${serverOrigin}/api/create-form-url", {
   }
 });
 
-console.log(res.data);`}
+// Request with custom properties
+const customRes = await axios.post("${serverOrigin}/api/create-form-url", {
+  prompt: "${samplePrompt}",
+  domain: "my_custom_domain",
+  label: "feedback_form_v1",
+  language: "en", 
+  icon_mode: "emoji"
+}, {
+  headers: {
+    Authorization: "Bearer <your_api_key_here>",
+    "Content-Type": "application/json"
+  }
+});
+
+console.log(customRes.data);`}
                   </pre>
                 </div>
-                <div className="text-xs text-gray-600">
-                  <b>Response:</b> Returns a JSON object with the form URL and configuration.<br/>
-                  <b>Note:</b> This endpoint requires 1 credit and creates a form with a random domain, returning the URL where the form can be accessed.
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="font-semibold text-gray-800">📋 Request Parameters</h4>
+                    <ul className="list-disc list-inside text-gray-600 space-y-1 mt-2">
+                      <li><strong>prompt</strong> (required): Description of the form to create</li>
+                      <li><strong>domain</strong> (optional): Custom domain identifier. Random if not provided</li>
+                      <li><strong>label</strong> (optional): Custom form label. Generated from form title if not provided</li>
+                      <li><strong>language</strong> (optional): Form language. Options: <code className="bg-gray-100 px-1 rounded">'en'</code> or <code className="bg-gray-100 px-1 rounded">'de'</code>. Defaults to 'en'</li>
+                      <li><strong>icon_mode</strong> (optional): Icon style for form elements. Options: <code className="bg-gray-100 px-1 rounded">'lucide'</code> (line icons), <code className="bg-gray-100 px-1 rounded">'emoji'</code> (emoji icons), or <code className="bg-gray-100 px-1 rounded">'none'</code> (no icons). Defaults to 'lucide'</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-800">📤 Response Format</h4>
+                    <pre className="bg-gray-50 p-3 rounded text-xs">
+{`{
+  "url": "https://app.com/embed?language=en&label=feedback_form_v1&domain=my_custom_domain",
+  "formId": 123,
+  "language": "en", 
+  "label": "feedback_form_v1",
+  "domain": "my_custom_domain",
+  "iconMode": "emoji"
+}`}
+                    </pre>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-blue-600">🎨 Icon Mode Options</h4>
+                    <ul className="list-disc list-inside text-gray-600 space-y-1 mt-2">
+                      <li><code className="bg-blue-50 px-2 py-1 rounded text-blue-800">'lucide'</code> - Modern line icons (default)</li>
+                      <li><code className="bg-yellow-50 px-2 py-1 rounded text-yellow-800">'emoji'</code> - Colorful emoji icons</li>
+                      <li><code className="bg-gray-50 px-2 py-1 rounded text-gray-800">'none'</code> - No icons, text only</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-red-600">⚠️ Important Notes</h4>
+                    <ul className="list-disc list-inside text-gray-600 space-y-1 mt-2">
+                      <li>The combination of <strong>language</strong>, <strong>label</strong>, and <strong>domain</strong> must be unique</li>
+                      <li>If a duplicate combination is provided, you'll receive a <strong>409 Conflict</strong> error</li>
+                      <li>This endpoint requires 1 credit and creates a form, returning the URL and metadata</li>
+                    </ul>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -258,7 +339,8 @@ console.log(res.data);`}
                   <ul className="list-disc list-inside text-gray-600 space-y-1">
                     <li>401: Invalid or missing API key</li>
                     <li>402: Insufficient credits</li>
-                    <li>400: Invalid request format</li>
+                    <li>400: Invalid request format or invalid parameter values</li>
+                    <li>409: Duplicate combination of language, label, and domain</li>
                     <li>500: Server error during form generation</li>
                   </ul>
                 </div>

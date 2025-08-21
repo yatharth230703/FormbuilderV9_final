@@ -363,7 +363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API key based: Create form and return URL with random domain, default label/language
+  // API key based: Create form and return URL with specified or random domain, custom label/language
   app.post("/api/create-form-url", apiKeyAuthMiddleware, async (req, res) => {
     try {
       const userId = req.user?.uuid;
@@ -378,10 +378,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { prompt } = req.body;
+      const { prompt, domain, label, language, icon_mode } = req.body;
+      
+      console.log("🔍 API Request received:", {
+        prompt: prompt ? `${prompt.substring(0, 50)}...` : "undefined",
+        domain: domain || "undefined",
+        label: label || "undefined", 
+        language: language || "undefined",
+        icon_mode: icon_mode || "undefined"
+      });
+      
       if (!prompt) {
         return res.status(400).json({ error: "Missing required field: prompt" });
       }
+
+      // Validate language if provided
+      if (language && !["en", "de"].includes(language)) {
+        return res.status(400).json({ error: "Language must be either 'en' or 'de'" });
+      }
+
+      // Validate icon_mode if provided
+      if (icon_mode && !["lucide", "emoji", "none"].includes(icon_mode)) {
+        return res.status(400).json({ error: "icon_mode must be one of: 'lucide', 'emoji', 'none'" });
+      }
+
+      // Use provided values or defaults
+      const finalLanguage = language || "en";
+      const finalIconMode = icon_mode || "lucide";
+      const finalDomain = domain || `domain_${Math.random().toString(36).substring(2, 8)}`;
+      
+      // For label, we'll use the provided label or generate one from the form title after creation
+      let finalLabel = label;
+      
+      console.log("🎯 Processing values:", {
+        originalLabel: label,
+        finalLabel: finalLabel,
+        finalLanguage: finalLanguage,
+        finalDomain: finalDomain,
+        finalIconMode: finalIconMode
+      });
 
       // Generate form config
       const formConfig = await generateFormFromPrompt(prompt);
@@ -389,15 +424,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Failed to generate form configuration." });
       }
 
-      // Assign random domain, use default label/language logic
-      const formId = await supabaseService.createFormConfig(prompt, formConfig, undefined, undefined, userId);
+      // If no label provided, generate one from the first step title
+      if (!finalLabel) {
+        let firstTitle = 'untitled';
+        if (formConfig && Array.isArray(formConfig.steps) && formConfig.steps.length > 0 && formConfig.steps[0].title) {
+          firstTitle = String(formConfig.steps[0].title).replace(/\s+/g, '_').toLowerCase();
+        }
+        finalLabel = firstTitle;
+      }
+
+      // Check for unique combination of language, label, and domain
+      const isUnique = await supabaseService.checkUniqueFormProperties(
+        finalLanguage,
+        finalLabel,
+        finalDomain
+      );
+
+      if (!isUnique) {
+        return res.status(409).json({ 
+          error: "This combination of language, label, and domain already exists. Please choose different values.",
+          conflictDetails: {
+            language: finalLanguage,
+            label: finalLabel,
+            domain: finalDomain
+          }
+        });
+      }
+
+      // Create form with the specified parameters
+      console.log("🚀 About to create form with parameters:", {
+        finalLabel: finalLabel,
+        finalLanguage: finalLanguage,
+        finalDomain: finalDomain,
+        finalIconMode: finalIconMode
+      });
+      
+      const formId = await supabaseService.createFormConfig(
+        finalLabel, 
+        formConfig, 
+        finalLanguage, 
+        finalDomain, 
+        userId,
+        finalIconMode
+      );
 
       // Deduct credit after successful generation
       await supabaseService.deductUserCredits(userId!, 1);
 
       // Fetch the form to get the actual URL
-      const form = await supabaseService.getFormConfig(formId);
-      return res.json({ url: form.url });
+      const form = await supabaseService.getFormByProperties(finalLanguage, finalLabel, finalDomain);
+      if (!form) {
+        return res.status(500).json({ error: "Failed to retrieve created form." });
+      }
+
+      return res.json({ 
+        url: form.url,
+        formId: form.id,
+        language: form.language,
+        label: form.label,
+        domain: form.domain,
+        iconMode: form.iconMode
+      });
     } catch (error: any) {
       console.error("/api/create-form-url error:", error);
       if (error.name === "ZodError") {
