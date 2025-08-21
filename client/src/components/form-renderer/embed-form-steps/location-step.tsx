@@ -147,18 +147,19 @@ export default function LocationStep({ step }: LocationStepProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col pt-6 sm:pt-10 pb-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar">
+    <div className="flex-1 flex flex-col pt-4 sm:pt-6 pb-2 max-w-full px-4">
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
+        className="mb-4"
       >
         <h3 className="text-2xl font-bold mb-2 text-center">{step.title}</h3>
-        <p className="text-gray-500 mb-5 text-center">{step.subtitle}</p>
+        <p className="text-gray-500 mb-4 text-center">{step.subtitle}</p>
       </motion.div>
 
       <motion.div 
-        className="w-full mb-4"
+        className="w-full mb-3"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.5 }}
@@ -222,7 +223,7 @@ export default function LocationStep({ step }: LocationStepProps) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="mt-6 flex flex-col items-center justify-center"
+            className="mt-4 flex flex-col items-center justify-center"
           >
             {/* Show static map if coordinates are available */}
             {locationCoords && (
@@ -231,7 +232,7 @@ export default function LocationStep({ step }: LocationStepProps) {
                   src={`/api/staticmap?center=${locationCoords.lat},${locationCoords.lon}&zoom=14&size=800x400&markers=color:red%7C${locationCoords.lat},${locationCoords.lon}`}
                   alt="Location Map"
                   className="w-full h-auto rounded-lg shadow-lg border border-gray-200"
-                  style={{ maxHeight: '300px', objectFit: 'cover' }}
+                  style={{ maxHeight: '280px', objectFit: 'cover' }}
                   onError={(e) => {
                     // Hide image if it fails to load (API key issues, etc.)
                     e.currentTarget.style.display = 'none';
@@ -249,7 +250,7 @@ export default function LocationStep({ step }: LocationStepProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.5 }}
-          className="mt-8 text-center text-sm text-gray-500 space-y-2"
+          className="mt-6 text-center text-sm text-gray-500 space-y-2"
         >
           <p className="font-medium">Please enter your pincode</p>
         </motion.div>
