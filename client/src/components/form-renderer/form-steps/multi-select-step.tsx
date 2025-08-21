@@ -70,7 +70,7 @@ export default function MultiSelectStep({ step }: MultiSelectStepProps) {
       <p className="text-gray-500 mb-1 text-center">{step.subtitle}</p>
       
 
-      <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 max-w-3xl mx-auto mt-6`}>
+      <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-6 max-w-6xl mx-auto mt-6 w-full`}>
         {step.options.map((option, idx) => {
           const isActive = selectedOptions.includes(option.id);
           const iconName = option.icon ?? "Circle";

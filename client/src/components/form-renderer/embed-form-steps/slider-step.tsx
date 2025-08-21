@@ -58,7 +58,7 @@ export default function SliderStep({ step }: SliderStepProps) {
         </motion.div>
 
         <div className="relative">
-          <div className="flex justify-between mb-2 text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex justify-between mb-2 text-lg text-gray-500 dark:text-gray-400">
             <span>{step.prefix || ''}{step.min}</span>
             <span>{step.prefix || ''}{step.max}</span>
           </div>
