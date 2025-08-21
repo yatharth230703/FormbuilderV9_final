@@ -162,7 +162,7 @@ console.log(res.data);`}
               </CardContent>
             </Card>
 
-            {/* New Endpoint: Create Form and Get URL */}
+            {/* Create Form and Get URL */}
             <Card>
               <CardHeader>
                 <CardTitle>Create Form and Get URL</CardTitle>
@@ -171,7 +171,7 @@ console.log(res.data);`}
                 <div>
                   <h3 className="font-semibold mb-2">🔧 cURL</h3>
                   <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
-{`curl -X POST ${serverOrigin}/api/generate-and-create-form \\
+{`curl -X POST ${serverOrigin}/api/create-form-url \\
   -H "Authorization: Bearer <your_api_key_here>" \\
   -H "Content-Type: application/json" \\
   -d '{"prompt": "${samplePrompt}"}'`}
@@ -188,7 +188,7 @@ headers = {
 }
 
 response = requests.post(
-  "${serverOrigin}/api/generate-and-create-form",
+  "${serverOrigin}/api/create-form-url",
   headers=headers,
   json={"prompt": "${samplePrompt}"}
 )
@@ -201,7 +201,7 @@ print(response.json())`}
                   <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
 {`const axios = require("axios");
 
-const res = await axios.post("${serverOrigin}/api/generate-and-create-form", {
+const res = await axios.post("${serverOrigin}/api/create-form-url", {
   prompt: "${samplePrompt}"
 }, {
   headers: {
@@ -214,37 +214,53 @@ console.log(res.data);`}
                   </pre>
                 </div>
                 <div className="text-xs text-gray-600">
-                  <b>Response:</b> Returns the form configuration and a shareable URL.<br/>
-                  <b>Note:</b> This endpoint requires 2 credits and creates a persistent form in the database.
+                  <b>Response:</b> Returns a JSON object with the form URL and configuration.<br/>
+                  <b>Note:</b> This endpoint requires 1 credit and creates a form with a random domain, returning the URL where the form can be accessed.
                 </div>
               </CardContent>
             </Card>
 
-            {/* API Documentation */}
+            {/* API Usage Information */}
             <Card>
               <CardHeader>
-                <CardTitle>API Documentation</CardTitle>
+                <CardTitle>API Usage & Limits</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 text-sm">
-                <div>
-                  <h3 className="font-semibold">Rate Limits</h3>
-                  <p className="text-gray-600">
-                    • 100 requests per minute<br/>
-                    • 1000 requests per hour<br/>
-                    • Each form generation costs 1-2 credits
-                  </p>
+                <div className="space-y-2">
+                  <h3 className="font-semibold">📊 Rate Limits</h3>
+                  <ul className="list-disc list-inside text-gray-600 space-y-1">
+                    <li>Each form generation costs 1 credit</li>
+                    <li>Ensure you have sufficient credits before making requests</li>
+                    <li>API key must be included in Authorization header</li>
+                  </ul>
                 </div>
-                <div>
-                  <h3 className="font-semibold">Error Handling</h3>
-                  <p className="text-gray-600">
-                    The API returns standard HTTP status codes. Check the response body for detailed error messages.
-                  </p>
+                
+                <div className="space-y-2">
+                  <h3 className="font-semibold">🔑 Authentication</h3>
+                  <ul className="list-disc list-inside text-gray-600 space-y-1">
+                    <li>Include your API key in the Authorization header</li>
+                    <li>Format: <code className="bg-gray-100 px-1 rounded">Bearer YOUR_API_KEY</code></li>
+                    <li>Keep your API key secure and don't share it publicly</li>
+                  </ul>
                 </div>
-                <div>
-                  <h3 className="font-semibold">Need Help?</h3>
-                  <p className="text-gray-600">
-                    Contact our support team or check our documentation for more examples and advanced usage.
-                  </p>
+
+                <div className="space-y-2">
+                  <h3 className="font-semibold">📝 Request Format</h3>
+                  <ul className="list-disc list-inside text-gray-600 space-y-1">
+                    <li>Content-Type must be application/json</li>
+                    <li>Request body must contain a "prompt" field</li>
+                    <li>Prompt should describe the form you want to create</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="font-semibold">🚨 Error Handling</h3>
+                  <ul className="list-disc list-inside text-gray-600 space-y-1">
+                    <li>401: Invalid or missing API key</li>
+                    <li>402: Insufficient credits</li>
+                    <li>400: Invalid request format</li>
+                    <li>500: Server error during form generation</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>

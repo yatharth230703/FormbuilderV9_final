@@ -88,30 +88,34 @@ export default function DocumentInfoStep({ step }: DocumentInfoStepProps) {
         ) : showQuotation ? (
           <div className="flex flex-col items-center justify-center min-h-[400px] w-full" style={{ minHeight: "400px", maxHeight: step.config.maxHeight || "600px" }}>
             <div className="w-full flex flex-col items-center">
-              <div className="w-full border-2 border-purple-600 rounded-md py-4 mb-4 flex justify-center">
-                <span className="text-6xl font-semibold tracking-wide text-gray-900 text-center">Your Estimated Total</span>
-              </div>
-              <div className="w-full text-center mb-6">
-                <span className="text-lg text-gray-700 font-medium">{`{Including VAT and Surcharge}`}</span>
-              </div>
-              <div className="w-full flex justify-center mb-6">
-                <div
-                  className="bg-gradient-to-r from-green-100 to-blue-100 rounded-lg border border-gray-300 shadow flex items-center justify-center"
-                  style={{ minWidth: 350, minHeight: 120, maxWidth: 500, width: "100%" }}
-                >
-                  <span
-                    className="text-5xl text-black text-center font-semibold"
-                    dangerouslySetInnerHTML={{ __html: quotationHtml }}
-                  />
+              {/* Content box with light blue borders */}
+              <div className="w-full bg-gray-50 border-2 border-dotted border-blue-400 border-r-blue-500 rounded-lg p-6">
+                <div className="w-full rounded-md py-4 mb-4 flex justify-center">
+                  <span className="text-6xl font-semibold tracking-wide text-gray-900 text-center">Your Estimated Total</span>
+                </div>
+                <div className="w-full text-center mb-6">
+                  <span className="text-lg text-gray-700 font-medium">{`{Including VAT and Surcharge}`}</span>
+                </div>
+                <div className="w-full flex justify-center mb-6">
+                  <div
+                    className="rounded-lg flex items-center justify-center"
+                    style={{ minWidth: 350, minHeight: 120, maxWidth: 500, width: "100%" }}
+                  >
+                    <span
+                      className="text-5xl text-black text-center font-semibold"
+                      dangerouslySetInnerHTML={{ __html: quotationHtml }}
+                    />
+                  </div>
+                </div>
+                <div className="w-full flex justify-center mt-4">
+                  <span className="text-lg text-gray-800 text-center">Our partners will reach out to you shortly with an accurate quote</span>
                 </div>
               </div>
-              <div className="w-full flex justify-center mt-4">
-                <span className="text-lg text-gray-800 text-center">Our partners will reach out to you shortly with an accurate quote</span>
-              </div>
+              
               <Button 
                 variant="outline" 
                 size="sm"
-                className="mt-8"
+                className="mt-6"
                 onClick={() => setShowQuotation(false)}
               >
                 Back to Document Info
