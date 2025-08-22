@@ -27,7 +27,7 @@ export async function submitFormResponses(label: string, formResponses: Record<s
     label,
     language: "en",
     response: formResponses,
-    portal: null
+    domain: null
   });
   return response.json();
 }

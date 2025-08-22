@@ -897,10 +897,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const savedResponseId = await supabaseService.createFormResponse(
         form.label,
         req.body,
-        "en",
-        null,
+        form.language || "en", // Use form's actual language
+        form.domain || null,   // Use form's actual domain
         formId,
-        null, // userUuid
+        form.user_uuid || null, // Use form's actual user_uuid
       );
       console.log(`[Form Submission] Form response saved with ID ${savedResponseId} for formId ${formId}`);
 
@@ -1046,7 +1046,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             latestResponse.label,
             updatedResponse,
             latestResponse.language,
-            latestResponse.portal,
+            latestResponse.domain,
             formId,
             latestResponse.user_uuid || null
           );

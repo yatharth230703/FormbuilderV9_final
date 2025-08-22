@@ -46,7 +46,7 @@ export function FormPreviewPage() {
     label: string;
     config: FormConfig;
     created_at: string;
-    portal: string | null;
+    domain: string | null;
     user_uuid: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);

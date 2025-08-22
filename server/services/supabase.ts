@@ -134,7 +134,7 @@ export async function createFormConfig(
  * @param id The form configuration ID
  * @returns The form configuration or null if not found
  */
-export async function getFormConfig(id: number): Promise<FormConfig | null> {
+export async function getFormConfig(id: number): Promise<{ id: number; label: string; config: FormConfig; created_at: string; user_uuid: string | null; form_console?: any; language: string; domain: string; url?: string; iconMode?: string } | null> {
   if (!supabase) {
     throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
   }
