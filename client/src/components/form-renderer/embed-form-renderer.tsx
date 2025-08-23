@@ -31,6 +31,7 @@ export default function EmbedFormRenderer({
   const {
     formConfig: contextFormConfig,
     setFormConfig,
+    setFormId,
     currentStep,
     totalSteps,
     nextStep,
@@ -42,6 +43,8 @@ export default function EmbedFormRenderer({
     setIsFormComplete,
     validateCurrentStep,
     resetResponses,
+    initializeSession,
+    getSessionInfo,
   } = useFormContext();
 
   // Use prop formConfig if provided, otherwise use context formConfig
@@ -53,6 +56,14 @@ export default function EmbedFormRenderer({
       setFormConfig(propFormConfig);
     }
   }, [propFormConfig, contextFormConfig, setFormConfig]);
+
+  // Set formId if provided (but don't initialize session yet)
+  useEffect(() => {
+    if (formId) {
+      setFormId(formId);
+      // Don't initialize session here - wait for first slide interaction
+    }
+  }, [formId, setFormId]);
 
   const { toast } = useToast();
 
@@ -77,12 +88,24 @@ export default function EmbedFormRenderer({
 
       // Determine form ID - either from prop or from config
       const submissionFormId = formId || (formConfig as any)?.id || null;
+      
+      // Get session information
+      const { sessionId, sessionNo } = getSessionInfo();
+
+      // Prepare submission data with session info
+      const submissionData = {
+        ...formResponses,
+        _sessionInfo: {
+          sessionId,
+          sessionNo
+        }
+      };
 
       // Use the correct endpoint with form ID
       await apiRequest({
         url: `/api/forms/${submissionFormId}/submit`,
         method: "POST",
-        body: JSON.stringify(formResponses),
+        body: JSON.stringify(submissionData),
         headers: {
           "Content-Type": "application/json",
         },

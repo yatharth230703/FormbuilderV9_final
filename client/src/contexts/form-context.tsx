@@ -35,6 +35,11 @@ interface FormContextType {
   // Device / embedding information
   isMobile: boolean;
   isIframe: boolean;
+  // Session management
+  sessionId: number | null;
+  sessionNo: number | null;
+  initializeSession: () => Promise<void>;
+  getSessionInfo: () => { sessionId: number | null; sessionNo: number | null };
 }
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -50,6 +55,10 @@ export function FormProvider({ children }: { children: ReactNode }) {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isFormComplete, setIsFormComplete] = useState<boolean>(false);
   const [iconMode, setIconMode] = useState<IconMode>('lucide');
+  // Session management state
+  const [sessionId, setSessionId] = useState<number | null>(null);
+  const [sessionNo, setSessionNo] = useState<number | null>(null);
+  const [sessionInitialized, setSessionInitialized] = useState<boolean>(false);
 
   // Device detection
   const { isMobile, isIframe } = useDeviceDetection();
@@ -63,7 +72,7 @@ export function FormProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Reset step when form config changes
-// Reset step when form config changes
+  // Reset step when form config changes
 useEffect(() => {
   if (formConfig) {
     setCurrentStep(1);
@@ -72,23 +81,105 @@ useEffect(() => {
     setIsFormComplete(false);
     // Removed setFormId(null); to retain the original form ID
     setPromptHistory([]);
+    // Reset session state when form config changes
+    setSessionId(null);
+    setSessionNo(null);
+    setSessionInitialized(false);
   }
 }, [formConfig]);
 
+// Reset session state whenever formId changes (new form access)
+useEffect(() => {
+  if (formId) {
+    console.log(`[Session] Form ID changed to ${formId}, resetting session state for fresh start`);
+    setSessionId(null);
+    setSessionNo(null);
+    setSessionInitialized(false);
+    setFormResponses({});
+    setTempJson({});
+    setCurrentStep(1);
+    setIsFormComplete(false);
+  }
+}, [formId]);
 
-
+  // Auto-update temp response when formResponses change and session is ready
+  useEffect(() => {
+    if (sessionInitialized && sessionId && Object.keys(formResponses).length > 0) {
+      updateTempResponse(formResponses);
+    }
+  }, [formResponses, sessionInitialized, sessionId]);
 
   // Calculate total steps
   const totalSteps = formConfig?.steps.length || 1;
 
+  // Initialize session for temporary response tracking
+  const initializeSession = async () => {
+    if (!formId || sessionInitialized) return;
+    
+    try {
+      console.log(`[Session] Creating NEW session for form ${formId}`);
+      const response = await fetch(`/api/forms/${formId}/session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to initialize session: ${response.statusText}`);
+      }
+
+      const sessionData = await response.json();
+      setSessionId(sessionData.sessionId);
+      setSessionNo(sessionData.sessionNo);
+      setSessionInitialized(true);
+      
+      // Don't restore any existing temp response data - start fresh
+      // Each new session should start with empty responses
+      console.log(`[Session] NEW session created: ID=${sessionData.sessionId}, No=${sessionData.sessionNo}`);
+    } catch (error) {
+      console.error('[Session] Failed to initialize session:', error);
+    }
+  };
+
+  // Update temp response on server
+  const updateTempResponse = async (responses: Record<string, any>) => {
+    if (!sessionId) return;
+
+    try {
+      await fetch(`/api/sessions/${sessionId}/temp-response`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ tempResponse: responses }),
+      });
+      console.log(`[Session] Updated temp response for session ${sessionId}`);
+    } catch (error) {
+      console.error('[Session] Failed to update temp response:', error);
+    }
+  };
+
   // Update a response value
   const updateResponse = (key: string, value: any) => {
-    setFormResponses(prev => ({
-      ...prev,
+    const newResponses = {
+      ...formResponses,
       [key]: value
-    }));
+    };
+    
+    setFormResponses(newResponses);
 
-    // Update tempJson with responses up to documentUpload step
+    // Initialize session on first interaction if not already done, then update temp response
+    if (!sessionInitialized && formId) {
+      initializeSession().then(() => {
+        // This will be handled by the effect that watches sessionId changes
+      });
+    } else if (sessionInitialized && sessionId) {
+      // Update temp response on server if session is already initialized
+      updateTempResponse(newResponses);
+    }
+
+    // Update tempJson with responses up to documentUpload step (existing logic)
     if (formConfig?.steps) {
       const documentUploadIndex = formConfig.steps.findIndex(step => step.type === 'documentUpload');
 
@@ -146,6 +237,9 @@ useEffect(() => {
     setTempJson({});
     setCurrentStep(1);
     setIsFormComplete(false);
+    setSessionId(null);
+    setSessionNo(null);
+    setSessionInitialized(false);
   };
 
   // Reset just the responses (keep the config)
@@ -154,6 +248,9 @@ useEffect(() => {
     setTempJson({});
     setCurrentStep(1);
     setIsFormComplete(false);
+    setSessionId(null);
+    setSessionNo(null);
+    setSessionInitialized(false);
   };
 
   // Validate if a specific step has valid responses
@@ -300,6 +397,11 @@ useEffect(() => {
     }
   };
 
+  // Get current session information
+  const getSessionInfo = () => {
+    return { sessionId, sessionNo };
+  };
+
   return (
     <FormContext.Provider
       value={{
@@ -332,7 +434,12 @@ useEffect(() => {
         ,
         // expose device info
         isMobile,
-        isIframe
+        isIframe,
+        // session management
+        sessionId,
+        sessionNo,
+        initializeSession,
+        getSessionInfo
       }}
     >
       {children}

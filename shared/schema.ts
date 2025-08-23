@@ -78,6 +78,8 @@ export const formResponses = pgTable("form_responses", {
   domain: text("domain"),
   form_config_id: integer("form_config_id").references(() => formConfig.id),
   user_uuid: text("user_uuid"), // Add user_uuid to link responses to users
+  temp_response: json("temp_response"), // Temporary response for per-slide tracking
+  session_no: integer("session_no"), // Session number for form interactions
 });
 
 export const formResponsesRelations = relations(formResponses, ({ one }) => ({
@@ -94,6 +96,8 @@ export const insertFormResponseSchema = createInsertSchema(formResponses).pick({
   domain: true,
   form_config_id: true,
   user_uuid: true,
+  temp_response: true,
+  session_no: true,
 });
 
 export type InsertFormResponse = z.infer<typeof insertFormResponseSchema>;

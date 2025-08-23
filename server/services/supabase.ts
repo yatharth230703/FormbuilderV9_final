@@ -330,6 +330,189 @@ export async function createFormResponse(
 }
 
 /**
+ * Gets the next session number for a form
+ * @param formId The form config ID
+ * @returns The next session number to use
+ */
+export async function getNextSessionNumber(formId: number): Promise<number> {
+  if (!supabase) {
+    throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+  }
+
+  const { data, error } = await supabase
+    .from('form_responses')
+    .select('session_no')
+    .eq('form_config_id', formId)
+    .order('session_no', { ascending: false })
+    .limit(1);
+
+  if (error) {
+    console.error('Supabase error getting next session number:', error);
+    throw new Error(`Failed to get next session number: ${error.message}`);
+  }
+
+  // Return next session number (starting from 1 if no sessions exist)
+  const maxSession = data?.[0]?.session_no || 0;
+  return maxSession + 1;
+}
+
+/**
+ * Creates a new session entry in form_responses for temporary response tracking
+ * @param formId The form config ID  
+ * @param sessionNo The session number
+ * @param formData The form metadata (label, language, domain, etc.)
+ * @returns The ID of the newly created session entry
+ */
+export async function createFormSession(
+  formId: number,
+  sessionNo: number,
+  formData: {
+    label: string;
+    language?: string;
+    domain?: string | null;
+    userUuid?: string | null;
+  }
+): Promise<number> {
+  if (!supabase) {
+    throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+  }
+
+  const { data, error } = await supabase
+    .from('form_responses')
+    .insert([
+      {
+        label: formData.label,
+        language: formData.language || 'en',
+        domain: formData.domain,
+        form_config_id: formId,
+        user_uuid: formData.userUuid,
+        session_no: sessionNo,
+        temp_response: {}, // Start with empty temp response
+        response: null // Main response stays null until form is submitted
+      }
+    ])
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error('Supabase error creating form session:', error);
+    throw new Error(`Failed to create form session: ${error.message}`);
+  }
+
+  console.log(`[Session] Created new session ${sessionNo} for form ${formId} with ID ${data.id}`);
+  return data.id;
+}
+
+/**
+ * Updates the temporary response for a session
+ * @param sessionId The session entry ID
+ * @param tempResponse The updated temporary response object
+ */
+export async function updateTempResponse(
+  sessionId: number,
+  tempResponse: Record<string, any>
+): Promise<void> {
+  if (!supabase) {
+    throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+  }
+
+  const { error } = await supabase
+    .from('form_responses')
+    .update({ temp_response: tempResponse })
+    .eq('id', sessionId);
+
+  if (error) {
+    console.error('Supabase error updating temp response:', error);
+    throw new Error(`Failed to update temp response: ${error.message}`);
+  }
+
+  console.log(`[Session] Updated temp response for session ID ${sessionId}`);
+}
+
+/**
+ * Gets existing session for a form (checks if there's an active session with null response)
+ * Note: This function is now deprecated - we always create new sessions for each form interaction
+ * @param formId The form config ID
+ * @returns Session data if exists, null otherwise
+ */
+export async function getActiveSession(formId: number): Promise<{ id: number; session_no: number; temp_response: Record<string, any> } | null> {
+  // Always return null to force creation of new sessions
+  // This ensures each form interaction gets a fresh session
+  return null;
+}
+
+/**
+ * Completes a form session by updating the response field and clearing temp_response
+ * @param sessionId The session entry ID
+ * @param finalResponse The final form response data
+ * @returns True if successful, false otherwise
+ */
+export async function completeFormSession(
+  sessionId: number,
+  finalResponse: Record<string, any>
+): Promise<boolean> {
+  if (!supabase) {
+    throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+  }
+
+  try {
+    const { error } = await supabase
+      .from('form_responses')
+      .update({ 
+        response: finalResponse,
+        temp_response: null // Clear temp response since we now have the final response
+      })
+      .eq('id', sessionId);
+
+    if (error) {
+      console.error('Supabase error completing form session:', error);
+      return false;
+    }
+
+    console.log(`[Session] Completed session ${sessionId} - moved temp response to final response`);
+    return true;
+  } catch (error) {
+    console.error('Error in completeFormSession:', error);
+    return false;
+  }
+}
+
+/**
+ * Gets the current session ID for a user's form interaction
+ * @param formId The form config ID
+ * @param sessionNo The session number
+ * @returns The session ID if found, null otherwise
+ */
+export async function getSessionId(formId: number, sessionNo: number): Promise<number | null> {
+  if (!supabase) {
+    throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('form_responses')
+      .select('id')
+      .eq('form_config_id', formId)
+      .eq('session_no', sessionNo)
+      .is('response', null) // Only get sessions that haven't been completed yet
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null; // Not found
+      }
+      console.error('Supabase error getting session ID:', error);
+      throw new Error(`Failed to get session ID: ${error.message}`);
+    }
+
+    return data?.id || null;
+  } catch (error) {
+    console.error('Error in getSessionId:', error);
+    return null;
+  }
+}
+
+/**
  * Fetches all form responses from Supabase
  * @returns Array of form responses
  */

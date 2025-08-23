@@ -872,6 +872,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Create new form session for temporary response tracking
+  app.post("/api/forms/:id/session", async (req, res) => {
+    console.log("[Session] NEW session creation requested");
+    try {
+      const formId = parseInt(req.params.id);
+      if (isNaN(formId)) {
+        return res.status(400).json({ error: "Invalid form ID" });
+      }
+
+      // Get the form to validate it exists and get metadata
+      const form = await supabaseService.getFormConfig(formId);
+      if (!form) {
+        return res.status(404).json({ error: "Form not found" });
+      }
+
+      // Always create a new session for each form interaction
+      // This ensures no data contamination between different users/sessions
+      const sessionNo = await supabaseService.getNextSessionNumber(formId);
+      const sessionId = await supabaseService.createFormSession(formId, sessionNo, {
+        label: form.label,
+        language: form.language || "en",
+        domain: form.domain,
+        userUuid: form.user_uuid
+      });
+
+      console.log(`[Session] Created NEW session ${sessionNo} for form ${formId} with ID ${sessionId}`);
+      return res.json({
+        sessionId,
+        sessionNo,
+        tempResponse: {}
+      });
+
+    } catch (error: any) {
+      console.error("[Session] Error creating new session:", error);
+      return res.status(500).json({ error: error.message || "Failed to create session" });
+    }
+  });
+
+  // Update temporary response for a session
+  app.patch("/api/sessions/:sessionId/temp-response", async (req, res) => {
+    console.log("[Session] Temp response update requested");
+    try {
+      const sessionId = parseInt(req.params.sessionId);
+      if (isNaN(sessionId)) {
+        return res.status(400).json({ error: "Invalid session ID" });
+      }
+
+      const { tempResponse } = req.body;
+      if (!tempResponse || typeof tempResponse !== 'object') {
+        return res.status(400).json({ error: "Invalid temp response data" });
+      }
+
+      await supabaseService.updateTempResponse(sessionId, tempResponse);
+      console.log(`[Session] Updated temp response for session ${sessionId}`);
+      
+      return res.json({ success: true });
+
+    } catch (error: any) {
+      console.error("[Session] Error updating temp response:", error);
+      return res.status(500).json({ error: error.message || "Failed to update temp response" });
+    }
+  });
+
   // Submit a form response
   app.post("/api/forms/:id/submit", async (req, res) => {
     console.log("[Form Submission] Form submission received");
@@ -893,15 +956,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[Form Submission] No form_console config found for formId ${formId}`);
       }
 
-      // Create the form response with proper parameter order
-      const savedResponseId = await supabaseService.createFormResponse(
-        form.label,
-        req.body,
-        form.language || "en", // Use form's actual language
-        form.domain || null,   // Use form's actual domain
-        formId,
-        form.user_uuid || null, // Use form's actual user_uuid
-      );
+      // Extract session info from request body
+      const { _sessionInfo, ...formResponses } = req.body;
+      const sessionId = _sessionInfo?.sessionId;
+      const sessionNo = _sessionInfo?.sessionNo;
+      
+      console.log(`[Form Submission] Session info received: sessionId=${sessionId}, sessionNo=${sessionNo}`);
+
+      let savedResponseId: number;
+
+      // If we have session info, try to complete the existing session
+      if (sessionId && sessionNo) {
+        console.log(`[Form Submission] Attempting to complete existing session ${sessionId}`);
+        const success = await supabaseService.completeFormSession(sessionId, formResponses);
+        
+        if (success) {
+          console.log(`[Form Submission] Successfully completed session ${sessionId}`);
+          savedResponseId = sessionId; // Use the existing session ID
+        } else {
+          console.log(`[Form Submission] Failed to complete session ${sessionId}, creating new response`);
+          // Fallback: create new response if session completion fails
+          savedResponseId = await supabaseService.createFormResponse(
+            form.label,
+            formResponses,
+            form.language || "en",
+            form.domain || null,
+            formId,
+            form.user_uuid || null,
+          );
+        }
+      } else {
+        console.log(`[Form Submission] No session info provided, creating new response`);
+        // No session info, create new response (legacy behavior)
+        savedResponseId = await supabaseService.createFormResponse(
+          form.label,
+          formResponses,
+          form.language || "en",
+          form.domain || null,
+          formId,
+          form.user_uuid || null,
+        );
+      }
+
       console.log(`[Form Submission] Form response saved with ID ${savedResponseId} for formId ${formId}`);
 
 //COMMENTING OUT THE EMAIL SENDING FOR NOW 
@@ -909,7 +1005,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 //       // --- INTEGRATE CONSOLE FUNCTION EXECUTION ---
 //       try {
 //         console.log(`[Form Submission] Executing console functions for formId ${formId}...`);
-//         await executeConsoleActions(formId, req.body, form.label);
+//         await executeConsoleActions(formId, formResponses, form.label);
 //         console.log(`[Form Submission] Console functions executed for formId ${formId}`);
 //       } catch (consoleError) {
 //         console.error(`[Form Submission] Error executing console functions for formId ${formId}:`, consoleError);
@@ -919,17 +1015,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 //       // Send email notification if user provided an email
 //       try {
 //         // Look for email in the response data (common field names)
-//         // const userEmail = req.body.email || req.body.Email || req.body.emailAddress || 
-//         //                  req.body['Email Address'] || req.body['email_address'] ||
-//         //                  req.body.contact?.email || req.body.Contact?.email ||
-//         //                  req.body['Your Contact Information 📧']?.email;
+//         // const userEmail = formResponses.email || formResponses.Email || formResponses.emailAddress || 
+//         //                  formResponses['Email Address'] || formResponses['email_address'] ||
+//         //                  formResponses.contact?.email || formResponses.Contact?.email ||
+//         //                  formResponses['Your Contact Information 📧']?.email;
 //         console.log("email loop entered");
 // /////////////CHANGEDLOCAL        
-//         fileLogger.log('form-submission', `Form submission data: ${JSON.stringify(req.body)}`);
+//         fileLogger.log('form-submission', `Form submission data: ${JSON.stringify(formResponses)}`);
 
-//         const keys = Object.keys(req.body);
+//         const keys = Object.keys(formResponses);
 //         const lastKey = keys[keys.length - 1];
-//         const userEmail = req.body[lastKey]?.email;
+//         const userEmail = formResponses[lastKey]?.email;
 // ////////////CHANGEDLOCAL
 //         if (userEmail && form.user_uuid) {
 //           // Get form creator's email
@@ -940,7 +1036,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 //               formCreator.email,
 //               userEmail,
 //               form.label,
-//               req.body
+//               formResponses
 //             );
 //             console.log(`email sent to ${userEmail} for form , this is route proof`)
 //           }
