@@ -147,7 +147,7 @@ export default function LocationStep({ step }: LocationStepProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col pt-4 sm:pt-6 pb-2 max-w-full px-4">
+    <div className="flex-1 flex flex-col pt-1 sm:pt-2 pb-2 max-w-full px-4">
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}

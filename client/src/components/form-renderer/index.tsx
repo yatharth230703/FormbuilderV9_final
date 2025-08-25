@@ -1,17 +1,17 @@
 import { useMemo, useEffect } from "react";
 import { useFormContext } from "@/contexts/form-context";
 import { useLocation } from "wouter";
-import TilesStep from "./form-steps/tiles-step.tsx";
-import MultiSelectStep from "./form-steps/multi-select-step";
-import DropdownStep from "./form-steps/dropdown-step";
-import SliderStep from "./form-steps/slider-step";
-import FollowupStep from "./form-steps/followup-step";
-import TextboxStep from "./form-steps/textbox-step";
-import LocationStep from "./form-steps/location-step";
-import ContactStep from "./form-steps/contact-step";
-import DocumentUploadStep from "./form-steps/document-upload-step";
-import DocumentInfoStep from "./form-steps/document-info-step";
-import SubmissionStep from "./form-steps/submission-step";
+import TilesStep from "./embed-form-steps/tiles-step";
+import MultiSelectStep from "./embed-form-steps/multi-select-step";
+import DropdownStep from "./embed-form-steps/dropdown-step";
+import SliderStep from "./embed-form-steps/slider-step";
+import FollowupStep from "./embed-form-steps/followup-step";
+import TextboxStep from "./embed-form-steps/textbox-step";
+import LocationStep from "./embed-form-steps/location-step";
+import ContactStep from "./embed-form-steps/contact-step";
+import DocumentUploadStep from "./embed-form-steps/document-upload-step";
+import DocumentInfoStep from "./embed-form-steps/document-info-step";
+import SubmissionStep from "./embed-form-steps/submission-step";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
@@ -221,7 +221,7 @@ export default function FormRenderer({
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-auto px-6 pt-12 pb-4 hide-scrollbar">
+      <div className="flex-1 overflow-auto px-6 pt-4 pb-4 hide-scrollbar">
         <div className="mb-4">{currentStepContent}</div>
       </div>
 
