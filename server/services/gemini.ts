@@ -283,12 +283,11 @@ Follow these strict rules:
 1. Each page should have 1-2 elements (except for tiles which can have up to 6)
 2. Layout must be designed for 16:9 aspect ratio
 3. Use minimal brand colors (1-2 brand colors globally)
-4. Use emojis or icons from the lucide-react library
-5. Always include a location question asking for postal code and country
-6. Always include a contact step to collect user's contact information
-7. Each tile or multiSelect step must have exactly 4 or 6 options
-8. Keep descriptions under each option very short (less than 4 words)
-9. Always use modern, concise language with emojis
+4. Always include a location question asking for postal code and country
+5. Always include a contact step to collect user's contact information
+6. Each tile or multiSelect step must have exactly 4 or 6 options
+7. Keep descriptions under each option very short (less than 4 words)
+8. Always use modern, concise language .
 
 
 `;

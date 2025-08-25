@@ -50,7 +50,7 @@ ${JSON.stringify(LUCIDE_ICONS)}
 
 Return ONLY a JSON array of icon names (strings) of the same length,
 where each icon semantically matches the corresponding title.
-Only use icons from the provided list. If no perfect match exists, choose the closest semantic match.
+Only use icons from the provided list. If no perfect match exists, choose the closest semantic match. You HAVE TO choose the closest semantic match in all the cases , default is just not an option.
 
 Example input: ["Home Page", "Contact Us", "About", "Services"]
 Example output: ["Home", "Mail", "Users", "Settings"]
