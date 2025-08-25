@@ -661,6 +661,11 @@ export async function generateFormFromPrompt(
             ],
           },
         ],
+        tools: [
+          {
+            "googleSearch": {}
+          }
+        ],
         generationConfig: {
           temperature: 0.2,
           topP: 0.8,
@@ -968,12 +973,15 @@ export async function generateFormFromPrompt(
           // stitch them back _onto_ each option – preserve everything else on `step`
           formConfig.steps.forEach((step) => {
             if (Array.isArray((step as any).options)) {
-              (step as any).options = (step as any).options.map((opt: any) => ({
-                ...opt,
-                icon: flatIcons[idx] || "Circle",
-                emoji: flatEmojis[idx] || "❓",
-              }));
-              idx++;
+              (step as any).options = (step as any).options.map((opt: any) => {
+                const result = {
+                  ...opt,
+                  icon: flatIcons[idx] || "Circle",
+                  emoji: flatEmojis[idx] || "❓",
+                };
+                idx++; // Increment for each option, not each step
+                return result;
+              });
             }
           });
         }
@@ -1093,36 +1101,80 @@ where each emoji semantically matches the corresponding title.
 Example output: ["🍽️","📍","🛍️",…]
   `.trim();
 
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [
-        { role: "user", parts: [{ text: prompt }] }
-      ],
-      generationConfig: {
-        temperature: 0.2,
-        topP: 0.8,
-        topK: 40,
-        maxOutputTokens: 256
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          { role: "user", parts: [{ text: prompt }] }
+        ],
+        generationConfig: {
+          temperature: 0.2,
+          topP: 0.8,
+          topK: 40,
+          maxOutputTokens: 256,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "ARRAY",
+            items: { type: "STRING" }
+          }
+        }
+      })
+    });
+
+    if (!res.ok) {
+      console.error("Emoji API error:", await res.text());
+      throw new Error("Failed to generate emojis");
+    }
+
+    const payload = await res.json();
+    const part: any = payload?.candidates?.[0]?.content?.parts?.[0] ?? {};
+    let emojisRaw: unknown = null;
+
+    // 1) Preferred: structured JSON returned directly
+    if (Array.isArray(part.json)) {
+      emojisRaw = part.json;
+    } else {
+      // 2) Fallback: JSON delivered as text (possibly wrapped in ```json fences)
+      let text = (part.text || "").trim();
+      if (text.startsWith("```")) {
+        // Remove any ```json / ``` wrappers
+        text = text.replace(/```json|```/gi, "").trim();
       }
-    })
-  });
+      // Attempt to parse the whole string first
+      try {
+        emojisRaw = JSON.parse(text);
+      } catch {
+        // If that fails, search the first JSON array inside the text
+        const match = text.match(/\[[\s\S]*?\]/);
+        if (match) {
+          try {
+            emojisRaw = JSON.parse(match[0]);
+          } catch {
+            /* ignore – will be handled below */
+          }
+        }
+      }
+    }
 
-  if (!res.ok) {
-    console.error("Emoji API error:", await res.text());
-    throw new Error("Failed to generate emojis");
+    if (!Array.isArray(emojisRaw)) {
+      throw new Error("Invalid emoji response format");
+    }
+
+    let emojis = emojisRaw as string[];
+    
+    // Ensure we have the right number of emojis
+    while (emojis.length < optionTitles.length) {
+      emojis.push("❓");
+    }
+    
+    return emojis.slice(0, optionTitles.length);
+  } catch (error) {
+    console.error("Error generating emojis:", error);
+    // Fallback to default emojis
+    return optionTitles.map(() => "❓");
   }
-
-  const payload = await res.json();
-  const text = payload.candidates?.[0]?.content?.parts?.[0]?.text || "";
-  // extract JSON array from response
-  const match = text.match(/\[[\s\S]*\]/);
-  if (!match) throw new Error("Invalid emoji response");
-  let emojis = JSON.parse(match[0]) as string[];
-
-  // No longer needed since we use icons instead of emojis
-  return [];
 }
 
 /**
