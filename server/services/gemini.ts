@@ -1113,7 +1113,7 @@ Example output: ["🍽️","📍","🛍️",…]
           temperature: 0.2,
           topP: 0.8,
           topK: 40,
-          maxOutputTokens: 256,
+          maxOutputTokens: 60000,
           responseMimeType: "application/json",
           responseSchema: {
             type: "ARRAY",
