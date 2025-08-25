@@ -125,6 +125,35 @@ interface LeftPanelProps {
     return `#${darkerR.toString(16).padStart(2, '0')}${darkerG.toString(16).padStart(2, '0')}${darkerB.toString(16).padStart(2, '0')}`;
   };
 
+  // Helper: convert HEX -> HSL string "H S% L%" for Tailwind CSS variables
+  const hexToHslString = (hex: string): string => {
+    const clean = hex.replace('#', '');
+    const r = parseInt(clean.substring(0, 2), 16) / 255;
+    const g = parseInt(clean.substring(2, 4), 16) / 255;
+    const b = parseInt(clean.substring(4, 6), 16) / 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0;
+    let s = 0;
+    const l = (max + min) / 2;
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r:
+          h = (g - b) / d + (g < b ? 6 : 0);
+          break;
+        case g:
+          h = (b - r) / d + 2;
+          break;
+        default:
+          h = (r - g) / d + 4;
+      }
+      h /= 6;
+    }
+    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+  };
+
   // Apply custom theme colors
   const applyCustomTheme = () => {
     // Generate darker shade
@@ -137,6 +166,12 @@ interface LeftPanelProps {
     document.documentElement.style.setProperty('--color-accent', accentColor);
     document.documentElement.style.setProperty('--color-background', '#ffffff');
     document.documentElement.style.setProperty('--color-foreground', '#1e293b');
+    
+    // Also set Tailwind CSS variable --primary so utilities like bg-primary/10 use the chosen color
+    try {
+      const hsl = hexToHslString(primaryColor);
+      document.documentElement.style.setProperty("--primary", hsl);
+    } catch {}
 
     updateThemeColor('primary', primaryColor);
     updateThemeColor('secondary', secondaryColor);
@@ -244,6 +279,35 @@ interface LeftPanelProps {
       document.head.appendChild(link);
     });
     
+    // Helper: convert HEX -> HSL string "H S% L%" for Tailwind CSS variables
+    const hexToHslString = (hex: string): string => {
+      const clean = hex.replace('#', '');
+      const r = parseInt(clean.substring(0, 2), 16) / 255;
+      const g = parseInt(clean.substring(2, 4), 16) / 255;
+      const b = parseInt(clean.substring(4, 6), 16) / 255;
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      let h = 0;
+      let s = 0;
+      const l = (max + min) / 2;
+      if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case r:
+            h = (g - b) / d + (g < b ? 6 : 0);
+            break;
+          case g:
+            h = (b - r) / d + 2;
+            break;
+          default:
+            h = (r - g) / d + 4;
+        }
+        h /= 6;
+      }
+      return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+    };
+
     // Load saved custom theme or set defaults
     const savedPrimary = localStorage.getItem('custom-theme-primary') || "#3b82f6";
     const savedSecondary = localStorage.getItem('custom-theme-secondary') || "#a855f7";
@@ -263,9 +327,15 @@ interface LeftPanelProps {
     document.documentElement.style.setProperty('--color-background', '#ffffff');
     document.documentElement.style.setProperty('--color-foreground', '#1e293b');
     document.documentElement.style.setProperty('--font-primary', savedFont);
+    
+    // Also set Tailwind CSS variable --primary so utilities like bg-primary/10 use the chosen color
+    try {
+      const hsl = hexToHslString(savedPrimary);
+      document.documentElement.style.setProperty("--primary", hsl);
+    } catch {}
   }, []);
 
-  // Add CSS variables for theming
+      // Add CSS variables for theming
   useEffect(() => {
     const styleEl = document.createElement("style");
     styleEl.textContent = `
@@ -284,6 +354,12 @@ interface LeftPanelProps {
       .hover\\:bg-primary-dark:hover { background-color: var(--color-primary-dark); }
     `;
     document.head.appendChild(styleEl);
+    
+    // Also set Tailwind CSS variable --primary so utilities like bg-primary/10 use the chosen color
+    try {
+      const hsl = hexToHslString(primaryColor);
+      document.documentElement.style.setProperty("--primary", hsl);
+    } catch {}
     
     // Return a cleanup function
     return function cleanup() {
