@@ -68,7 +68,7 @@ Example output: ["Home", "Mail", "Users", "Settings"]
           temperature: 0.1,
           topP: 0.8,
           topK: 40,
-          maxOutputTokens: 8192,
+          maxOutputTokens: 60000,
           responseMimeType: "application/json",
           responseSchema: {
             type: "ARRAY",

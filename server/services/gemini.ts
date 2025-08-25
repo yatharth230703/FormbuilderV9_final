@@ -665,7 +665,7 @@ export async function generateFormFromPrompt(
           temperature: 0.2,
           topP: 0.8,
           topK: 40,
-          maxOutputTokens: 8192,
+          maxOutputTokens: 60000,
         },
       }),
     });
@@ -746,7 +746,7 @@ export async function generateFormFromPrompt(
                 temperature: 0.1, // Reduced temperature for more focused output
                 topP: 0.8,
                 topK: 40,
-                maxOutputTokens: 8192,
+                maxOutputTokens: 60000,
               },
             }),
           });
@@ -1159,7 +1159,7 @@ Make sure the 'type' key strictly has one of the following values from the list 
         temperature: 0.2,
         topP: 0.8,
         topK: 40,
-        maxOutputTokens: 8192,
+        maxOutputTokens: 60000,
       },
     }),
   });
