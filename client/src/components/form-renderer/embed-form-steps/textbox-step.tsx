@@ -24,15 +24,16 @@ export default function TextboxStep({ step }: TextboxStepProps) {
     const newValue = e.target.value;
     setValue(newValue);
 
-    // Validate if required (ignore minLength)
-    if (step.validation?.required && !newValue.trim()) {
-      setError('This field is required');
-    } else {
+    // Clear error when user starts typing
+    if (error) {
       setError(null);
     }
 
+    // Update response with the new value
     updateResponse(step.title, newValue);
   };
+
+  const isOptional = !step.validation?.required;
 
   return (
     <div className="flex-1 flex flex-col pt-1 sm:pt-2 pb-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar">
@@ -51,8 +52,6 @@ export default function TextboxStep({ step }: TextboxStepProps) {
         {error && (
           <p className="mt-2 text-sm text-red-500">{error}</p>
         )}
-
-        
       </div>
     </div>
   );
