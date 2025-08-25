@@ -19,7 +19,7 @@ Output ONLY valid JSON without any explanation or extra text.
 Make sure you extract all keywords from the prompt and include relevant questions that address the user's specific needs. If in the given prompt you feel the need to add a document upload step , add it .This can usually be deduced by looking for keywords like 'upload document' or 'try our service' or 'get a quote'.
 
 CRITICAL RULES FOR TITLES AND QUESTIONS:
-1. Each title and subtitle MUST be unique across all steps, and should never be untitled. It should hold significance. The title must be a question and the subtitle must be related to that question. No need for very long titles or subtitles, they should be to the point .
+1. Each title and subtitle MUST be unique across all steps, and should never be untitled. It should hold significance. The title must be a question and the subtitle must be related to that question. No need for very long titles or subtitles, they should be to the point . FOR LOCATION STEP SUBTITLES ONLY POSTAL CODE IS REQUIRED SINCE THAT IS THE ONLY VALUE WE ASK OUR USER TO INPUT 
 2. Never repeat the same question in different formats
 3. Avoid semantically similar questions (e.g., "What's your budget?" vs "How much can you spend?")
 4. Use distinct icons for each step

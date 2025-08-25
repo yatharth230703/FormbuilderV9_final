@@ -169,34 +169,23 @@ export default function LocationStep({ step }: LocationStepProps) {
             type="text" 
             value={addressInput}
             onChange={handleAddressInputChange}
-            className="w-full p-4 pr-12 text-base border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-            placeholder="123 Main Street, City, State, 12345"
+            className="w-full p-4 text-base border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+            placeholder="Please enter pincode"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 validateLocation();
               }
             }}
           />
-          <Button 
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-primary p-1"
-            variant="ghost"
-            size="sm"
-            onClick={validateLocation}
-            disabled={isValidating}
-          >
-            {isValidating ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Search className="h-5 w-5" />
-            )}
-          </Button>
+          {/* Check icon for valid postal code */}
+          {extractedPostalCode && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500">
+              <CheckCircle className="h-5 w-5" />
+            </div>
+          )}
+
         </div>
-        {/* Show extracted postal code if found */}
-        {extractedPostalCode && !validationStatus && (
-          <div className="mt-2 text-sm text-gray-600">
-            Postal Code detected: <span className="font-medium">{extractedPostalCode}</span>
-          </div>
-        )}
+
 
         <AnimatePresence mode="wait">
           {validationStatus === 'error' && (
