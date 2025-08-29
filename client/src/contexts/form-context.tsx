@@ -40,6 +40,8 @@ interface FormContextType {
   sessionNo: number | null;
   initializeSession: () => Promise<void>;
   getSessionInfo: () => { sessionId: number | null; sessionNo: number | null };
+  // Document upload tracking
+  hasDocumentUploaded: () => boolean;
 }
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -216,9 +218,50 @@ useEffect(() => {
     }
   };
 
+  // Helper function to check if a document was actually uploaded
+  const hasDocumentUploaded = (): boolean => {
+    if (!formConfig?.steps) return false;
+    
+    const documentUploadStep = formConfig.steps.find(step => step.type === 'documentUpload');
+    if (!documentUploadStep) return false;
+    
+    const documentResponse = formResponses[documentUploadStep.title];
+    
+    // Check if there's a valid document response with actual file content
+    return !!documentResponse && 
+           typeof documentResponse === 'object' && 
+           (documentResponse.file || documentResponse.extractedText || documentResponse.documentContent);
+  };
+
   // Move to the next step
   const nextStep = () => {
     if (currentStep < totalSteps) {
+      // Check if we're on a document upload step and it's being skipped
+      if (formConfig?.steps && currentStep <= formConfig.steps.length) {
+        const currentStepData = formConfig.steps[currentStep - 1];
+        const nextStepData = formConfig.steps[currentStep];
+        
+        // If current step is documentUpload and it's being skipped (no response), 
+        // and next step is documentInfo, skip the documentInfo step too
+        if (currentStepData?.type === 'documentUpload' && 
+            nextStepData?.type === 'documentInfo' && 
+            !formResponses[currentStepData.title]) {
+          // Skip both documentUpload and documentInfo steps
+          setCurrentStep(currentStep + 2);
+          return;
+        }
+      }
+      
+      // Check if we're moving to a documentInfo step and no document was uploaded
+      if (formConfig?.steps && currentStep < formConfig.steps.length) {
+        const nextStepData = formConfig.steps[currentStep];
+        if (nextStepData?.type === 'documentInfo' && !hasDocumentUploaded()) {
+          // Skip documentInfo step if no document was uploaded
+          setCurrentStep(currentStep + 2);
+          return;
+        }
+      }
+      
       setCurrentStep(currentStep + 1);
     }
   };
@@ -327,12 +370,17 @@ useEffect(() => {
         return true;
 
       case 'documentUpload':
-        // Document upload should always have a response (even if placeholder)
-        return !!stepResponse;
+        // Document upload is skippable if validation.required is false
+        if (step.validation?.required) {
+          return !!stepResponse;
+        }
+        // For skippable document upload, we consider it valid even without a response
+        // but we'll track if something was actually uploaded for the document info step
+        return true;
 
       case 'documentInfo':
-        // Document info always has content, so always valid
-        return true;
+        // Document info is only valid if a document was actually uploaded
+        return hasDocumentUploaded();
 
       default:
         return true;
@@ -439,7 +487,9 @@ useEffect(() => {
         sessionId,
         sessionNo,
         initializeSession,
-        getSessionInfo
+        getSessionInfo,
+        // document upload tracking
+        hasDocumentUploaded
       }}
     >
       {children}

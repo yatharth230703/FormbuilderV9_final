@@ -13,7 +13,7 @@ import DocumentUploadStep from "./embed-form-steps/document-upload-step";
 import DocumentInfoStep from "./embed-form-steps/document-info-step";
 import SubmissionStep from "./embed-form-steps/submission-step";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, SkipForward } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { FormConfig } from "@shared/types";
@@ -43,6 +43,7 @@ export default function FormRenderer({
     validateCurrentStep,
     isStepValid,
     resetResponses,
+    hasDocumentUploaded,
   } = useFormContext();
 
   // Use prop formConfig if provided, otherwise use context formConfig
@@ -54,6 +55,17 @@ export default function FormRenderer({
       setFormConfig(propFormConfig);
     }
   }, [propFormConfig, contextFormConfig, setFormConfig]);
+
+  // Auto-advance past document info steps when no document is available
+  useEffect(() => {
+    if (formConfig?.steps && currentStep <= formConfig.steps.length) {
+      const currentStepData = formConfig.steps[currentStep - 1];
+      if (currentStepData?.type === 'documentInfo' && !hasDocumentUploaded()) {
+        // Automatically advance past document info step if no document was uploaded
+        nextStep();
+      }
+    }
+  }, [currentStep, formConfig, hasDocumentUploaded, nextStep]);
 
   const { toast } = useToast();
 
@@ -185,6 +197,24 @@ export default function FormRenderer({
       case "documentUpload":
         return <DocumentUploadStep step={step} />;
       case "documentInfo":
+        // Check if a document was actually uploaded
+        if (!hasDocumentUploaded()) {
+          return (
+            <div className="flex flex-col items-center justify-center p-8 text-center">
+              <SkipForward className="h-16 w-16 text-gray-400 mb-4" />
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">No Document Available</h3>
+              <p className="text-gray-500 mb-6">
+                Since no document was uploaded in the previous step, this step has been skipped.
+              </p>
+              <Button
+                onClick={nextStep}
+                className="bg-primary text-white hover:bg-primary/90"
+              >
+                Continue to Next Step
+              </Button>
+            </div>
+          );
+        }
         return <DocumentInfoStep step={step} />;
       default:
         return null;
@@ -203,6 +233,14 @@ export default function FormRenderer({
     if (!formConfig?.steps) return false;
     const step = formConfig.steps[currentStep - 1];
     return step?.type === "tiles";
+  }, [currentStep, formConfig]);
+
+  // Check if current step is skippable
+  const isCurrentStepSkippable = useMemo(() => {
+    if (!formConfig?.steps) return false;
+    const step = formConfig.steps[currentStep - 1];
+    // Check if the step has validation and is marked as not required
+    return 'validation' in step && step.validation?.required === false;
   }, [currentStep, formConfig]);
 
   if (!formConfig) {
@@ -252,7 +290,18 @@ export default function FormRenderer({
             </Button>
           )}
         </div>
-        {!isFormComplete && !isCurrentStepTiles && (
+        <div className="flex gap-2">
+          {!isFormComplete && !isCurrentStepTiles && isCurrentStepSkippable && (
+            <Button
+              variant="outline"
+              className="text-gray-500 hover:bg-gray-100 border-gray-300"
+              onClick={handleNextStep}
+              disabled={isSubmitting}
+            >
+              Skip
+            </Button>
+          )}
+          {!isFormComplete && !isCurrentStepTiles && (
             <Button
               className={`transition-all duration-200 flex items-center ${
                 isCurrentStepValid
@@ -268,6 +317,7 @@ export default function FormRenderer({
               )}
             </Button>
           )}
+        </div>
       </div>
     </div>
   );

@@ -33,6 +33,9 @@ CRITICAL RULES FOR TITLES AND QUESTIONS:
 11. If and only if there is a document upload step involved,  make sure that the previous steps are asking questions / contain content that is relevant to the document upload step and the document that needs to be uploaded. Let us say for example , if the document upload step is asking for a resume , make sure that the previous steps are asking questions like 'What is your current job title?' , 'What is your current company?' etc. Or if the document upload step is asking for a business plan , make sure that the previous steps are asking questions like 'What is your business idea?' , 'What is your business model?' etc.
 12. Please make sure that the steps before the document upload step are the only ones that ask document upload related questions, rest can be generic based on prompt.
 13. Always check if a number/amount of slides or questions is given. If so , generate the exact amount of slides asked , else generate about 7-8 slides.
+14. Document upload steps should always be skippable (required: false) to allow users to proceed without uploading documents.
+15. When a document upload step is skipped, the document info step should also be automatically skipped since there's no document to process.
+16. Textbox steps should be skippable by default (required: false) to allow users to proceed without providing detailed text responses.
 
 
 The following form configuration is to be used as a reference for any configs that you generate. Focus largely on structure and keynames, values are placeholders:
@@ -132,7 +135,7 @@ The following form configuration is to be used as a reference for any configs th
       placeholder: "Placeholder content",
       rows: num_rows,
       validation: {
-        required: true,
+        required: false,
         minLength: 20,
       },
     },
@@ -152,7 +155,7 @@ The following form configuration is to be used as a reference for any configs th
     {
       type: "documentUpload",
       title: "Upload Your Document",
-      subtitle: "Please upload your document for processing",
+      subtitle: "Please upload your document for processing (optional)",
       config: {
         acceptedTypes: [".pdf", ".doc", ".docx", ".txt"],
         maxFileSize: "10MB",
@@ -389,7 +392,7 @@ const demoFormConfig: FormConfig = {
       placeholder: "Enter project details here...",
       rows: 4,
       validation: {
-        required: true,
+        required: false,
         minLength: 20,
       },
     },
