@@ -25,6 +25,7 @@ CRITICAL RULES FOR TITLES AND QUESTIONS:
 4. Use distinct icons for each step
 5. Ensure each option within tiles/multiSelect steps has a unique title
 6. Make sure that the tiles step is always having only and exclusively 4 options . No other amount of options ,only 4 .
+7. Make sure that the multiSelect step is always having only and exclusively 4 options . No other amount of options ,only 4 .
 7. Make each step focus on a distinct aspect of information gathering
 8. Make sure the dropdown slide has anywhere between 3-6 options . no more no less
 9. Make sure the 'type' key strictly has one of the following values from the list , absolutely nothing else: [ tiles, multiSelect, dropdown, slider, followup, textbox, location, documentUpload ,documentInfo ,  contact]
