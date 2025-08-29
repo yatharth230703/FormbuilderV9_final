@@ -287,7 +287,7 @@ useEffect(() => {
         return !!stepResponse && 
           typeof stepResponse === 'object' && 
           'option' in stepResponse && 
-          'value' in stepResponse;
+          'followup' in stepResponse;
 
       case 'textbox':
         // Only require non-empty text if marked required; ignore minLength

@@ -41,6 +41,7 @@ export default function FormRenderer({
     isFormComplete,
     setIsFormComplete,
     validateCurrentStep,
+    isStepValid,
     resetResponses,
   } = useFormContext();
 
@@ -55,6 +56,14 @@ export default function FormRenderer({
   }, [propFormConfig, contextFormConfig, setFormConfig]);
 
   const { toast } = useToast();
+
+  // Check if current step is valid for continue button state
+  const isCurrentStepValid = useMemo(() => {
+    if (!formConfig?.steps || currentStep < 1 || currentStep > formConfig.steps.length) {
+      return false;
+    }
+    return isStepValid(currentStep - 1);
+  }, [formConfig?.steps, currentStep, isStepValid]);
 
   const handleNextStep = () => {
     const isValid = validateCurrentStep();
@@ -245,9 +254,13 @@ export default function FormRenderer({
         </div>
         {!isFormComplete && !isCurrentStepTiles && (
             <Button
-              className="bg-primary text-white hover:bg-primary/90 transition-colors flex items-center"
+              className={`transition-all duration-200 flex items-center ${
+                isCurrentStepValid
+                  ? "bg-primary text-white hover:bg-primary/90"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed hover:bg-gray-300"
+              }`}
               onClick={handleNextStep}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !isCurrentStepValid}
             >
               {nextButtonText}
               {currentStep < totalSteps && (
