@@ -19,7 +19,7 @@ export default function DocumentUploadStep({ step }: DocumentUploadStepProps) {
   useEffect(() => {
     // Set placeholder response on mount
     if (!currentResponse) {
-      const placeholderResponse = "document.txt";
+      const placeholderResponse = "Upload your document";
       setUploadedFile(placeholderResponse);
       updateResponse(step.title, placeholderResponse);
     } else {
@@ -102,7 +102,7 @@ export default function DocumentUploadStep({ step }: DocumentUploadStepProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col pt-6 sm:pt-10 pb-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar space-y-4">
+    <div className="flex-1 flex flex-col pt-2 sm:pt-2 pb-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar space-y-14">
       <div className="space-y-1">
         <h2 className="text-xl font-semibold text-gray-900">
           {step.title}
@@ -114,7 +114,8 @@ export default function DocumentUploadStep({ step }: DocumentUploadStepProps) {
         )}
       </div>
 
-      <div className="max-w-sm mx-auto mt-6">
+      <div className="flex justify-center mt-16">
+        <div className="max-w-sm">
         <div
           className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
             dragActive
@@ -161,6 +162,7 @@ export default function DocumentUploadStep({ step }: DocumentUploadStepProps) {
         <p className="text-xs text-gray-400 text-center mt-1">
           Max: {step.config.maxFileSize}
         </p>
+        </div>
       </div>
     </div>
   );
