@@ -235,13 +235,7 @@ export default function FormRenderer({
     return step?.type === "tiles";
   }, [currentStep, formConfig]);
 
-  // Check if current step is skippable
-  const isCurrentStepSkippable = useMemo(() => {
-    if (!formConfig?.steps) return false;
-    const step = formConfig.steps[currentStep - 1];
-    // Check if the step has validation and is marked as not required
-    return 'validation' in step && step.validation?.required === false;
-  }, [currentStep, formConfig]);
+
 
   if (!formConfig) {
     return (
@@ -291,16 +285,6 @@ export default function FormRenderer({
           )}
         </div>
         <div className="flex gap-2">
-          {!isFormComplete && !isCurrentStepTiles && isCurrentStepSkippable && (
-            <Button
-              variant="outline"
-              className="text-gray-500 hover:bg-gray-100 border-gray-300"
-              onClick={handleNextStep}
-              disabled={isSubmitting}
-            >
-              Skip
-            </Button>
-          )}
           {!isFormComplete && !isCurrentStepTiles && (
             <Button
               className={`transition-all duration-200 flex items-center ${
