@@ -88,6 +88,7 @@ export default function ContactStep({ step }: ContactStepProps) {
           <div>
             <Label htmlFor="firstName" className="block text-sm font-medium mb-1">
               {step.config.labels.firstName}
+              <span className="text-red-500 ml-1">*</span>
             </Label>
             <Input
               id="firstName"
@@ -104,6 +105,7 @@ export default function ContactStep({ step }: ContactStepProps) {
           <div>
             <Label htmlFor="lastName" className="block text-sm font-medium mb-1">
               {step.config.labels.lastName}
+              <span className="text-red-500 ml-1">*</span>
             </Label>
             <Input
               id="lastName"
@@ -117,6 +119,7 @@ export default function ContactStep({ step }: ContactStepProps) {
           <div>
             <Label htmlFor="email" className="block text-sm font-medium mb-1">
               {step.config.labels.email}
+              <span className="text-red-500 ml-1">*</span>
             </Label>
             <Input
               id="email"
