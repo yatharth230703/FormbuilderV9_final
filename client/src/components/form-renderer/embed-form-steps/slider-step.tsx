@@ -72,7 +72,7 @@ export default function SliderStep({ step }: SliderStepProps) {
   const percentage = ((value - step.min) / (step.max - step.min)) * 100;
 
   return (
-    <div className="flex-1 flex flex-col pt-6 sm:pt-10 pb-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar">
+    <div className="flex-1 flex flex-col pt-4 sm:pt-8 pb-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar">
       <h3 className="text-2xl font-bold mb-2 text-center dark:text-white">{step.title}</h3>
       <p className="text-gray-500 dark:text-gray-400 mb-8 text-center">{step.subtitle}</p>
 
@@ -82,7 +82,7 @@ export default function SliderStep({ step }: SliderStepProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-10 text-center relative"
+          className="mb-5 text-center relative min-h-[80px] sm:min-h-[100px] py-2 sm:py-4 flex items-center justify-center overflow-visible"
         >
           {isEditing ? (
             <div className="flex items-center justify-center gap-2">
@@ -131,7 +131,7 @@ export default function SliderStep({ step }: SliderStepProps) {
           ) : (
             <div className="flex items-center justify-center gap-2">
               <motion.span 
-                className="text-5xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent"
+                className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent leading-tight min-h-[60px] flex items-center"
                 key={value}
                 initial={{ scale: 0.8 }}
                 animate={{ scale: 1 }}
