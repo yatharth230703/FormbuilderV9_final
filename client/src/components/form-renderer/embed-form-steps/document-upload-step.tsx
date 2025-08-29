@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useFormContext } from "@/contexts/form-context";
 import { DocumentUploadStep as DocumentUploadStepType } from "@shared/types";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText } from "lucide-react";
+import { Upload, FileText, Loader2 } from "lucide-react";
 
 interface DocumentUploadStepProps {
   step: DocumentUploadStepType;
@@ -13,8 +13,43 @@ export default function DocumentUploadStep({ step }: DocumentUploadStepProps) {
   const { updateResponse, formResponses } = useFormContext();
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [estimatedTime, setEstimatedTime] = useState<string>("");
+  const [startTime, setStartTime] = useState<number | null>(null);
 
   const currentResponse = formResponses[step.title];
+
+  // Calculate estimated upload time based on file size
+  const calculateEstimatedTime = (fileSize: number): string => {
+    // Assume average upload speed of 2 Mbps (250 KB/s) for conservative estimate
+    const uploadSpeedKBps = 250;
+    const fileSizeKB = fileSize / 1024;
+    const estimatedSeconds = fileSizeKB / uploadSpeedKBps;
+    
+    if (estimatedSeconds < 60) {
+      return `${Math.ceil(estimatedSeconds)} seconds`;
+    } else if (estimatedSeconds < 3600) {
+      const minutes = Math.ceil(estimatedSeconds / 60);
+      return `${minutes} minute${minutes > 1 ? 's' : ''}`;
+    } else {
+      const hours = Math.ceil(estimatedSeconds / 3600);
+      return `${hours} hour${hours > 1 ? 's' : ''}`;
+    }
+  };
+
+  // Update progress and estimated time during upload
+  useEffect(() => {
+    if (isUploading && startTime) {
+      const interval = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000;
+        const progress = Math.min((elapsed / 10) * 100, 95); // Simulate progress over 10 seconds
+        setUploadProgress(progress);
+      }, 100);
+
+      return () => clearInterval(interval);
+    }
+  }, [isUploading, startTime]);
 
   useEffect(() => {
     // Set placeholder response on mount
@@ -48,6 +83,14 @@ export default function DocumentUploadStep({ step }: DocumentUploadStepProps) {
 
   const uploadFile = async (file: File) => {
     try {
+      setIsUploading(true);
+      setUploadProgress(0);
+      setStartTime(Date.now());
+      
+      // Calculate and display estimated time
+      const estimatedTimeStr = calculateEstimatedTime(file.size);
+      setEstimatedTime(estimatedTimeStr);
+
       const formData = new FormData();
       formData.append('document', file);
 
@@ -61,6 +104,9 @@ export default function DocumentUploadStep({ step }: DocumentUploadStepProps) {
       }
 
       const result = await response.json();
+      
+      // Complete the progress
+      setUploadProgress(100);
       
       // Extract filename from URL for display
       const urlParts = result.documentUrl.split('/');
@@ -78,6 +124,11 @@ export default function DocumentUploadStep({ step }: DocumentUploadStepProps) {
     } catch (error) {
       console.error('Upload error:', error);
       setUploadedFile('Upload failed');
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+      setEstimatedTime("");
+      setStartTime(null);
     }
   };
 
@@ -132,10 +183,38 @@ export default function DocumentUploadStep({ step }: DocumentUploadStepProps) {
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             accept={step.config.acceptedTypes.join(",")}
             onChange={handleFileInput}
+            disabled={isUploading}
           />
           
           <div className="space-y-3">
-            {uploadedFile ? (
+            {isUploading ? (
+              <div className="space-y-4">
+                <Loader2 className="h-8 w-8 text-primary mx-auto animate-spin" />
+                <div className="space-y-2">
+                  <p className="text-gray-600 text-sm font-medium">Uploading document...</p>
+                  
+                  {/* Progress bar */}
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                  
+                  {/* Progress percentage */}
+                  <p className="text-xs text-gray-500">
+                    {Math.round(uploadProgress)}% complete
+                  </p>
+                  
+                  {/* Estimated time */}
+                  {estimatedTime && (
+                    <p className="text-xs text-gray-600">
+                      Est. time: {estimatedTime}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : uploadedFile ? (
               <div className="flex items-center justify-center space-x-2 text-green-600">
                 <FileText className="h-6 w-6" />
                 <span className="font-medium text-sm">{uploadedFile}</span>
