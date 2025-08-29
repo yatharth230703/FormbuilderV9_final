@@ -69,12 +69,12 @@ export async function getFormConfig(id: number): Promise<FormConfig> {
 }
 
 /**
- * Generate a quotation using AI agent
+ * Generate document analysis using AI agent
  * @param formResponses User's form responses
  * @param documentData All tempJson data
- * @param contentPrompt Content generation prompt
+ * @param contentPrompt The question to answer about the document
  * @param formId Form ID
- * @returns Generated quotation HTML
+ * @returns Generated analysis answer
  */
 export async function generateQuotation({ formResponses, documentData, contentPrompt, formId }: {
   formResponses: any;
@@ -82,12 +82,32 @@ export async function generateQuotation({ formResponses, documentData, contentPr
   contentPrompt: string;
   formId: number | null;
 }): Promise<{ quotation: string }> {
-  return await apiRequest({
+  console.log('[API-SERVICE] generateQuotation called with:', {
+    formResponsesKeys: Object.keys(formResponses || {}),
+    documentDataKeys: Object.keys(documentData || {}),
+    contentPrompt,
+    formId
+  });
+  
+  const requestBody = { formResponses, documentData, contentPrompt, formId };
+  console.log('[API-SERVICE] Request body being sent:', JSON.stringify(requestBody, null, 2));
+  
+  const result = await apiRequest({
     url: '/api/generate-quotation',
     method: 'POST',
-    body: JSON.stringify({ formResponses, documentData, contentPrompt, formId }),
+    body: JSON.stringify(requestBody),
     headers: { 'Content-Type': 'application/json' },
   });
+  
+  console.log('[API-SERVICE] Response received:', result);
+  console.log('[API-SERVICE] Response details:', {
+    hasQuotation: !!result.quotation,
+    quotationLength: result.quotation?.length || 0,
+    quotationPreview: result.quotation?.substring(0, 200) + '...',
+    quotationType: typeof result.quotation
+  });
+  
+  return result;
 }
 
 export async function saveQuotationTemplate(data: {

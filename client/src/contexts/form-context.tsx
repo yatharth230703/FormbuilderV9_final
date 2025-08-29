@@ -197,18 +197,39 @@ useEffect(() => {
             };
 
             // If this is the documentUpload step, add document content from extracted text
-            if (currentStepIndex === documentUploadIndex && typeof value === 'object' && (value.extractedText || value.documentContent)) {
+            if (currentStepIndex === documentUploadIndex && typeof value === 'object' && (value.extractedText || value.documentContent || value.documentUrl)) {
+              console.log('[FORM-CONTEXT] Document upload step detected:', {
+                stepIndex: currentStepIndex,
+                documentUploadIndex,
+                value,
+                valueKeys: Object.keys(value || {})
+              });
+              
               // Store the extracted text if available
               if (value.extractedText) {
                 newTempJson.documentContent = value.extractedText;
+                console.log('[FORM-CONTEXT] Stored extractedText:', value.extractedText.substring(0, 100) + '...');
               } else if (value.documentContent) {
                 newTempJson.documentContent = value.documentContent;
+                console.log('[FORM-CONTEXT] Stored documentContent:', value.documentContent.substring(0, 100) + '...');
+              }
+              
+              // Store the document URL for images
+              if (value.documentUrl) {
+                newTempJson.documentUrl = value.documentUrl;
+                console.log('[FORM-CONTEXT] Stored documentUrl:', value.documentUrl);
               }
 
               // Log tempJson to CLI after document upload
               console.log('\n=== TEMP JSON AFTER DOCUMENT UPLOAD ===');
               console.log(JSON.stringify(newTempJson, null, 2));
               console.log('=== END TEMP JSON ===\n');
+              
+              console.log('[FORM-CONTEXT] Final tempJson after document processing:', {
+                tempJsonKeys: Object.keys(newTempJson),
+                documentContentLength: newTempJson.documentContent?.length || 0,
+                documentUrl: newTempJson.documentUrl
+              });
             }
 
             return newTempJson;
@@ -227,25 +248,50 @@ useEffect(() => {
     
     const documentResponse = formResponses[documentUploadStep.title];
     
+    console.log('[FORM-CONTEXT] Checking if document uploaded:', {
+      hasResponse: !!documentResponse,
+      responseType: typeof documentResponse,
+      responseKeys: documentResponse ? Object.keys(documentResponse) : [],
+      hasFile: documentResponse?.file,
+      hasExtractedText: !!documentResponse?.extractedText,
+      hasDocumentContent: !!documentResponse?.documentContent,
+      hasDocumentUrl: !!documentResponse?.documentUrl
+    });
+    
     // Check if there's a valid document response with actual file content
+    // For images, we only have documentUrl, for text files we have extractedText/documentContent
     return !!documentResponse && 
            typeof documentResponse === 'object' && 
-           (documentResponse.file || documentResponse.extractedText || documentResponse.documentContent);
+           (documentResponse.file || documentResponse.extractedText || documentResponse.documentContent || documentResponse.documentUrl);
   };
 
   // Move to the next step
   const nextStep = () => {
+    console.log('[FORM-CONTEXT] nextStep called:', {
+      currentStep,
+      totalSteps,
+      hasDocumentUploaded: hasDocumentUploaded(),
+      formResponsesKeys: Object.keys(formResponses)
+    });
+    
     if (currentStep < totalSteps) {
       // Check if we're on a document upload step and it's being skipped
       if (formConfig?.steps && currentStep <= formConfig.steps.length) {
         const currentStepData = formConfig.steps[currentStep - 1];
         const nextStepData = formConfig.steps[currentStep];
         
+        console.log('[FORM-CONTEXT] Step data:', {
+          currentStepType: currentStepData?.type,
+          nextStepType: nextStepData?.type,
+          hasDocumentUploaded: hasDocumentUploaded()
+        });
+        
         // If current step is documentUpload and it's being skipped (no response), 
         // and next step is documentInfo, skip the documentInfo step too
         if (currentStepData?.type === 'documentUpload' && 
             nextStepData?.type === 'documentInfo' && 
-            !formResponses[currentStepData.title]) {
+            !hasDocumentUploaded()) {
+          console.log('[FORM-CONTEXT] Skipping documentUpload and documentInfo steps');
           // Skip both documentUpload and documentInfo steps
           setCurrentStep(currentStep + 2);
           return;
@@ -256,12 +302,14 @@ useEffect(() => {
       if (formConfig?.steps && currentStep < formConfig.steps.length) {
         const nextStepData = formConfig.steps[currentStep];
         if (nextStepData?.type === 'documentInfo' && !hasDocumentUploaded()) {
+          console.log('[FORM-CONTEXT] Skipping documentInfo step - no document uploaded');
           // Skip documentInfo step if no document was uploaded
           setCurrentStep(currentStep + 2);
           return;
         }
       }
       
+      console.log('[FORM-CONTEXT] Moving to next step normally');
       setCurrentStep(currentStep + 1);
     }
   };

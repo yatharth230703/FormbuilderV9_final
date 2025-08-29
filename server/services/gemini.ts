@@ -157,12 +157,12 @@ The following form configuration is to be used as a reference for any configs th
       title: "Upload Your Document",
       subtitle: "Please upload your document for processing (optional)",
       config: {
-        acceptedTypes: [".pdf", ".doc", ".docx", ".txt"],
+        acceptedTypes: [".pdf", ".doc", ".docx", ".txt", ".png", ".jpg", ".jpeg"],
         maxFileSize: "10MB",
         labels: {
           uploadButton: "Choose File",
           dragDropText: "Drag and drop your file here",
-          supportedFormats: "Supported formats: PDF, DOC, DOCX, TXT",
+          supportedFormats: "Supported formats: PDF, DOC, DOCX, TXT, PNG, JPG, JPEG",
         },
       },
       validation: {

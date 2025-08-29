@@ -83,6 +83,12 @@ export default function DocumentUploadStep({ step }: DocumentUploadStepProps) {
 
   const uploadFile = async (file: File) => {
     try {
+      console.log('[DOCUMENT-UPLOAD] Starting file upload:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type
+      });
+      
       setIsUploading(true);
       setUploadProgress(0);
       setStartTime(Date.now());
@@ -104,6 +110,7 @@ export default function DocumentUploadStep({ step }: DocumentUploadStepProps) {
       }
 
       const result = await response.json();
+      console.log('[DOCUMENT-UPLOAD] Upload response received:', result);
       
       // Complete the progress
       setUploadProgress(100);
@@ -115,11 +122,14 @@ export default function DocumentUploadStep({ step }: DocumentUploadStepProps) {
       setUploadedFile(displayName);
       
       // Store both the document URL and extracted text in the response
-      updateResponse(step.title, {
+      const responseData = {
         documentUrl: result.documentUrl,
         extractedText: result.extractedText || '',
         fileName: displayName
-      });
+      };
+      
+      console.log('[DOCUMENT-UPLOAD] Storing response data:', responseData);
+      updateResponse(step.title, responseData);
 
     } catch (error) {
       console.error('Upload error:', error);

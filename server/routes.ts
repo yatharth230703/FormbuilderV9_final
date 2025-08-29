@@ -27,7 +27,7 @@ import path from "path";
 import { parsePdf } from "./services/pdf-parser";
 import { uploadDocumentToStorage } from "./services/supabase-storage";
 import { sendFormResponseEmail } from "./services/email";
-import { generateQuotation, QuotationRequest } from "./services/quotation-generator";
+import { analyzeDocument, DocumentAnalysisRequest } from "./services/document-analyzer";
 import { executeConsoleActions } from "./console-functions/executor";
 import { executeFormConfigFunctions } from "./console-functions/executor";
 import { fileLogger } from "./services/file-logger";
@@ -817,24 +817,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const file = req.file;
+        console.log('[API] File details:', {
+          originalname: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+          bufferLength: file.buffer?.length || 0
+        });
+        
         let extractedText = "";
 
         // Extract text based on file type
         try {
           if (file.mimetype === "application/pdf") {
+            console.log('[API] Processing PDF file');
             const pdfData = await parsePdf(file.buffer);
             extractedText = pdfData.text;
+            console.log('[API] PDF text extracted, length:', extractedText.length);
           } else if (
             file.mimetype ===
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           ) {
+            console.log('[API] Processing Word document');
             const result = await mammoth.extractRawText({ buffer: file.buffer });
             extractedText = result.value;
+            console.log('[API] Word document text extracted, length:', extractedText.length);
           } else if (file.mimetype === "text/plain") {
+            console.log('[API] Processing text file');
             extractedText = file.buffer.toString("utf-8");
+            console.log('[API] Text file content extracted, length:', extractedText.length);
+          } else if (file.mimetype.startsWith("image/")) {
+            console.log('[API] Processing image file - no text extraction');
+            // For images, we don't extract text, just store the URL
+            extractedText = ""; // No text content for images
           } else {
             return res.status(400).json({ 
-              error: "Unsupported file type. Please upload a PDF, Word document, or text file." 
+              error: "Unsupported file type. Please upload a PDF, Word document, text file, or image (PNG, JPG, JPEG)." 
             });
           }
         } catch (textExtractionError) {
@@ -856,17 +873,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           file.mimetype
         );
 
-        console.log("Document uploaded and processed:", {
+        console.log('[API] Document uploaded and processed:', {
           fileName: file.originalname,
           fileSize: file.size,
           documentUrl: documentUrl,
           extractedTextLength: extractedText.length,
         });
 
-        return res.json({
+        const responseData = {
           documentUrl: documentUrl,
           extractedText: extractedText,
-        });
+        };
+        
+        console.log('[API] Final response data being sent:', responseData);
+        return res.json(responseData);
       } catch (error) {
         console.error("Error processing document:", error);
         if (error instanceof Error) {
@@ -1120,30 +1140,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Generate quotation using AI agent
-  app.post("/api/generate-quotation", async (req, res) => {
-    try {
-      const { formResponses, documentData, contentPrompt, formId } = req.body;
-      const stepTitle = Object.keys(documentData).find(key => key.toLowerCase().includes('document info') || key.toLowerCase().includes('analyzing your document')) || 'Document Information';
-      console.log('[API] /api/generate-quotation called with:', { formResponses, documentData, contentPrompt, formId, stepTitle });
-      // Use Gemini agent to generate quotation
-      const quotationResult = await generateQuotation({
+      // Generate document analysis using AI agent
+    app.post("/api/generate-quotation", async (req, res) => {
+      try {
+        const { formResponses, documentData, contentPrompt, formId } = req.body;
+        const stepTitle = Object.keys(documentData).find(key => key.toLowerCase().includes('document info') || key.toLowerCase().includes('analyzing your document')) || 'Document Information';
+        console.log('[API] /api/generate-quotation called with:', { 
+          formResponses, 
+          documentData, 
+          contentPrompt, 
+          formId, 
+          stepTitle 
+        });
+        console.log('[API] Full documentData object:', JSON.stringify(documentData, null, 2));
+        console.log('[API] Full formResponses object:', JSON.stringify(formResponses, null, 2));
+      
+      // Determine if the document is an image
+      const isImage = documentData.documentUrl && (
+        documentData.documentUrl.includes('.png') || 
+        documentData.documentUrl.includes('.jpg') || 
+        documentData.documentUrl.includes('.jpeg')
+      );
+      console.log('[API] Document type detection:', { 
+        isImage, 
+        documentUrl: documentData.documentUrl,
+        hasDocumentContent: !!documentData.documentContent,
+        documentContentLength: documentData.documentContent?.length || 0
+      });
+      
+      // Use Gemini agent to analyze document
+      const analysisResult = await analyzeDocument({
         formResponses,
         documentContent: documentData.documentContent,
-        contentGenerationPrompt: contentPrompt
+        documentUrl: documentData.documentUrl,
+        question: contentPrompt,
+        isImage
       });
-      console.log('[API] Gemini quotation result:', quotationResult);
-      // Save the generated quotation in Supabase under the step title key
+      
+      console.log('[API] Gemini document analysis result:', analysisResult);
+      console.log('[API] Analysis result details:', {
+        success: analysisResult.success,
+        answerLength: analysisResult.answer?.length || 0,
+        answerPreview: analysisResult.answer?.substring(0, 200) + '...',
+        error: analysisResult.error
+      });
+      
+      // Save the generated analysis in Supabase under the step title key
       if (formId) {
         // Fetch the latest form response for this formId
         const responses = await supabaseService.getFormResponsesByFormId(formId);
         const latestResponse = responses && responses.length > 0 ? responses[0] : null;
         if (latestResponse) {
-          // Update the response object with the new quotation under the step title
+          console.log('[API] Found existing response:', {
+            responseId: latestResponse.id,
+            responseKeys: Object.keys(latestResponse.response || {}),
+            currentStepValue: latestResponse.response?.[stepTitle]
+          });
+          
+          // Update the response object with the new analysis under the step title
           const updatedResponse = {
             ...latestResponse.response,
-            [stepTitle]: quotationResult.quotationHtml || quotationResult.quotation || 'Failed to generate quotation.'
+            [stepTitle]: analysisResult.answer || 'Failed to analyze document.'
           };
+          console.log('[API] Updated response object:', {
+            newStepValue: updatedResponse[stepTitle],
+            allKeys: Object.keys(updatedResponse)
+          });
+          
           // Save the updated response back to Supabase
           await supabaseService.createFormResponse(
             latestResponse.label,
@@ -1153,17 +1216,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             formId,
             latestResponse.user_uuid || null
           );
-          console.log('[API] Quotation saved in Supabase for formId', formId, 'under key', stepTitle);
+          console.log('[API] Document analysis saved in Supabase for formId', formId, 'under key', stepTitle);
         } else {
           console.warn('[API] No existing form response found for formId', formId, '. Skipping Supabase save.');
         }
       } else {
         console.warn('[API] No formId provided. Skipping Supabase save.');
       }
-      res.json({ quotation: quotationResult.quotationHtml || quotationResult.quotation });
+      
+      console.log('[API] Final response being sent to frontend:', { quotation: analysisResult.answer });
+      res.json({ quotation: analysisResult.answer });
     } catch (error) {
-      console.error('[API] Error generating quotation:', error);
-      res.status(500).json({ quotation: 'An error occurred while generating the quotation.' });
+      console.error('[API] Error analyzing document:', error);
+      res.status(500).json({ quotation: 'An error occurred while analyzing the document.' });
     }
   });
 
