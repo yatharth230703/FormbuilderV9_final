@@ -48,9 +48,9 @@ export function AuthLayout({ defaultView = 'login', redirectTo = '/' }: AuthLayo
         {/* Auth form */}
         <div className="transition-all">
           {view === 'login' ? (
-            <LoginForm onSuccess={handleSuccess} />
+            <LoginForm onSuccess={handleSuccess} onSwitchToRegister={() => setView('register')} />
           ) : (
-            <RegisterForm onSuccess={handleSuccess} />
+            <RegisterForm onSuccess={handleSuccess} onSwitchToLogin={() => setView('login')} />
           )}
         </div>
       </div>

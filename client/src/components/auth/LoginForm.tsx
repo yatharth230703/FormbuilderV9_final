@@ -20,9 +20,10 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 interface LoginFormProps {
   onSuccess?: () => void;
+  onSwitchToRegister?: () => void;
 }
 
-export function LoginForm({ onSuccess }: LoginFormProps) {
+export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
   const { login, error, isLoading, clearError } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -108,7 +109,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       </CardContent>
       <CardFooter className="flex flex-col items-center justify-center">
         <p className="text-sm text-gray-500">Don't have an account?</p>
-        <Button variant="link" className="px-0">Register now</Button>
+        <Button variant="link" className="px-0" onClick={onSwitchToRegister}>Register now</Button>
       </CardFooter>
     </Card>
   );

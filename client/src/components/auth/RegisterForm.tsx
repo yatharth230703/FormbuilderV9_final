@@ -25,9 +25,10 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 interface RegisterFormProps {
   onSuccess?: () => void;
+  onSwitchToLogin?: () => void;
 }
 
-export function RegisterForm({ onSuccess }: RegisterFormProps) {
+export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) {
   const { register, error, isLoading, clearError } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -143,7 +144,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
       </CardContent>
       <CardFooter className="flex flex-col items-center justify-center">
         <p className="text-sm text-gray-500">Already have an account?</p>
-        <Button variant="link" className="px-0">Login here</Button>
+        <Button variant="link" className="px-0" onClick={onSwitchToLogin}>Login here</Button>
       </CardFooter>
     </Card>
   );
