@@ -20,6 +20,7 @@ export default function LocationStep({ step }: LocationStepProps) {
   const [extractedPostalCode, setExtractedPostalCode] = useState<string>('');
   const [resolvedAddress, setResolvedAddress] = useState<string>('');
   const [locationCoords, setLocationCoords] = useState<{ lat: string; lon: string } | null>(null);
+  const [showCheckmark, setShowCheckmark] = useState<boolean>(false);
 
   useEffect(() => {
     const savedResponse = formResponses[step.title];
@@ -28,6 +29,7 @@ export default function LocationStep({ step }: LocationStepProps) {
         setAddressInput(savedResponse.fullAddress);
         setExtractedPostalCode(savedResponse.postalCode || '');
         setValidationStatus('success');
+        setShowCheckmark(true);
         if (savedResponse.isAvailable) {
           setValidationMessage(
             formConfig?.ui?.location?.availableIn?.replace('{city}', savedResponse.postalCode) || 
@@ -66,6 +68,7 @@ export default function LocationStep({ step }: LocationStepProps) {
     setAddressInput(newAddress);
     setValidationStatus(null);
     setValidationMessage(null);
+    setShowCheckmark(false);
     
     // Extract postal code as user types
     const postalCode = extractPostalCode(newAddress);
@@ -78,6 +81,7 @@ export default function LocationStep({ step }: LocationStepProps) {
       setValidationMessage(formConfig?.ui?.messages?.thisFieldRequired || 'Please enter your complete address');
       setResolvedAddress('');
       setLocationCoords(null);
+      setShowCheckmark(false);
       return;
     }
 
@@ -87,12 +91,14 @@ export default function LocationStep({ step }: LocationStepProps) {
       setValidationMessage('Please include a valid postal code in your address');
       setResolvedAddress('');
       setLocationCoords(null);
+      setShowCheckmark(false);
       return;
     }
 
     setIsValidating(true);
     setResolvedAddress('');
     setLocationCoords(null);
+    setShowCheckmark(false);
 
     try {
       // Use backend proxy for Google Maps Geocoding API
@@ -114,6 +120,7 @@ export default function LocationStep({ step }: LocationStepProps) {
         setIsValidating(false);
         setResolvedAddress('');
         setLocationCoords(null);
+        setShowCheckmark(false);
         return;
       }
       
@@ -130,10 +137,12 @@ export default function LocationStep({ step }: LocationStepProps) {
       setIsValidating(false);
       setResolvedAddress('');
       setLocationCoords(null);
+      setShowCheckmark(false);
       return;
     }
 
     setValidationStatus('success');
+    setShowCheckmark(true);
     setValidationMessage(
       formConfig?.ui?.location?.availableIn?.replace('{city}', postalCode) || 
       `Our service is available in ${postalCode}!`
@@ -177,8 +186,8 @@ export default function LocationStep({ step }: LocationStepProps) {
               }
             }}
           />
-          {/* Check icon for valid postal code */}
-          {extractedPostalCode && (
+          {/* Check icon for valid postal code - only show after successful validation */}
+          {showCheckmark && validationStatus === 'success' && (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500">
               <CheckCircle className="h-5 w-5" />
             </div>
