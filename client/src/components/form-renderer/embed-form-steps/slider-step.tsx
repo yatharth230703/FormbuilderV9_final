@@ -45,7 +45,8 @@ export default function SliderStep({ step }: SliderStepProps) {
       setEditValue("");
       return;
     }
-    if (!isNaN(numValue) && numValue >= step.min && numValue <= step.max) {
+    if (!isNaN(numValue)) {
+      // Accept any numeric value, regardless of min/max boundaries
       setValue(numValue);
       updateResponse(step.title, numValue);
       setIsEditing(false);
