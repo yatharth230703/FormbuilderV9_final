@@ -223,7 +223,7 @@ export default function EmbedFormRenderer({
         </div>
         <div className="flex justify-between items-center mt-2">
           <span className="text-sm text-gray-600">
-            Step {currentStep} of {totalSteps}
+            Question {currentStep} of {totalSteps}
           </span>
           <span className="text-sm text-gray-600">
             {Math.round((currentStep / totalSteps) * 100)}% Complete
