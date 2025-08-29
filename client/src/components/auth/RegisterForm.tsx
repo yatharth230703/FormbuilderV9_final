@@ -14,7 +14,12 @@ import { Loader2 } from 'lucide-react';
 const registerSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
   email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
   confirmPassword: z.string().min(1, 'Please confirm your password'),
 }).refine(data => data.password === data.confirmPassword, {
   message: 'Passwords do not match',
@@ -111,6 +116,16 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                     <Input type="password" placeholder="••••••••" {...field} />
                   </FormControl>
                   <FormMessage />
+                  <div className="text-xs text-gray-500 mt-1">
+                    <p>Password must contain:</p>
+                    <ul className="list-disc list-inside ml-2 space-y-0.5">
+                      <li>At least 8 characters</li>
+                      <li>At least one uppercase letter (A-Z)</li>
+                      <li>At least one lowercase letter (a-z)</li>
+                      <li>At least one number (0-9)</li>
+                      <li>At least one special character (!@#$%^&* etc.)</li>
+                    </ul>
+                  </div>
                 </FormItem>
               )}
             />
