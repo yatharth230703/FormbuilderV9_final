@@ -625,11 +625,11 @@ function reorderFinalSteps(config: FormConfig): FormConfig {
 /**
  * Generates a form configuration from a natural language prompt using Gemini API
  * @param prompt The natural language prompt describing the form to generate
- * @returns FormConfig object representing the generated form structure
+ * @returns Object containing FormConfig and error information if fallback was used
  */
 export async function generateFormFromPrompt(
   prompt: string,
-): Promise<FormConfig> {
+): Promise<{ config: FormConfig; error?: string; fallbackReason?: string }> {
   // Create a customized demo form based on prompt for fallback
   const customDemoForm = createCustomizedDemoForm(prompt);
 
@@ -638,7 +638,11 @@ export async function generateFormFromPrompt(
     console.warn(
       "GEMINI_API_KEY environment variable not set - using demo form configuration",
     );
-    return validateAndDeduplicateForm(cleanOptionTitles(customDemoForm));
+    return {
+      config: validateAndDeduplicateForm(cleanOptionTitles(customDemoForm)),
+      error: "GEMINI_API_KEY environment variable not set",
+      fallbackReason: "API key missing"
+    };
   }
 
   try {
@@ -688,7 +692,11 @@ export async function generateFormFromPrompt(
         console.error(`Gemini API error response: ${errorText}`);
       }
 
-      return validateAndDeduplicateForm(cleanOptionTitles(customDemoForm));
+      return {
+        config: validateAndDeduplicateForm(cleanOptionTitles(customDemoForm)),
+        error: `Gemini API HTTP error: ${response.status} ${response.statusText}`,
+        fallbackReason: "API request failed"
+      };
     }
 
     const data = await response.json();
@@ -704,14 +712,22 @@ export async function generateFormFromPrompt(
         "Unexpected response structure from Gemini API:",
         JSON.stringify(data),
       );
-      return validateAndDeduplicateForm(cleanOptionTitles(customDemoForm));
+      return {
+        config: validateAndDeduplicateForm(cleanOptionTitles(customDemoForm)),
+        error: "Unexpected response structure from Gemini API",
+        fallbackReason: "Invalid API response format"
+      };
     }
 
     const textResponse = data.candidates[0].content.parts[0].text;
 
     if (!textResponse) {
       console.error("Empty response from Gemini API");
-      return validateAndDeduplicateForm(cleanOptionTitles(customDemoForm));
+      return {
+        config: validateAndDeduplicateForm(cleanOptionTitles(customDemoForm)),
+        error: "Empty response from Gemini API",
+        fallbackReason: "No content received"
+      };
     }
 
     try {
@@ -768,15 +784,27 @@ export async function generateFormFromPrompt(
               formConfig = retryConfig;
             } else {
               console.error("Retry attempt failed: still invalid form configuration");
-              return validateAndDeduplicateForm(cleanOptionTitles(customDemoForm));
+              return {
+                config: validateAndDeduplicateForm(cleanOptionTitles(customDemoForm)),
+                error: "Retry attempt failed: still invalid form configuration",
+                fallbackReason: "Invalid form structure after retry"
+              };
             }
           } else {
             console.error("Retry attempt failed: empty response");
-            return validateAndDeduplicateForm(cleanOptionTitles(customDemoForm));
+            return {
+              config: validateAndDeduplicateForm(cleanOptionTitles(customDemoForm)),
+              error: "Retry attempt failed: empty response",
+              fallbackReason: "No content received on retry"
+            };
           }
         } catch (retryError) {
           console.error("Retry attempt failed:", retryError);
-          return validateAndDeduplicateForm(cleanOptionTitles(customDemoForm));
+          return {
+            config: validateAndDeduplicateForm(cleanOptionTitles(customDemoForm)),
+            error: `Retry attempt failed: ${retryError}`,
+            fallbackReason: "Retry mechanism failed"
+          };
         }
       }
 
@@ -929,8 +957,7 @@ export async function generateFormFromPrompt(
               (step as any).config.labels.phone =
                 phoneConfig.label || "Phone Number";
               if (phoneConfig.placeholder) {
-                (step as any).config.placeholders.phone =
-                  phoneConfig.placeholder;
+                (step as any).config.placeholders.phone = phoneConfig.placeholder;
               }
             }
             delete (step as any).phone;
@@ -1001,18 +1028,26 @@ export async function generateFormFromPrompt(
       console.log(JSON.stringify(formConfig, null, 2));
       console.log("=== END FORM CONFIGURATION ===");
       
-      return formConfig;
+      return { config: formConfig };
     } catch (parseError) {
       console.error("Error parsing Gemini response as JSON:", parseError);
       console.warn("Using demo form configuration due to parsing error");
       // Remove emojis from option titles before returning
-      return validateAndDeduplicateForm(cleanOptionTitles(customDemoForm));
+      return {
+        config: validateAndDeduplicateForm(cleanOptionTitles(customDemoForm)),
+        error: `Error parsing Gemini response as JSON: ${parseError}`,
+        fallbackReason: "JSON parsing failed"
+      };
     }
   } catch (error) {
     console.error("Error calling Gemini API:", error);
     console.warn("Using demo form configuration due to API error");
     // Remove emojis from option titles before returning
-    return validateAndDeduplicateForm(cleanOptionTitles(customDemoForm));
+    return {
+      config: validateAndDeduplicateForm(cleanOptionTitles(customDemoForm)),
+      error: `Error calling Gemini API: ${error}`,
+      fallbackReason: "API call failed"
+    };
   }
 }
 

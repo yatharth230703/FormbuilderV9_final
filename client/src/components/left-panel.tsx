@@ -15,6 +15,7 @@ import {
   Check,
   User,
   LogIn,
+  AlertTriangle
 } from "lucide-react";
 import { FormConfig } from "@shared/types";
 import { useLocation } from "wouter";

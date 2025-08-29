@@ -286,9 +286,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const validatedData = promptSchema.parse(req.body);
-      const formConfig = await generateFormFromPrompt(validatedData.prompt);
+      const result = await generateFormFromPrompt(validatedData.prompt);
 
-      if (!formConfig) {
+      if (!result.config) {
         return res.status(500).json({ error: "Failed to generate form" });
       }
 
@@ -296,7 +296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const label = `Generated Form ${new Date().toLocaleDateString()}`;
       const savedFormId = await supabaseService.createFormConfig(
         label,
-        formConfig,
+        result.config,
         "en",
         null,
         userId,
@@ -307,10 +307,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Log the final JSON configuration being sent to frontend
       console.log("=== FINAL FORM CONFIGURATION SENT TO FRONTEND ===");
-      console.log(JSON.stringify({ id: savedFormId, config: formConfig }, null, 2));
+      console.log(JSON.stringify({ id: savedFormId, config: result.config }, null, 2));
       console.log("=== END FORM CONFIGURATION ===");
 
-      return res.json({ id: savedFormId, config: formConfig });
+      // Return form data with optional error information if fallback was used
+      return res.json({ 
+        id: savedFormId, 
+        config: result.config,
+        error: result.error,
+        fallbackReason: result.fallbackReason,
+        usedFallback: !!result.error
+      });
     } catch (error: any) {
       console.error("Error generating form:", error);
       if (error.name === "ZodError") {

@@ -9,11 +9,22 @@ import { FormConfig, PromptRequest, FormResponse } from "@shared/types";
 /**
  * Generate a form from a natural language prompt
  * @param prompt The user's natural language prompt
- * @returns Generated form configuration
+ * @returns Generated form configuration with optional error information
  */
-export async function generateFormFromPrompt(prompt: string): Promise<{ id: number; config: FormConfig }> {
-  const response = await apiRequest("POST", "/api/prompt", { prompt });
-  return response.json();
+export async function generateFormFromPrompt(prompt: string): Promise<{ 
+  id: number; 
+  config: FormConfig; 
+  error?: string; 
+  fallbackReason?: string; 
+  usedFallback: boolean; 
+}> {
+  const response = await apiRequest({
+    url: "/api/prompt",
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+  return response;
 }
 
 /**
@@ -23,13 +34,13 @@ export async function generateFormFromPrompt(prompt: string): Promise<{ id: numb
  * @returns Submission confirmation
  */
 export async function submitFormResponses(label: string, formResponses: Record<string, any>): Promise<{ id: number; message: string }> {
-  const response = await apiRequest("POST", "/api/submit", {
-    label,
-    language: "en",
-    response: formResponses,
-    domain: null
+  const response = await apiRequest({
+    url: "/api/submit",
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ label, response: formResponses })
   });
-  return response.json();
+  return response;
 }
 
 /**
@@ -37,8 +48,11 @@ export async function submitFormResponses(label: string, formResponses: Record<s
  * @returns List of form configurations
  */
 export async function getFormConfigs(): Promise<FormConfig[]> {
-  const response = await apiRequest("GET", "/api/forms");
-  return response.json();
+  const response = await apiRequest({
+    url: "/api/forms",
+    method: "GET"
+  });
+  return response;
 }
 
 /**
@@ -47,8 +61,11 @@ export async function getFormConfigs(): Promise<FormConfig[]> {
  * @returns The requested form configuration
  */
 export async function getFormConfig(id: number): Promise<FormConfig> {
-  const response = await apiRequest("GET", `/api/forms/${id}`);
-  return response.json();
+  const response = await apiRequest({
+    url: `/api/forms/${id}`,
+    method: "GET"
+  });
+  return response;
 }
 
 /**

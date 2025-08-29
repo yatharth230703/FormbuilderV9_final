@@ -61,6 +61,21 @@ export interface FormConfig {
   };
 }
 
+// New types for API responses with error information
+export interface FormGenerationResponse {
+  id: number;
+  config: FormConfig;
+  error?: string;
+  fallbackReason?: string;
+  usedFallback: boolean;
+}
+
+export interface FormGenerationError {
+  error: string;
+  fallbackReason: string;
+  usedFallback: boolean;
+}
+
 export type StepType = 'tiles' | 'multiSelect' | 'slider' | 'followup' | 'textbox' | 'location' | 'contact' | 'dropdown' | 'documentUpload' | 'documentInfo';
 
 export interface BaseFormStep {
