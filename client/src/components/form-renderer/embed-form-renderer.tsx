@@ -42,7 +42,6 @@ export default function EmbedFormRenderer({
     isFormComplete,
     setIsFormComplete,
     validateCurrentStep,
-    resetResponses,
     initializeSession,
     getSessionInfo,
   } = useFormContext();
