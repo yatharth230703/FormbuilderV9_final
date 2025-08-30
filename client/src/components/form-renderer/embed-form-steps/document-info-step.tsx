@@ -104,7 +104,7 @@ export default function DocumentInfoStep({ step }: DocumentInfoStepProps) {
   }, []);
 
   return (
-    <div className="flex-1 flex flex-col pt-6 sm:pt-10 pb-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar space-y-4">
+    <div className="flex-1 flex flex-col pt-4 sm:pt-3 pb-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar space-y-4">
       <div className="space-y-1">
         <h2 className="text-xl font-semibold text-gray-900">
           {step.title}
@@ -144,15 +144,6 @@ export default function DocumentInfoStep({ step }: DocumentInfoStepProps) {
                   <span className="text-base text-gray-800 text-center">Analysis complete. Review the results above.</span>
                 </div>
               </div>
-              
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="mt-4 text-xs"
-                onClick={() => setShowQuotation(false)}
-              >
-                Back
-              </Button>
             </div>
           </div>
         ) : null}

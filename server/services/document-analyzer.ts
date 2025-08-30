@@ -18,7 +18,7 @@ Your task is to:
 2. Provide ONLY the direct answer
 
 CRITICAL RULES:
-- Answer the question in 3-4 sentences maximum
+- Answer the question in 1-2 sentences maximum
 - Do NOT mention "based on provided responses" or similar phrases
 - Do NOT describe the document content or context
 - Do NOT include document details or file names
