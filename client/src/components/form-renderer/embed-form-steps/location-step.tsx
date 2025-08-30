@@ -21,6 +21,7 @@ export default function LocationStep({ step }: LocationStepProps) {
   const [resolvedAddress, setResolvedAddress] = useState<string>('');
   const [locationCoords, setLocationCoords] = useState<{ lat: string; lon: string } | null>(null);
   const [showCheckmark, setShowCheckmark] = useState<boolean>(false);
+  const [isMapLoading, setIsMapLoading] = useState<boolean>(false);
 
   useEffect(() => {
     const savedResponse = formResponses[step.title];
@@ -155,6 +156,22 @@ export default function LocationStep({ step }: LocationStepProps) {
     setIsValidating(false);
   };
 
+  const handleMapLoad = () => {
+    setIsMapLoading(false);
+  };
+
+  const handleMapError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    setIsMapLoading(false);
+    e.currentTarget.style.display = 'none';
+  };
+
+  // Set map loading to true when coordinates are set
+  useEffect(() => {
+    if (locationCoords) {
+      setIsMapLoading(true);
+    }
+  }, [locationCoords]);
+
   return (
     <div className="flex-1 flex flex-col pt-1 sm:pt-2 pb-2 max-w-full px-4">
       <motion.div
@@ -225,16 +242,33 @@ export default function LocationStep({ step }: LocationStepProps) {
           >
             {/* Show static map if coordinates are available */}
             {locationCoords && (
-              <div className="w-full max-w-4xl">
+              <div className="w-full max-w-4xl relative">
+                {/* Map Loading Skeleton */}
+                <AnimatePresence>
+                  {isMapLoading && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="absolute inset-0 bg-gray-200 rounded-lg flex items-center justify-center"
+                      style={{ height: '280px' }}
+                    >
+                      <div className="flex flex-col items-center space-y-3">
+                        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                        <p className="text-sm text-gray-500">Loading map...</p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <img
                   src={`/api/staticmap?center=${locationCoords.lat},${locationCoords.lon}&zoom=14&size=800x400&markers=color:red%7C${locationCoords.lat},${locationCoords.lon}`}
                   alt="Location Map"
                   className="w-full h-auto rounded-lg shadow-lg border border-gray-200"
                   style={{ maxHeight: '280px', objectFit: 'cover' }}
-                  onError={(e) => {
-                    // Hide image if it fails to load (API key issues, etc.)
-                    e.currentTarget.style.display = 'none';
-                  }}
+                  onLoad={handleMapLoad}
+                  onError={handleMapError}
                 />
               </div>
             )}
