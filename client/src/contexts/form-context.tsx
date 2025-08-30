@@ -42,6 +42,8 @@ interface FormContextType {
   getSessionInfo: () => { sessionId: number | null; sessionNo: number | null };
   // Document upload tracking
   hasDocumentUploaded: () => boolean;
+  // Step optionality checking
+  isStepOptional: (stepIndex: number) => boolean;
 }
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -263,6 +265,60 @@ useEffect(() => {
     return !!documentResponse && 
            typeof documentResponse === 'object' && 
            (documentResponse.file || documentResponse.extractedText || documentResponse.documentContent || documentResponse.documentUrl);
+  };
+
+  // Helper function to check if a step is optional
+  const isStepOptional = (stepIndex: number): boolean => {
+    if (!formConfig || !formConfig.steps || stepIndex < 0 || stepIndex >= formConfig.steps.length) {
+      return false;
+    }
+
+    const step = formConfig.steps[stepIndex];
+
+    switch (step.type) {
+      case 'tiles':
+        // Tiles are always required
+        return false;
+
+      case 'multiSelect':
+        // MultiSelect is always required
+        return false;
+
+      case 'dropdown':
+        // Dropdown is always required
+        return false;
+
+      case 'slider':
+        // Slider is always valid (has defaultValue)
+        return false;
+
+      case 'followup':
+        // Followup is always required
+        return false;
+
+      case 'textbox':
+        // Optional if validation.required is false or not set
+        return !step.validation?.required;
+
+      case 'location':
+        // Location is always required
+        return false;
+
+      case 'contact':
+        // Contact is always required
+        return false;
+
+      case 'documentUpload':
+        // Optional if validation.required is false or not set
+        return !step.validation?.required;
+
+      case 'documentInfo':
+        // DocumentInfo is conditional (only shows if document uploaded)
+        return true;
+
+      default:
+        return false;
+    }
   };
 
   // Move to the next step
@@ -537,7 +593,9 @@ useEffect(() => {
         initializeSession,
         getSessionInfo,
         // document upload tracking
-        hasDocumentUploaded
+        hasDocumentUploaded,
+        // step optionality checking
+        isStepOptional
       }}
     >
       {children}

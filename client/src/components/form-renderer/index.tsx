@@ -13,7 +13,7 @@ import DocumentUploadStep from "./embed-form-steps/document-upload-step";
 import DocumentInfoStep from "./embed-form-steps/document-info-step";
 import SubmissionStep from "./embed-form-steps/submission-step";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, SkipForward } from "lucide-react";
+import { ArrowLeft, ArrowRight, SkipForward, SkipForwardIcon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { FormConfig } from "@shared/types";
@@ -44,6 +44,7 @@ export default function FormRenderer({
     isStepValid,
     resetResponses,
     hasDocumentUploaded,
+    isStepOptional,
   } = useFormContext();
 
   // Use prop formConfig if provided, otherwise use context formConfig
@@ -235,6 +236,12 @@ export default function FormRenderer({
     return step?.type === "tiles";
   }, [currentStep, formConfig]);
 
+  // Check if current step is optional
+  const isCurrentStepOptional = useMemo(() => {
+    if (!formConfig?.steps) return false;
+    return isStepOptional(currentStep - 1);
+  }, [currentStep, formConfig, isStepOptional]);
+
 
 
   if (!formConfig) {
@@ -286,20 +293,33 @@ export default function FormRenderer({
         </div>
         <div className="flex gap-2">
           {!isFormComplete && !isCurrentStepTiles && (
-            <Button
-              className={`transition-all duration-200 flex items-center ${
-                isCurrentStepValid
-                  ? "bg-primary text-white hover:bg-primary/90"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed hover:bg-gray-300"
-              }`}
-              onClick={handleNextStep}
-              disabled={isSubmitting || !isCurrentStepValid}
-            >
-              {nextButtonText}
-              {currentStep < totalSteps && (
-                <ArrowRight className="ml-1 h-5 w-5" />
+            <>
+              {isCurrentStepOptional && (
+                <Button
+                  variant="outline"
+                  className="text-gray-600 border-gray-300 hover:bg-gray-50 flex items-center"
+                  onClick={nextStep}
+                  disabled={isSubmitting}
+                >
+                  <SkipForwardIcon className="mr-1 h-4 w-4" />
+                  Skip
+                </Button>
               )}
-            </Button>
+              <Button
+                className={`transition-all duration-200 flex items-center ${
+                  isCurrentStepValid
+                    ? "bg-primary text-white hover:bg-primary/90"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed hover:bg-gray-300"
+                }`}
+                onClick={handleNextStep}
+                disabled={isSubmitting || !isCurrentStepValid}
+              >
+                {nextButtonText}
+                {currentStep < totalSteps && (
+                  <ArrowRight className="ml-1 h-5 w-5" />
+                )}
+              </Button>
+            </>
           )}
         </div>
       </div>
