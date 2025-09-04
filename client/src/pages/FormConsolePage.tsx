@@ -308,6 +308,12 @@ export default function FormConsolePage() {
             </div>
             <div className="flex gap-3 items-center">
               <CreditsDisplay />
+              <Button
+                variant="secondary"
+                onClick={() => setLocation("/route-response")}
+              >
+                Route Response
+              </Button>
               <UserNav />
             </div>
           </div>

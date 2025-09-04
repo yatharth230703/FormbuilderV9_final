@@ -115,6 +115,12 @@ export function DashboardPage() {
               <CreditsDisplay />
               <Button
                 variant="secondary"
+                onClick={() => setLocation("/route-response")}
+              >
+                Route Response
+              </Button>
+              <Button
+                variant="secondary"
                 onClick={() => setLocation("/api-access")}
               >
                 Try our API

@@ -16,6 +16,7 @@ import { FormPreviewPage } from "@/pages/FormPreviewPage";
 import { FormEditPage } from "@/pages/FormEditPage";
 import FormConsolePage from "@/pages/FormConsolePage";
 import EditPage from "@/pages/EditPage";
+import { RouteResponsePage } from "@/pages/RouteResponsePage";
 import { useIframeResize } from "@/hooks/useIframeResize";
 
 function Router() {
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/edit/:id" component={EditPage} />
       <Route path="/forms/:id" component={FormEditPage} />
       <Route path="/api-access" component={ApiAccessPage} />
+      <Route path="/route-response" component={RouteResponsePage} />
       <Route component={NotFound} />
     </Switch>
   );
