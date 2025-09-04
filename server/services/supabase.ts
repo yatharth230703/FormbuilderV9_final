@@ -478,6 +478,38 @@ export async function completeFormSession(
 }
 
 /**
+ * Gets a session by ID
+ * @param sessionId The session ID
+ * @returns The session object or null if not found
+ */
+export async function getSessionById(sessionId: number): Promise<any> {
+  if (!supabase) {
+    throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('form_responses')
+      .select('*')
+      .eq('id', sessionId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null; // Not found
+      }
+      console.error('Supabase error getting session by ID:', error);
+      throw new Error(`Failed to get session: ${error.message}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in getSessionById:', error);
+    return null;
+  }
+}
+
+/**
  * Gets the current session ID for a user's form interaction
  * @param formId The form config ID
  * @param sessionNo The session number
@@ -714,6 +746,37 @@ export async function updateUserCredits(userId: string, credits: number): Promis
     return true;
   } catch (err) {
     console.error('Error in updateUserCredits:', err);
+    return false;
+  }
+}
+
+/**
+ * Updates user webhook URL in Supabase
+ * @param userId The user's ID
+ * @param webhookUrl The webhook URL to save
+ * @returns Success status
+ */
+export async function updateUserWebhook(userId: string, webhookUrl: string): Promise<boolean> {
+  if (!supabase) {
+    throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+  }
+  
+  try {
+    console.log(`[Webhook] Attempting to update webhook for user ${userId} with URL: ${webhookUrl}`);
+    const { error } = await supabase
+      .from('users')
+      .update({ "CRM_webhook": webhookUrl })
+      .eq('uuid', userId);
+      
+    if (error) {
+      console.error('Error updating user webhook:', error);
+      return false;
+    }
+    
+    console.log(`[Webhook] Successfully updated webhook for user ${userId}`);
+    return true;
+  } catch (err) {
+    console.error('Error in updateUserWebhook:', err);
     return false;
   }
 }

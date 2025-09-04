@@ -12,6 +12,7 @@ export const users = pgTable("users", {
   uuid: text("uuid").unique(), // This is the Supabase auth user ID
   api_key: text("api_key").unique().default(null),
   credits: text("credits"), // Adding credits column from migration
+  CRM_webhook: text("CRM_webhook"), // Optional CRM webhook URL
 });
 
 export const usersRelations = relations(users, ({ many }) => ({

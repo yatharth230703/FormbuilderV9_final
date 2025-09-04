@@ -106,6 +106,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user webhook URL
+  app.get("/api/user/webhook", async (req, res) => {
+    try {
+      const userId = req.session.user?.supabaseUserId;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const user = await supabaseService.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      return res.json({
+        webhookUrl: user.CRM_webhook || "",
+      });
+    } catch (error) {
+      console.error("Error fetching user webhook URL:", error);
+      return res.status(500).json({ error: "Failed to fetch webhook URL" });
+    }
+  });
+
+  // Save user webhook URL
+  app.post("/api/user/webhook", async (req, res) => {
+    try {
+      const userId = req.session.user?.supabaseUserId;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { webhookUrl } = req.body;
+      if (!webhookUrl) {
+        return res.status(400).json({ error: "Webhook URL is required" });
+      }
+
+      // Basic URL validation
+      try {
+        new URL(webhookUrl);
+      } catch {
+        return res.status(400).json({ error: "Invalid URL format" });
+      }
+
+      const success = await supabaseService.updateUserWebhook(userId, webhookUrl);
+      console.log(`[Webhook] Update result for user ${userId}: ${success}`);
+      if (!success) {
+        return res.status(500).json({ error: "Failed to save webhook URL" });
+      }
+
+      return res.json({ success: true, message: "Webhook URL saved successfully" });
+    } catch (error) {
+      console.error("Error saving user webhook URL:", error);
+      return res.status(500).json({ error: "Failed to save webhook URL" });
+    }
+  });
+
+  // Test webhook URL
+  app.post("/api/user/webhook/test", async (req, res) => {
+    try {
+      const userId = req.session.user?.supabaseUserId;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { webhookUrl } = req.body;
+      if (!webhookUrl) {
+        return res.status(400).json({ error: "Webhook URL is required" });
+      }
+
+      // Send test webhook
+      const testPayload = {
+        event: "test",
+        timestamp: new Date().toISOString(),
+        message: "This is a test webhook from your form builder",
+        user: {
+          id: userId,
+          email: req.session.user?.email,
+        },
+      };
+
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": "FormBuilder/1.0",
+        },
+        body: JSON.stringify(testPayload),
+      });
+
+      if (!response.ok) {
+        return res.status(400).json({ 
+          error: "Webhook test failed", 
+          status: response.status,
+          statusText: response.statusText 
+        });
+      }
+
+      return res.json({ success: true, message: "Test webhook sent successfully" });
+    } catch (error) {
+      console.error("Error testing webhook:", error);
+      return res.status(500).json({ error: "Failed to test webhook" });
+    }
+  });
+
   // Create Stripe checkout session for purchasing credits
   app.post("/api/purchase-credits", async (req, res) => {
     try {
@@ -954,6 +1057,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await supabaseService.updateTempResponse(sessionId, tempResponse);
       console.log(`[Session] Updated temp response for session ${sessionId}`);
       
+      // Send webhook notification for incomplete response if user has configured a webhook URL
+      try {
+        // Get the session to find the form and user
+        const session = await supabaseService.getSessionById(sessionId);
+        if (session && session.form_config_id) {
+          const form = await supabaseService.getFormConfig(session.form_config_id);
+          if (form && form.user_uuid) {
+            const formCreator = await supabaseService.getUserById(form.user_uuid);
+            if (formCreator && formCreator.CRM_webhook) {
+              console.log(`[Session] Sending incomplete response webhook to ${formCreator.CRM_webhook}`);
+              
+              const webhookPayload = {
+                event: "form_progress",
+                timestamp: new Date().toISOString(),
+                form: {
+                  id: session.form_config_id,
+                  label: form.label,
+                  language: form.language,
+                  domain: form.domain,
+                },
+                response: {
+                  id: sessionId,
+                  data: tempResponse,
+                  sessionNo: session.session_no,
+                  isComplete: false,
+                },
+                user: {
+                  id: form.user_uuid,
+                  email: formCreator.email,
+                },
+              };
+
+              // Send webhook asynchronously (don't wait for response)
+              fetch(formCreator.CRM_webhook, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "User-Agent": "FormBuilder/1.0",
+                },
+                body: JSON.stringify(webhookPayload),
+              }).catch((error) => {
+                console.error(`[Session] Webhook delivery failed:`, error);
+                // Don't fail the temp response update if webhook fails
+              });
+            }
+          }
+        }
+      } catch (webhookError) {
+        console.error(`[Session] Error processing webhook:`, webhookError);
+        // Don't fail the temp response update if webhook processing fails
+      }
+      
       return res.json({ success: true });
 
     } catch (error: any) {
@@ -1027,7 +1182,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`[Form Submission] Form response saved with ID ${savedResponseId} for formId ${formId}`);
 
-//COMMENTING OUT THE EMAIL SENDING FOR NOW 
+      // Send webhook notification if user has configured a webhook URL
+      try {
+        if (form.user_uuid) {
+          const formCreator = await supabaseService.getUserById(form.user_uuid);
+          if (formCreator && formCreator.CRM_webhook) {
+            console.log(`[Form Submission] Sending webhook to ${formCreator.CRM_webhook}`);
+            
+            const webhookPayload = {
+              event: "form_submission",
+              timestamp: new Date().toISOString(),
+              form: {
+                id: formId,
+                label: form.label,
+                language: form.language,
+                domain: form.domain,
+              },
+              response: {
+                id: savedResponseId,
+                data: formResponses,
+                sessionId,
+                sessionNo,
+              },
+              user: {
+                id: form.user_uuid,
+                email: formCreator.email,
+              },
+            };
+
+            // Send webhook asynchronously (don't wait for response)
+            fetch(formCreator.CRM_webhook, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "User-Agent": "FormBuilder/1.0",
+              },
+              body: JSON.stringify(webhookPayload),
+            }).catch((error) => {
+              console.error(`[Form Submission] Webhook delivery failed:`, error);
+              // Don't fail the form submission if webhook fails
+            });
+          }
+        }
+      } catch (webhookError) {
+        console.error(`[Form Submission] Error processing webhook:`, webhookError);
+        // Don't fail the form submission if webhook processing fails
+      } 
 
 //       // --- INTEGRATE CONSOLE FUNCTION EXECUTION ---
 //       try {
