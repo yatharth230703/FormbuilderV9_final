@@ -13,7 +13,8 @@ interface FormResponse {
   id: number;
   label: string;
   created_at: string;
-  response: Record<string, any>;
+  response: Record<string, any> | null;
+  temp_response?: Record<string, any> | null;
 }
 
 export function FormResponsesPage() {
@@ -79,7 +80,11 @@ export function FormResponsesPage() {
     }
     
     if (typeof value === 'object') {
-      return JSON.stringify(value, null, 2);
+      try {
+        return JSON.stringify(value, null, 2);
+      } catch (e) {
+        return '[Complex Object]';
+      }
     }
     
     return String(value);
@@ -98,12 +103,23 @@ export function FormResponsesPage() {
     }
   };
 
+  // Helper function to get response data with fallback to temp_response
+  const getResponseData = (response: FormResponse): Record<string, any> | null => {
+    if (response.response && typeof response.response === 'object') {
+      return response.response;
+    }
+    if (response.temp_response && typeof response.temp_response === 'object') {
+      return response.temp_response;
+    }
+    return null;
+  };
+
   // Get all unique keys from responses
   const getAllResponseKeys = (responses: FormResponse[]): string[] => {
     const keys = new Set<string>();
     
     responses.forEach(response => {
-      const responseData = response.response;
+      const responseData = getResponseData(response);
       if (responseData && typeof responseData === 'object') {
         Object.keys(responseData).forEach(key => keys.add(key));
       }
@@ -181,18 +197,30 @@ export function FormResponsesPage() {
                         ))}
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
-                      {formData.data.map(response => (
-                        <TableRow key={response.id}>
-                          <TableCell>{response.id}</TableCell>
-                          <TableCell>{new Date(response.created_at).toLocaleString()}</TableCell>
-                          {getAllResponseKeys(formData.data).map(key => (
-                            <TableCell key={key}>
-                              {formatResponseValue(parseJsonIfPossible(response.response[key]))}
+                                        <TableBody>
+                      {formData.data.map(response => {
+                        const responseData = getResponseData(response);
+                        const isUsingTempResponse = !response.response && response.temp_response;
+                        
+                        return (
+                          <TableRow key={response.id} className={isUsingTempResponse ? 'bg-yellow-50' : ''}>
+                            <TableCell>
+                              {response.id}
+                              {isUsingTempResponse && (
+                                <span className="ml-2 text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded">
+                                  Incomplete
+                                </span>
+                              )}
                             </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
+                            <TableCell>{new Date(response.created_at).toLocaleString()}</TableCell>
+                            {getAllResponseKeys(formData.data).map(key => (
+                              <TableCell key={key}>
+                                {formatResponseValue(parseJsonIfPossible(responseData?.[key]))}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </ScrollArea>
