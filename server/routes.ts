@@ -1057,58 +1057,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await supabaseService.updateTempResponse(sessionId, tempResponse);
       console.log(`[Session] Updated temp response for session ${sessionId}`);
       
-      // Send webhook notification for incomplete response if user has configured a webhook URL
-      try {
-        // Get the session to find the form and user
-        const session = await supabaseService.getSessionById(sessionId);
-        if (session && session.form_config_id) {
-          const form = await supabaseService.getFormConfig(session.form_config_id);
-          if (form && form.user_uuid) {
-            const formCreator = await supabaseService.getUserById(form.user_uuid);
-            if (formCreator && formCreator.CRM_webhook) {
-              console.log(`[Session] Sending incomplete response webhook to ${formCreator.CRM_webhook}`);
-              
-              const webhookPayload = {
-                event: "form_progress",
-                timestamp: new Date().toISOString(),
-                form: {
-                  id: session.form_config_id,
-                  label: form.label,
-                  language: form.language,
-                  domain: form.domain,
-                },
-                response: {
-                  id: sessionId,
-                  data: tempResponse,
-                  sessionNo: session.session_no,
-                  isComplete: false,
-                },
-                user: {
-                  id: form.user_uuid,
-                  email: formCreator.email,
-                },
-              };
-
-              // Send webhook asynchronously (don't wait for response)
-              fetch(formCreator.CRM_webhook, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "User-Agent": "FormBuilder/1.0",
-                },
-                body: JSON.stringify(webhookPayload),
-              }).catch((error) => {
-                console.error(`[Session] Webhook delivery failed:`, error);
-                // Don't fail the temp response update if webhook fails
-              });
-            }
-          }
-        }
-      } catch (webhookError) {
-        console.error(`[Session] Error processing webhook:`, webhookError);
-        // Don't fail the temp response update if webhook processing fails
-      }
-      
       return res.json({ success: true });
 
     } catch (error: any) {
