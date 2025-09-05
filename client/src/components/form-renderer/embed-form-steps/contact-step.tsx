@@ -3,6 +3,7 @@ import { useFormContext } from "@/contexts/form-context";
 import { ContactStep as ContactStepType } from "@shared/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ContactStepProps {
   step: ContactStepType;
@@ -13,6 +14,7 @@ interface FormErrors {
   lastName?: string;
   email?: string;
   phone?: string;
+  consent?: string;
 }
 
 export default function ContactStep({ step }: ContactStepProps) {
@@ -22,6 +24,7 @@ export default function ContactStep({ step }: ContactStepProps) {
     lastName: "",
     email: "",
     phone: "",
+    consent: false,
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -34,6 +37,7 @@ export default function ContactStep({ step }: ContactStepProps) {
         lastName: savedResponse.lastName || "",
         email: savedResponse.email || "",
         phone: savedResponse.phone || "",
+        consent: savedResponse.consent || false,
       });
     }
   }, [formResponses, step.title]);
@@ -45,7 +49,7 @@ export default function ContactStep({ step }: ContactStepProps) {
 
   const handleInputChange = (
     field: keyof typeof contactInfo,
-    value: string,
+    value: string | boolean,
   ) => {
     const newContactInfo = { ...contactInfo, [field]: value };
     setContactInfo(newContactInfo);
@@ -57,21 +61,16 @@ export default function ContactStep({ step }: ContactStepProps) {
     delete newErrors[field];
 
     // Email validation - only validate format if email is provided
-    if (field === "email" && value && !validateEmail(value)) {
+    if (field === "email" && typeof value === "string" && value && !validateEmail(value)) {
       newErrors.email =
         formConfig?.ui?.messages?.enterValidEmail ||
         "Please enter a valid email address";
     }
 
-    // Remove required field validation - all fields are now optional
-    // if (!value.trim()) {
-    //   // Only set required error if field is empty and was touched
-    //   if (field === "email" || field === "firstName") {
-    //     newErrors[field] =
-    //       formConfig?.ui?.messages?.thisFieldRequired ||
-    //       "This field is required";
-    //   }
-    // }
+    // Consent validation - required field
+    if (field === "consent" && !value) {
+      newErrors.consent = "You must agree to the data processing terms";
+    }
 
     setErrors(newErrors);
     updateResponse(step.title, newContactInfo);
@@ -146,6 +145,21 @@ export default function ContactStep({ step }: ContactStepProps) {
               className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
+          <div className="flex items-start space-x-2">
+            <Checkbox
+              id="consent"
+              checked={contactInfo.consent}
+              onCheckedChange={(checked) => handleInputChange("consent", checked as boolean)}
+              className="mt-1"
+            />
+            <Label htmlFor="consent" className="text-sm text-gray-600 leading-relaxed">
+              I understand that my information will be stored for the purpose of processing my inquiry and, if necessary, shared with an authorized partner.
+              <span className="text-red-500 ml-1">*</span>
+            </Label>
+          </div>
+          {errors.consent && (
+            <p className="mt-1 text-xs text-red-500">{errors.consent}</p>
+          )}
         </div>
 
         {/* Contact information section - right side */}
