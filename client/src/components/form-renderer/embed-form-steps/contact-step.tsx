@@ -153,7 +153,7 @@ export default function ContactStep({ step }: ContactStepProps) {
               className="mt-1"
             />
             <Label htmlFor="consent" className="text-sm text-gray-600 leading-relaxed">
-              I understand that my information will be stored for the purpose of processing my inquiry and, if necessary, shared with an authorized partner.
+            I agree to be contacted in accordance with the Privacy Policy. I understand that my information will be stored for the purpose of processing my inquiry and, if necessary, shared with an authorized partner.
               <span className="text-red-500 ml-1">*</span>
             </Label>
           </div>
