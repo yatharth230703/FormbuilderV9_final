@@ -782,6 +782,43 @@ export async function updateUserWebhook(userId: string, webhookUrl: string): Pro
 }
 
 /**
+ * Updates user privacy policy link in Supabase
+ * @param userId The user's ID
+ * @param privacyPolicyLink The privacy policy link to save
+ * @returns Success status
+ */
+export async function updateUserPrivacyPolicy(userId: string, privacyPolicyLink: string): Promise<boolean> {
+  if (!supabase) {
+    throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+  }
+  
+  try {
+    console.log(`[Privacy Policy] Attempting to update privacy policy for user ${userId} with URL: ${privacyPolicyLink}`);
+    console.log(`[Privacy Policy] Supabase client initialized:`, !!supabase);
+    
+    const { data, error } = await supabase
+      .from('users')
+      .update({ "privacy_policy": privacyPolicyLink })
+      .eq('uuid', userId)
+      .select();
+      
+    console.log(`[Privacy Policy] Supabase response data:`, data);
+    console.log(`[Privacy Policy] Supabase response error:`, error);
+      
+    if (error) {
+      console.error('Error updating user privacy policy:', error);
+      return false;
+    }
+    
+    console.log(`[Privacy Policy] Successfully updated privacy policy for user ${userId}`);
+    return true;
+  } catch (err) {
+    console.error('Error in updateUserPrivacyPolicy:', err);
+    return false;
+  }
+}
+
+/**
  * Deducts credits from a user
  * @param userId The user ID
  * @param credits The number of credits to deduct

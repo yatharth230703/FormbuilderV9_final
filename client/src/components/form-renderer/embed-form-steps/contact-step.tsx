@@ -27,6 +27,7 @@ export default function ContactStep({ step }: ContactStepProps) {
     consent: false,
   });
   const [errors, setErrors] = useState<FormErrors>({});
+  const [privacyPolicyLink, setPrivacyPolicyLink] = useState<string>("");
 
   // Get the current response for this step if it exists
   useEffect(() => {
@@ -41,6 +42,23 @@ export default function ContactStep({ step }: ContactStepProps) {
       });
     }
   }, [formResponses, step.title]);
+
+  // Fetch privacy policy link
+  useEffect(() => {
+    const fetchPrivacyPolicy = async () => {
+      try {
+        const response = await fetch("/api/user/privacy-policy");
+        if (response.ok) {
+          const data = await response.json();
+          setPrivacyPolicyLink(data.privacyPolicyLink || "");
+        }
+      } catch (err) {
+        console.error("Error fetching privacy policy:", err);
+      }
+    };
+
+    fetchPrivacyPolicy();
+  }, []);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -153,7 +171,20 @@ export default function ContactStep({ step }: ContactStepProps) {
               className="mt-1"
             />
             <Label htmlFor="consent" className="text-sm text-gray-600 leading-relaxed">
-            I agree to be contacted in accordance with the Privacy Policy. I understand that my information will be stored for the purpose of processing my inquiry and, if necessary, shared with an authorized partner.
+            I agree to be contacted in accordance with the{" "}
+            {privacyPolicyLink ? (
+              <a 
+                href={privacyPolicyLink} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                Privacy Policy
+              </a>
+            ) : (
+              "Privacy Policy"
+            )}
+            . I understand that my information will be stored for the purpose of processing my inquiry and, if necessary, shared with an authorized partner.
               <span className="text-red-500 ml-1">*</span>
             </Label>
           </div>

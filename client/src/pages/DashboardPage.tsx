@@ -12,7 +12,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, Plus, Trash } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, Plus, Trash, Shield } from "lucide-react";
 import { useLocation } from "wouter";
 
 interface FormItem {
@@ -44,8 +55,11 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingFormId, setDeletingFormId] = useState<number | null>(null);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [privacyPolicyLink, setPrivacyPolicyLink] = useState("");
+  const [savingPrivacyPolicy, setSavingPrivacyPolicy] = useState(false);
 
-  // Fetch user's forms
+  // Fetch user's forms and privacy policy link
   useEffect(() => {
     const fetchForms = async () => {
       try {
@@ -73,8 +87,21 @@ export function DashboardPage() {
       }
     };
 
+    const fetchPrivacyPolicy = async () => {
+      try {
+        const response = await fetch("/api/user/privacy-policy");
+        if (response.ok) {
+          const data = await response.json();
+          setPrivacyPolicyLink(data.privacyPolicyLink || "");
+        }
+      } catch (err) {
+        console.error("Error fetching privacy policy:", err);
+      }
+    };
+
     if (user) {
       fetchForms();
+      fetchPrivacyPolicy();
     }
   }, [user]);
 
@@ -104,6 +131,42 @@ export function DashboardPage() {
     }
   };
 
+  // Save privacy policy handler
+  const handleSavePrivacyPolicy = async () => {
+    if (!privacyPolicyLink.trim()) {
+      return;
+    }
+
+    // Basic URL validation
+    try {
+      new URL(privacyPolicyLink);
+    } catch {
+      return;
+    }
+
+    setSavingPrivacyPolicy(true);
+    try {
+      const response = await fetch("/api/user/privacy-policy", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ privacyPolicyLink }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to save privacy policy link");
+      }
+
+      setShowPrivacyModal(false);
+    } catch (err) {
+      console.error("Error saving privacy policy:", err);
+    } finally {
+      setSavingPrivacyPolicy(false);
+    }
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-50">
@@ -113,6 +176,52 @@ export function DashboardPage() {
             <h1 className="text-xl font-bold">Form Builder</h1>
             <div className="flex gap-3 items-center">
               <CreditsDisplay />
+              <Dialog open={showPrivacyModal} onOpenChange={setShowPrivacyModal}>
+                <DialogTrigger asChild>
+                  <Button variant="secondary">
+                    <Shield className="mr-2 h-4 w-4" />
+                    Privacy Policy
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Privacy Policy Settings</DialogTitle>
+                    <DialogDescription>
+                      Add your privacy policy link. This will be displayed as a hyperlink in your contact forms.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="privacy-link" className="text-right">
+                        Link
+                      </Label>
+                      <Input
+                        id="privacy-link"
+                        value={privacyPolicyLink}
+                        onChange={(e) => setPrivacyPolicyLink(e.target.value)}
+                        placeholder="https://example.com/privacy-policy"
+                        className="col-span-3"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      type="submit"
+                      onClick={handleSavePrivacyPolicy}
+                      disabled={savingPrivacyPolicy}
+                    >
+                      {savingPrivacyPolicy ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        "Save"
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
               <Button
                 variant="secondary"
                 onClick={() => setLocation("/route-response")}

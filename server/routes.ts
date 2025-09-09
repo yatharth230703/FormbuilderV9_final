@@ -209,6 +209,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user privacy policy link
+  app.get("/api/user/privacy-policy", async (req, res) => {
+    try {
+      console.log("[Privacy Policy GET] Request received");
+      const userId = req.session.user?.supabaseUserId;
+      console.log("[Privacy Policy GET] User ID:", userId);
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const user = await supabaseService.getUserById(userId);
+      console.log("[Privacy Policy GET] User data:", user);
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      console.log("[Privacy Policy GET] Privacy policy link:", user.privacy_policy);
+      return res.json({
+        privacyPolicyLink: user.privacy_policy || "",
+      });
+    } catch (error) {
+      console.error("Error fetching user privacy policy:", error);
+      return res.status(500).json({ error: "Failed to fetch privacy policy" });
+    }
+  });
+
+  // Save user privacy policy link
+  app.post("/api/user/privacy-policy", async (req, res) => {
+    try {
+      console.log("[Privacy Policy API] Request received:", req.body);
+      const userId = req.session.user?.supabaseUserId;
+      console.log("[Privacy Policy API] User ID:", userId);
+      
+      if (!userId) {
+        console.log("[Privacy Policy API] No user ID found in session");
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { privacyPolicyLink } = req.body;
+      console.log("[Privacy Policy API] Privacy policy link:", privacyPolicyLink);
+      
+      if (!privacyPolicyLink) {
+        return res.status(400).json({ error: "Privacy policy link is required" });
+      }
+
+      // Basic URL validation
+      try {
+        new URL(privacyPolicyLink);
+      } catch {
+        return res.status(400).json({ error: "Invalid URL format" });
+      }
+
+      console.log("[Privacy Policy API] Calling updateUserPrivacyPolicy...");
+      const success = await supabaseService.updateUserPrivacyPolicy(userId, privacyPolicyLink);
+      console.log("[Privacy Policy API] Update result:", success);
+      
+      if (!success) {
+        return res.status(500).json({ error: "Failed to save privacy policy link" });
+      }
+
+      return res.json({ success: true, message: "Privacy policy link saved successfully" });
+    } catch (error) {
+      console.error("Error saving user privacy policy:", error);
+      return res.status(500).json({ error: "Failed to save privacy policy link" });
+    }
+  });
+
   // Create Stripe checkout session for purchasing credits
   app.post("/api/purchase-credits", async (req, res) => {
     try {
