@@ -15,8 +15,13 @@ export default function DropdownStep({ step }: DropdownStepProps) {
     const saved = formResponses[step.title];
     if (saved) {
       setSelectedOption(saved);
+    } else if (step.options.length > 0) {
+      // Pre-enable the topmost option
+      const firstOption = step.options[0].id;
+      setSelectedOption(firstOption);
+      updateResponse(step.title, firstOption);
     }
-  }, [formResponses, step.title, currentStep]);
+  }, [formResponses, step.title, currentStep, step.options, updateResponse]);
 
   const handleSelect = (value: string) => {
     setSelectedOption(value);
