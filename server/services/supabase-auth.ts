@@ -56,7 +56,7 @@ export async function registerUser(email: string, password: string, username: st
           password: '[SUPABASE_AUTH]',
           is_admin: isAdmin,
           uuid: authData.user?.id,
-          credits: 5
+          credits: 1000
         }
       ])
       .select()
@@ -128,7 +128,7 @@ export async function loginUser(email: string, password: string) {
               password: '[SUPABASE_AUTH]',
               is_admin: false,
               uuid: data.user.id,
-              credits: 5
+              credits: 1000
             }
           ])
           .select()
@@ -283,7 +283,7 @@ export async function getCurrentUser(supabaseUserId?: string) {
                 password: '[SUPABASE_AUTH]',
                 is_admin: false,
                 uuid: user.id,
-                credits: 5
+                credits: 1000
               }
             ])
             .select()
@@ -304,7 +304,7 @@ export async function getCurrentUser(supabaseUserId?: string) {
                     password: '[SUPABASE_AUTH]',
                     is_admin: false,
                     uuid: user.id,
-                    credits: 5
+                    credits: 1000
                   }
                 ])
                 .select()
