@@ -351,33 +351,162 @@ export default function EmbedForm() {
     }
   }, [formConfig]);
 
-  // ResizeObserver to measure content height and send to parent
+  // Enhanced ResizeObserver to measure content height and send to parent
   useEffect(() => {
     const container = containerRef.current;
     if (!container || loading) return;
 
-    const BASE_MIN_HEIGHT = 800; // keep footer position stable across steps
-    // Track the maximum height we've sent to avoid shrinking the iframe
+    // Minimum reasonable height for the form
+    const BASE_MIN_HEIGHT = 600;
+    
+    // Keep track of heights to prevent shrinking and ensure smooth transitions
+    let lastHeight = 0;
     let maxHeightSent = BASE_MIN_HEIGHT;
-    const sendHeight = () => {
-      const height = container.scrollHeight;
-      maxHeightSent = Math.max(BASE_MIN_HEIGHT, maxHeightSent, height);
-      // Post message to the parent window
-      window.parent.postMessage({ type: 'form-resize', height: maxHeightSent }, '*');
+    
+    // Enhanced height calculation function with detailed debugging
+    const calculateAndSendHeight = () => {
+      // Get the form container element for more accurate height
+      const formContainer = document.querySelector('[data-testid="embed-form-container"]');
+      
+      // Get all height measurements for debugging
+      const bodyHeight = document.body.offsetHeight;
+      const htmlHeight = document.documentElement.offsetHeight;
+      const containerHeight = container.scrollHeight;
+      const formContainerHeight = formContainer ? formContainer.getBoundingClientRect().height : 0;
+      
+      // Calculate height based on the most accurate source
+      const calculatedHeight = formContainer 
+        ? formContainer.getBoundingClientRect().height 
+        : container.scrollHeight;
+      
+      // Debug all height measurements
+      console.debug(`[embed] Height measurements:
+        - body: ${bodyHeight}px
+        - html: ${htmlHeight}px
+        - container: ${containerHeight}px
+        - formContainer: ${formContainerHeight}px
+        - calculated: ${calculatedHeight}px
+      `);
+      
+      // Apply smoothing to prevent jumps - don't shrink more than 10% at once
+      let newHeight = calculatedHeight;
+      
+      // Never go below our minimum height
+      newHeight = Math.max(BASE_MIN_HEIGHT, newHeight);
+      
+      // If we're shrinking, limit how much we shrink at once (prevents jarring changes)
+      if (lastHeight > 0 && newHeight < lastHeight) {
+        const limitedHeight = Math.max(newHeight, lastHeight * 0.9);
+        console.debug(`[embed] Limiting height reduction: ${newHeight}px → ${limitedHeight}px`);
+        newHeight = limitedHeight;
+      }
+      
+      // Round up to prevent fractional pixel issues
+      newHeight = Math.ceil(newHeight);
+      
+      // Add a small buffer to prevent scrollbars
+      newHeight += 10;
+      
+      // Check for infinite expansion
+      if (newHeight > lastHeight * 1.5 && lastHeight > 0) {
+        console.warn(`[embed] Potential infinite expansion detected: ${lastHeight}px → ${newHeight}px`);
+        // Cap the growth to prevent infinite expansion
+        newHeight = lastHeight * 1.2;
+      }
+      
+      // Keep track of our maximum height to prevent constant shrinking/growing
+      maxHeightSent = Math.max(maxHeightSent, newHeight);
+      
+      // Send message if height has changed significantly (more than 5px) or every 15 calls to ensure parent receives it
+      const forceUpdate = Math.random() < 0.1; // Occasionally force an update even if height hasn't changed
+      if (Math.abs(newHeight - lastHeight) > 5 || forceUpdate) {
+        console.debug(`[embed] Sending height update: ${newHeight}px (change: ${newHeight - lastHeight}px)`);
+        
+        // Send both message formats to ensure compatibility with different parent implementations
+        window.parent.postMessage({ type: 'form-resize', height: newHeight }, '*');
+        window.parent.postMessage({ type: 'heightUpdate', height: newHeight }, '*');
+        
+        lastHeight = newHeight;
+      }
     };
 
     // Use ResizeObserver to automatically send height on content change
-    const resizeObserver = new ResizeObserver(sendHeight);
+    const resizeObserver = new ResizeObserver(() => {
+      // Use requestAnimationFrame for smoother updates
+      requestAnimationFrame(calculateAndSendHeight);
+    });
+    
+    // Observe both the container and its children
     resizeObserver.observe(container);
+    
+    // Also observe the form container if it exists
+    const formContainer = document.querySelector('[data-testid="embed-form-container"]');
+    if (formContainer) {
+      resizeObserver.observe(formContainer);
+    }
 
-    // Send initial height
-    sendHeight();
+    // Utility function to check for overflow issues
+    const checkForOverflowIssues = () => {
+      const elements = document.querySelectorAll('*');
+      const overflowingElements: Array<{
+        element: string;
+        id: string;
+        className: string;
+        scrollWidth: number;
+        clientWidth: number;
+        scrollHeight: number;
+        clientHeight: number;
+      }> = [];
+      
+      elements.forEach(el => {
+        if (el instanceof HTMLElement) {
+          const hasOverflow = el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight;
+          const isScrollable = 
+            window.getComputedStyle(el).overflowY === 'scroll' || 
+            window.getComputedStyle(el).overflowY === 'auto' ||
+            window.getComputedStyle(el).overflowX === 'scroll' || 
+            window.getComputedStyle(el).overflowX === 'auto';
+            
+          if (hasOverflow && isScrollable) {
+            overflowingElements.push({
+              element: el.tagName,
+              id: el.id,
+              className: el.className,
+              scrollWidth: el.scrollWidth,
+              clientWidth: el.clientWidth,
+              scrollHeight: el.scrollHeight,
+              clientHeight: el.clientHeight
+            });
+          }
+        }
+      });
+      
+      if (overflowingElements.length > 0) {
+        console.warn('[embed] Found elements with overflow issues:', overflowingElements);
+      }
+    };
+
+    // Send initial height after a short delay to ensure content is rendered
+    setTimeout(() => {
+      calculateAndSendHeight();
+      checkForOverflowIssues();
+    }, 100);
+
+    // Also send height periodically to catch any missed changes
+    const intervalId = setInterval(() => {
+      calculateAndSendHeight();
+      // Check for overflow issues every 5 seconds
+      if (Date.now() % 5000 < 1000) {
+        checkForOverflowIssues();
+      }
+    }, 1000);
 
     // Cleanup on component unmount
     return () => {
       resizeObserver.disconnect();
+      clearInterval(intervalId);
     };
-  }, [loading]); // Dependency on `loading` ensures it runs after the form is ready
+  }, [loading, formConfig]); // Dependencies ensure it runs after form is ready and when form changes
 
   if (loading) {
     return (
@@ -400,7 +529,7 @@ export default function EmbedForm() {
 
   return (
     <FormProviderWithIconMode iconMode={iconMode}>
-      <div className="w-full min-h-screen" ref={containerRef}>
+      <div className="w-full flex flex-col no-scrollbar" ref={containerRef}>
         {formConfig && (
           <EmbedFormRenderer testMode={false} formConfig={formConfig} formId={formId} />
         )}

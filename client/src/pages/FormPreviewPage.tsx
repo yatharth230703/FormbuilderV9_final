@@ -96,6 +96,31 @@ export function FormPreviewPage() {
       setError('No form ID provided');
     }
   }, [user, formId]);
+  
+  // Handle iframe height messages
+  useEffect(() => {
+    // Function to handle messages from the iframe
+    const handleIframeMessage = (event: MessageEvent) => {
+      // Check if it's a height update message
+      if (event.data && (event.data.type === 'form-resize' || event.data.type === 'heightUpdate')) {
+        const iframe = document.getElementById('formPreviewIframe') as HTMLIFrameElement;
+        if (iframe) {
+          // Add a small buffer (10px) to prevent scrollbars
+          const height = Math.max(600, event.data.height + 10);
+          console.log('Resizing preview iframe to height:', height);
+          iframe.style.height = `${height}px`;
+        }
+      }
+    };
+    
+    // Add event listener
+    window.addEventListener('message', handleIframeMessage);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('message', handleIframeMessage);
+    };
+  }, []);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(previewUrl)
@@ -241,12 +266,23 @@ export function FormPreviewPage() {
               <CardHeader>
                 <CardTitle>Form Preview</CardTitle>
               </CardHeader>
-              <CardContent className="p-0 h-[800px]">
+              <CardContent className="p-0">
                 <iframe
                   src={previewUrl}
-                  className="w-full h-full border-0"
+                  className="w-full border-0"
+                  style={{ height: '600px', transition: 'height 0.3s ease' }}
                   title={`Preview of ${formData.label}`}
                   sandbox="allow-scripts allow-forms allow-same-origin"
+                  id="formPreviewIframe"
+                  onLoad={() => {
+                    // Request height update when iframe loads
+                    const iframe = document.getElementById('formPreviewIframe') as HTMLIFrameElement;
+                    if (iframe && iframe.contentWindow) {
+                      setTimeout(() => {
+                        iframe.contentWindow?.postMessage({ type: 'requestHeight' }, '*');
+                      }, 500); // Small delay to ensure content is rendered
+                    }
+                  }}
                 />
               </CardContent>
             </Card>

@@ -70,11 +70,10 @@ export default function MultiSelectStep({ step }: MultiSelectStepProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col pt-6 sm:pt-10 pb-2 max-h-[90vh] max-w-full overflow-y-auto overflow-x-hidden px-4 hide-scrollbar">
+    <div className="flex-1 flex flex-col pt-6 sm:pt-10 pb-2 max-w-full no-scrollbar px-4">
       <h3 className="text-2xl font-bold mb-1 text-center">{step.title}</h3>
       <p className="text-gray-500 mb-1 text-center">{step.subtitle}</p>
       
-
       {/* Extra top margin so the option tiles sit a bit lower */}
       <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-6 max-w-6xl mx-auto mt-6 w-full`}>
         {step.options.map((option, idx) => {

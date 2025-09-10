@@ -85,18 +85,22 @@
   }
 }
 
-.hide-scrollbar::-webkit-scrollbar {
+.hide-scrollbar::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
   display: none !important;
 }
-.hide-scrollbar {
+.hide-scrollbar,
+.no-scrollbar {
   -ms-overflow-style: none !important;  /* IE and Edge */
   scrollbar-width: none !important;     /* Firefox */
+  overflow: hidden !important;
 }
 
 /* === Global Responsive Overrides for Embedded Forms === */
 body.embed-mode,
 html.embed-mode,
-body.embed-mode #root {
+body.embed-mode #root,
+body.embed-mode #root > div {
   width: 100% !important;
   min-width: 100% !important;
   margin: 0 !important;
@@ -105,6 +109,9 @@ body.embed-mode #root {
   -webkit-text-size-adjust: 100%;
   -moz-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 /* Enable automatic hyphenation for better text wrapping */
@@ -122,4 +129,24 @@ body.embed-mode #root {
   overflow: hidden !important;
   -webkit-overflow-scrolling: touch !important;
   position: relative !important;
+}
+
+/* Dynamic form container styles for embedded forms */
+[data-testid="embed-form-container"] {
+  min-height: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure form steps don't cause overflow */
+[data-testid="embed-form-container"] > div:nth-child(2) {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure footer stays at bottom but doesn't expand unnecessarily */
+[data-testid="embed-form-container"] > div:last-child {
+  flex: 0 0 auto;
 }

@@ -86,6 +86,18 @@ export default function EmbedFormRenderer({
       handleSubmit();
     } else {
       nextStep();
+      
+      // Send height update message when changing steps
+      setTimeout(() => {
+        if (window.self !== window.top) {
+          // We're in an iframe, send height update to parent
+          const height = document.querySelector('[data-testid="embed-form-container"]')?.getBoundingClientRect().height || 
+                         document.documentElement.scrollHeight;
+          
+          window.parent.postMessage({ type: 'form-resize', height }, '*');
+          window.parent.postMessage({ type: 'heightUpdate', height }, '*');
+        }
+      }, 50); // Small delay to allow content to render
     }
   };
 
@@ -216,7 +228,7 @@ export default function EmbedFormRenderer({
   }
 
   return (
-    <div className="w-full h-screen overflow-hidden relative flex flex-col bg-white">
+    <div className="w-full flex flex-col bg-white no-scrollbar" data-testid="embed-form-container">
       
       {/* Progress bar for embed */}
       <div className="p-6 border-b border-gray-200">
@@ -238,9 +250,9 @@ export default function EmbedFormRenderer({
         </div>
       </div>
 
-      {/* Main Content - scroll only inside content area (matches build form) */}
-      <div className="flex-1 overflow-auto px-6 pt-12 pb-4 hide-scrollbar">
-        <div className="mb-6">{currentStepContent}</div>
+      {/* Main Content - no scrolling, content fits in available space */}
+      <div className="flex-grow flex flex-col px-6 pt-12 pb-4 no-scrollbar">
+        <div className="flex-grow">{currentStepContent}</div>
       </div>
 
       {/* Fixed Footer Navigation (matches build form footer behavior) */}
@@ -250,7 +262,20 @@ export default function EmbedFormRenderer({
               <Button
                 variant="ghost"
                 className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 flex items-center px-4 py-2"
-                onClick={prevStep}
+                onClick={() => {
+                  prevStep();
+                  // Send height update message when changing steps
+                  setTimeout(() => {
+                    if (window.self !== window.top) {
+                      // We're in an iframe, send height update to parent
+                      const height = document.querySelector('[data-testid="embed-form-container"]')?.getBoundingClientRect().height || 
+                                    document.documentElement.scrollHeight;
+                      
+                      window.parent.postMessage({ type: 'form-resize', height }, '*');
+                      window.parent.postMessage({ type: 'heightUpdate', height }, '*');
+                    }
+                  }, 50); // Small delay to allow content to render
+                }}
                 disabled={isSubmitting}
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -265,7 +290,20 @@ export default function EmbedFormRenderer({
                 <Button
                   variant="outline"
                   className="text-gray-600 border-gray-300 hover:bg-gray-50 flex items-center px-4 py-2"
-                  onClick={nextStep}
+                  onClick={() => {
+                    nextStep();
+                    // Send height update message when changing steps
+                    setTimeout(() => {
+                      if (window.self !== window.top) {
+                        // We're in an iframe, send height update to parent
+                        const height = document.querySelector('[data-testid="embed-form-container"]')?.getBoundingClientRect().height || 
+                                      document.documentElement.scrollHeight;
+                        
+                        window.parent.postMessage({ type: 'form-resize', height }, '*');
+                        window.parent.postMessage({ type: 'heightUpdate', height }, '*');
+                      }
+                    }, 50); // Small delay to allow content to render
+                  }}
                   disabled={isSubmitting}
                 >
                   <SkipForwardIcon className="mr-2 h-4 w-4" />

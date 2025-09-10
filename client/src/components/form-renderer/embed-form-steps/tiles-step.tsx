@@ -85,7 +85,7 @@ export default function TilesStep({ step }: TilesStepProps) {
   const iconSize = isMobile ? 32 : 48;
 
   return (
-    <div className="h-full flex flex-col items-center justify-start pt-6 sm:pt-10 w-full px-4">
+    <div className="flex-1 flex flex-col items-center justify-start pt-6 sm:pt-10 w-full px-4 no-scrollbar">
       {/* Align from the top so the tiles sit closer to the centre of the iframe, while the heading stays near the top */}
       <h3 className="text-2xl font-bold mb-2 text-center">{step.title}</h3>
       <p className="text-gray-500 mb-4 text-center text-sm">{step.subtitle}</p>

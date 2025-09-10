@@ -13,15 +13,27 @@ export function useIframeResize() {
   const sendHeight = useCallback(() => {
     if (!isIframe) return;
 
-    const height = Math.max(
-      document.documentElement.scrollHeight,
-      document.documentElement.offsetHeight,
-      document.documentElement.clientHeight,
-      document.body.scrollHeight,
-      document.body.offsetHeight,
-    );
+    // Find the form container element
+    const formContainer = document.querySelector('[data-testid="embed-form-container"]');
+    
+    // Calculate height based on the form container or fallback to document dimensions
+    const height = formContainer 
+      ? formContainer.getBoundingClientRect().height
+      : Math.max(
+          document.documentElement.scrollHeight,
+          document.documentElement.offsetHeight,
+          document.documentElement.clientHeight,
+          document.body.scrollHeight,
+          document.body.offsetHeight,
+        );
 
-    window.parent.postMessage({ type: "heightUpdate", height }, "*");
+    // Add a small buffer to prevent any potential scrolling
+    const heightWithBuffer = Math.ceil(height) + 5;
+    
+    // Log height for debugging
+    console.debug(`[useIframeResize] Sending height: ${heightWithBuffer}px`);
+    
+    window.parent.postMessage({ type: "heightUpdate", height: heightWithBuffer }, "*");
   }, [isIframe]);
 
   useEffect(() => {
@@ -46,13 +58,32 @@ export function useIframeResize() {
     setWindowWidth(window.innerWidth);
     sendHeight();
 
-    // Observe size changes of the root elements.
-    const resizeObserver = new ResizeObserver(() => {
-      requestAnimationFrame(sendHeight);
+    // Observe size changes of the root elements and form container.
+    const resizeObserver = new ResizeObserver((entries) => {
+      // Use requestAnimationFrame for smoother updates
+      requestAnimationFrame(() => {
+        // Log resize events for debugging
+        console.debug(`[useIframeResize] Resize detected: ${entries.length} entries`);
+        sendHeight();
+      });
     });
 
+    // Observe the document body and html element
     resizeObserver.observe(document.body);
     resizeObserver.observe(document.documentElement);
+    
+    // Also observe the form container element if it exists
+    const formContainer = document.querySelector('[data-testid="embed-form-container"]');
+    if (formContainer) {
+      resizeObserver.observe(formContainer);
+      
+      // Also observe each direct child of the form container
+      formContainer.childNodes.forEach(node => {
+        if (node instanceof HTMLElement) {
+          resizeObserver.observe(node);
+        }
+      });
+    }
 
     // Observe DOM mutations that might affect layout.
     const mutationObserver = new MutationObserver(() => {
