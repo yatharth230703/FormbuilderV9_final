@@ -139,7 +139,7 @@ export default function SliderStep({ step }: SliderStepProps) {
                 transition={{ type: "spring", stiffness: 300, damping: 15 }}
                 style={{ WebkitTextFillColor: 'transparent' }}
               >
-                {step.prefix || ''}{value}
+                {value}{step.prefix || ''}
               </motion.span>
               <motion.button
                 initial={{ scale: 0 }}
@@ -157,8 +157,8 @@ export default function SliderStep({ step }: SliderStepProps) {
 
         <div className="relative">
           <div className="flex justify-between mb-2 text-lg text-gray-500 dark:text-gray-400">
-            <span>{step.prefix || ''}{step.min}</span>
-            <span>{step.prefix || ''}{step.max}</span>
+            <span>{step.min}{step.prefix || ''}</span>
+            <span>{step.max}{step.prefix || ''}</span>
           </div>
 
           <Slider
