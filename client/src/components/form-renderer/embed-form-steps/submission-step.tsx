@@ -31,8 +31,8 @@ export default function SubmissionStep({ submission }: SubmissionStepProps) {
               </div>
             </div>
             <div className="text-left">
-              <h4 className="font-bold text-lg text-center">{step.title}</h4>
-              <p className="text-sm text-gray-500 text-center">{step.description}</p>
+              <h4 className="font-bold text-lg">{step.title}</h4>
+              <p className="text-sm text-gray-500">{step.description}</p>
             </div>
           </div>
         ))}
