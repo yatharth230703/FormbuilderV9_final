@@ -48,7 +48,7 @@ The following form configuration is to be used as a reference for any configs th
         light: "#ecebe4",
         muted: "#6a6a6a",
       },
-      primary: "#0E565B",
+      primary: "#10b981",
       background: {
         light: "#ffffff",
         white: "#ffffff",
@@ -286,7 +286,7 @@ The following form configuration is to be used as a reference for any configs th
 Follow these strict rules:
 1. Each page should have 1-2 elements (except for tiles which can have up to 6)
 2. Layout must be designed for 16:9 aspect ratio
-3. Use minimal brand colors (1-2 brand colors globally)
+3. Use colors exclusively from the theme.colors.primary field - do not generate or suggest additional colors
 4. Always include a location question asking for postal code and country
 5. Always include a contact step to collect user's contact information
 6. Each tile or multiSelect step must have exactly 4 or 6 options
@@ -305,7 +305,7 @@ const demoFormConfig: FormConfig = {
         light: "#ecebe4",
         muted: "#6a6a6a",
       },
-      primary: "#0E565B",
+      primary: "#10b981",
       background: {
         light: "#ffffff",
         white: "#ffffff",

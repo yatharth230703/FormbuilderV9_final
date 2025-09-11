@@ -278,15 +278,15 @@ export default function EmbedForm() {
         return `#${darkerR.toString(16).padStart(2, '0')}${darkerG.toString(16).padStart(2, '0')}${darkerB.toString(16).padStart(2, '0')}`;
       };
 
-      // Load saved custom theme (same as in main app)
-      const savedPrimary = localStorage.getItem('custom-theme-primary') || "#3b82f6";
+      // Use primary color from form config, fallback to localStorage if not available
+      const primaryColor = colors.primary || localStorage.getItem('custom-theme-primary') || "#10b981";
       const savedSecondary = localStorage.getItem('custom-theme-secondary') || "#a855f7";
       const savedAccent = localStorage.getItem('custom-theme-accent') || "#2dd4bf";
       const savedFont = localStorage.getItem('custom-theme-font') || "'Poppins', sans-serif";
       
       // Apply custom theme settings to match the main application
-      document.documentElement.style.setProperty('--color-primary', savedPrimary);
-      document.documentElement.style.setProperty('--color-primary-dark', getDarkerShade(savedPrimary));
+      document.documentElement.style.setProperty('--color-primary', primaryColor);
+      document.documentElement.style.setProperty('--color-primary-dark', getDarkerShade(primaryColor));
       document.documentElement.style.setProperty('--color-secondary', savedSecondary);
       document.documentElement.style.setProperty('--color-accent', savedAccent);
       document.documentElement.style.setProperty('--color-background', '#ffffff'); // Always white
@@ -321,7 +321,7 @@ export default function EmbedForm() {
         }
         return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
       };
-      document.documentElement.style.setProperty("--primary", hexToHslString(savedPrimary));
+      document.documentElement.style.setProperty("--primary", hexToHslString(primaryColor));
 
       // Apply other theme colors from form config
       if (colors.text) {
