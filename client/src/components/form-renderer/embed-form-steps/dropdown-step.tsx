@@ -28,6 +28,20 @@ export default function DropdownStep({ step }: DropdownStepProps) {
     updateResponse(step.title, value);
   };
 
+  // Handle empty options gracefully
+  if (!step.options || step.options.length === 0) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center w-full px-4">
+        <h3 className="text-2xl font-bold mb-2 text-center">{step.title}</h3>
+        <p className="text-gray-500 mb-4 text-center text-sm">{step.subtitle}</p>
+        <div className="text-center text-gray-500">
+          <p>This step has no options configured.</p>
+          <p className="text-sm mt-2">Please contact the form administrator.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-2xl mx-auto">
       <h3 className="text-2xl font-bold mb-2 text-center">{step.title}</h3>

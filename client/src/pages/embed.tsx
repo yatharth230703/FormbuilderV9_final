@@ -174,7 +174,7 @@ export default function EmbedForm() {
       try {
         // Get the URL directly from window.location
         const url = new URL(window.location.href);
-        console.log("Full URL:", url.toString());
+        console.log("🔍 EMBED PAGE - Full URL:", url.toString());
 
         // Get the new parameters
         const language = url.searchParams.get("language");
@@ -185,7 +185,7 @@ export default function EmbedForm() {
         // Fallback to old form parameter for backward compatibility
         const oldFormId = url.searchParams.get("form") || url.searchParams.get("id");
         
-        console.log("URL params:", { language, label, domain, oldFormId, iconModeParam });
+        console.log("🔍 EMBED PAGE - URL params:", { language, label, domain, oldFormId, iconModeParam });
         
         // Set icon mode from URL parameter
         if (iconModeParam && ['lucide', 'emoji', 'none'].includes(iconModeParam)) {
@@ -202,6 +202,7 @@ export default function EmbedForm() {
         
         if (language && label && domain) {
           // New URL structure
+          console.log("🔍 EMBED PAGE - Using new URL structure with properties");
           response = await apiRequest<{
             id: number;
             label: string;
@@ -213,6 +214,7 @@ export default function EmbedForm() {
           });
         } else if (oldFormId) {
           // Old URL structure (backward compatibility)
+          console.log("🔍 EMBED PAGE - Using old URL structure with form ID:", oldFormId);
           response = await apiRequest<{
             id: number;
             label: string;
@@ -229,8 +231,12 @@ export default function EmbedForm() {
             id: response.id,
             label: response.label,
             iconMode: response.iconMode,
-            hasConfig: !!response.config
+            hasConfig: !!response.config,
+            configSteps: response.config.steps?.length || 0,
+            configTheme: !!response.config.theme
           });
+          
+          console.log("📄 EMBED PAGE - Full form config:", JSON.stringify(response.config, null, 2));
           
           setFormConfig(response.config); // Do not inject id
           setFormId(response.id); // Set formId state
@@ -243,11 +249,15 @@ export default function EmbedForm() {
             console.log("⚠️ EMBED PAGE - No valid icon mode in response, using default");
           }
         } else {
-          console.log("❌ EMBED PAGE - Form not found");
+          console.log("❌ EMBED PAGE - Form not found or no response");
           setError("Form not found");
         }
       } catch (err) {
-        console.error("Error fetching form:", err);
+        console.error("❌ EMBED PAGE - Error fetching form:", err);
+        console.error("❌ EMBED PAGE - Error details:", {
+          message: err instanceof Error ? err.message : 'Unknown error',
+          stack: err instanceof Error ? err.stack : undefined
+        });
         setError("Failed to load form");
       } finally {
         setLoading(false);
@@ -527,11 +537,24 @@ export default function EmbedForm() {
     );
   }
 
+  console.log("🎨 EMBED PAGE - Rendering with:", {
+    formConfig: !!formConfig,
+    formId,
+    iconMode,
+    loading,
+    error
+  });
+
   return (
     <FormProviderWithIconMode iconMode={iconMode}>
       <div className="w-full flex flex-col no-scrollbar" ref={containerRef}>
         {formConfig && (
           <EmbedFormRenderer testMode={false} formConfig={formConfig} formId={formId} />
+        )}
+        {!formConfig && !loading && !error && (
+          <div className="p-4 text-center text-gray-500">
+            No form configuration available
+          </div>
         )}
       </div>
       <Toaster />

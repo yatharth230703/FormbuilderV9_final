@@ -42,10 +42,38 @@ console.log('CORS configuration:', {
   nodeEnv: process.env.NODE_ENV
 });
 
-app.use(cors({
-  origin: allowedOrigin,
+// Allow multiple origins for embedding
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: Function) {
+    // Allow requests with no origin (like mobile apps, local files, or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow localhost origins
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
+    
+    // Allow the main frontend origin
+    if (origin === allowedOrigin) {
+      return callback(null, true);
+    }
+    
+    // Allow any origin in development
+    if (!isProduction) {
+      return callback(null, true);
+    }
+    
+    // In production, only allow the main domain
+    if (origin === process.env.APP_URL) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
-}));
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -91,8 +119,16 @@ app.use((req, res, next) => {
 if (isProduction || process.env.NODE_ENV === 'development') {
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    // Allow iframe embedding from any origin for customer websites
-    res.setHeader('Content-Security-Policy', `frame-ancestors *`);
+    
+    // Special handling for embed route - allow iframe embedding
+    if (req.path === '/embed' || req.path.startsWith('/embed?')) {
+      res.setHeader('X-Frame-Options', 'ALLOWALL');
+      res.setHeader('Content-Security-Policy', 'frame-ancestors http: https: data:');
+    } else {
+      // Allow iframe embedding from any origin for customer websites
+      res.setHeader('Content-Security-Policy', `frame-ancestors http: https: data:`);
+    }
+    
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     next();

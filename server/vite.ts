@@ -19,7 +19,7 @@ export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
-    allowedHosts: true,
+    allowedHosts: true as const,
   };
 
   const vite = await createViteServer({
@@ -37,6 +37,7 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
+  
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
 
@@ -47,6 +48,13 @@ export async function setupVite(app: Express, server: Server) {
         "client",
         "index.html",
       );
+
+      // Set special headers for embed route
+      if (url.startsWith('/embed')) {
+        res.setHeader('X-Frame-Options', 'ALLOWALL');
+        res.setHeader('Content-Security-Policy', 'frame-ancestors http: https: data:');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+      }
 
       // always reload the index.html file from disk incase it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
@@ -107,6 +115,14 @@ export function serveStatic(app: Express) {
     
     try {
       const indexHtml = fs.readFileSync(indexPath, "utf-8");
+      
+      // Set special headers for embed route
+      if (req.path.startsWith('/embed')) {
+        res.setHeader('X-Frame-Options', 'ALLOWALL');
+        res.setHeader('Content-Security-Policy', 'frame-ancestors http: https: data:');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+      }
+      
       res.status(200).set({ "Content-Type": "text/html" }).end(indexHtml);
     } catch (error) {
       log(`Error serving index.html: ${error}`, "static");

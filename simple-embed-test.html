@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Embed Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .status {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simple Embed Test</h1>
+        
+        <div id="status" class="status info">
+            Testing server connectivity...
+        </div>
+        
+        <div>
+            <h3>Direct Link Test:</h3>
+            <a href="http://localhost:5000/embed?form=604" target="_blank">Open Embed Page in New Tab</a>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <h3>Iframe Test:</h3>
+            <iframe id="embedFrame" src="http://localhost:5000/embed?form=604"></iframe>
+        </div>
+        
+        <script>
+            // Test server connectivity
+            const statusDiv = document.getElementById('status');
+            
+            fetch('http://localhost:5000/api/forms/604')
+                .then(response => {
+                    if (response.ok) {
+                        statusDiv.className = 'status success';
+                        statusDiv.textContent = '✅ Server is accessible - Status: ' + response.status;
+                    } else {
+                        statusDiv.className = 'status error';
+                        statusDiv.textContent = '❌ Server returned error: ' + response.status;
+                    }
+                })
+                .catch(error => {
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = '❌ Server connectivity failed: ' + error.message;
+                });
+            
+            // Test iframe loading
+            const iframe = document.getElementById('embedFrame');
+            iframe.onload = function() {
+                console.log('✅ Iframe loaded successfully');
+                statusDiv.textContent += ' | ✅ Iframe loaded';
+            };
+            
+            iframe.onerror = function() {
+                console.log('❌ Iframe failed to load');
+                statusDiv.textContent += ' | ❌ Iframe failed';
+            };
+            
+            // Listen for messages from iframe
+            window.addEventListener('message', function(event) {
+                console.log('Received message from iframe:', event.data);
+            });
+        </script>
+    </div>
+</body>
+</html>
