@@ -258,19 +258,6 @@ export default function EmbedForm() {
             configKeys: Object.keys(formConfiguration)
           });
 
-          try{
-            console.log("The thing below is response.config.steps")
-            console.log(response.config.steps)
-            console.log("The thing below is response.config.steps.length")
-            console.log(response.config.steps.length)
-          }
-          catch (err){
-            console.log("There was an error printing step length for some fucking reason")
-          }
-
-          console.log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ SIMPLE RESPONSE , DONO ME MATCH HONA CHAHIYE MKC" ,response)
-
-
           
           // Direct access to the steps array from the unwrapped config object
           let stepsArray = [];
