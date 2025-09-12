@@ -48,15 +48,55 @@ export default function EmbedFormRenderer({
     isStepOptional,
   } = useFormContext();
 
-  // Use prop formConfig if provided, otherwise use context formConfig
-  const formConfig = propFormConfig || contextFormConfig;
+  // Handle both regular and double-wrapped configs
+  // If config.config exists, it's a double-wrapped config from the API
+  const unwrapConfig = (config: any) => {
+    if (!config) return config;
+    return config.config ? config.config : config;
+  };
+  
+  // Unwrap both prop config and context config
+  const unwrappedPropConfig = propFormConfig ? unwrapConfig(propFormConfig) : null;
+  const unwrappedContextConfig = contextFormConfig ? unwrapConfig(contextFormConfig) : null;
+  
+  // Use unwrapped prop formConfig if provided, otherwise use unwrapped context formConfig
+  const formConfig = unwrappedPropConfig || unwrappedContextConfig;
+  
+  console.log("🔍 FORM RENDERER - Config format detection:", {
+    hasPropConfig: !!propFormConfig,
+    propHasNestedConfig: propFormConfig && !!propFormConfig.config,
+    contextHasNestedConfig: contextFormConfig && !!contextFormConfig.config,
+    usingUnwrappedConfig: !!formConfig
+  });
 
   // If prop formConfig is provided, update the context
   useEffect(() => {
     if (propFormConfig && propFormConfig !== contextFormConfig) {
-      setFormConfig(propFormConfig);
+      const configToUse = unwrapConfig(propFormConfig);
+      console.log("🔄 FORM RENDERER - Updating form config from props:", {
+        hasSteps: configToUse && Array.isArray(configToUse.steps),
+        stepsLength: configToUse && configToUse.steps?.length || 0,
+        hasNestedConfig: !!propFormConfig.config
+      });
+      
+      // Validate the form config before setting it
+      if (!configToUse || !configToUse.steps || !Array.isArray(configToUse.steps) || configToUse.steps.length === 0) {
+        console.error("⚠️ FORM RENDERER - Invalid form config: no steps found");
+      } else {
+        setFormConfig(configToUse);
+      }
     }
   }, [propFormConfig, contextFormConfig, setFormConfig]);
+  
+  // Log current step information for debugging
+  useEffect(() => {
+    console.log("👣 FORM RENDERER - Current step info:", {
+      currentStep,
+      totalSteps,
+      hasFormConfig: !!formConfig,
+      stepsLength: formConfig?.steps?.length || 0
+    });
+  }, [currentStep, totalSteps, formConfig]);
 
   // Set formId if provided (but don't initialize session yet)
   useEffect(() => {
@@ -156,20 +196,141 @@ export default function EmbedFormRenderer({
   };
 
   const currentStepContent = useMemo(() => {
-    if (!formConfig?.steps) {
+    // Check if formConfig exists
+    if (!formConfig) {
+      console.log("⚠️ FORM RENDERER - No formConfig found");
       return (
         <div className="flex items-center justify-center h-full">
           <p className="text-gray-500">Loading form...</p>
         </div>
       );
     }
-
-    if (isFormComplete && formConfig.submission) {
-      return <SubmissionStep submission={formConfig.submission} />;
+    
+    // Process steps - handle both array and object formats
+    let stepsArray = [];
+    
+    // Log the raw form config structure
+    console.log("🔍 FORM RENDERER - Raw form config:", {
+      hasSteps: !!formConfig.steps,
+      stepsType: typeof formConfig.steps,
+      isArray: Array.isArray(formConfig.steps),
+      stepsLength: formConfig.steps?.length || 0,
+      configKeys: Object.keys(formConfig)
+    });
+    
+    // First approach: Check if steps is directly an array
+    if (Array.isArray(formConfig.steps)) {
+      console.log("✅ FORM RENDERER - Steps is directly an array");
+      stepsArray = formConfig.steps;
+    } 
+    // Second approach: Check if steps is an object with numeric keys
+    else if (typeof formConfig.steps === 'object' && formConfig.steps !== null) {
+      console.log("🔄 FORM RENDERER - Steps is an object, trying to convert to array");
+      try {
+        const keys = Object.keys(formConfig.steps).filter(k => !isNaN(Number(k))).sort((a, b) => Number(a) - Number(b));
+        if (keys.length > 0) {
+          stepsArray = keys.map(k => formConfig.steps[k]);
+          console.log("✅ FORM RENDERER - Converted steps object to array:", { 
+            convertedLength: stepsArray.length 
+          });
+        }
+      } catch (err) {
+        console.error("❌ FORM RENDERER - Error converting steps object to array:", err);
+      }
+    }
+    // Third approach: Try to extract steps from raw config JSON
+    else {
+      console.log("🔄 FORM RENDERER - Trying to extract steps from raw config");
+      try {
+        const configStr = JSON.stringify(formConfig);
+        const stepsMatch = configStr.match(/"steps"\s*:\s*(\[[\s\S]*?\])(?=\s*,|\s*\})/);
+        
+        if (stepsMatch && stepsMatch[1]) {
+          try {
+            const parsedSteps = JSON.parse(stepsMatch[1]);
+            if (Array.isArray(parsedSteps) && parsedSteps.length > 0) {
+              stepsArray = parsedSteps;
+              console.log("✅ FORM RENDERER - Extracted steps from raw JSON:", {
+                length: stepsArray.length,
+                firstStepTitle: stepsArray[0]?.title
+              });
+            }
+          } catch (parseErr) {
+            console.error("❌ FORM RENDERER - Error parsing steps from raw JSON:", parseErr);
+          }
+        }
+      } catch (err) {
+        console.error("❌ FORM RENDERER - Error extracting steps from raw config:", err);
+      }
+    }
+    
+    // Log the steps processing results
+    console.log("📊 FORM RENDERER - Steps processing:", {
+      originalStepsType: typeof formConfig.steps,
+      isOriginalArray: Array.isArray(formConfig.steps),
+      processedStepsLength: stepsArray.length,
+      currentStep
+    });
+    
+    // Check if we have any steps
+    if (!stepsArray.length) {
+      console.log("⚠️ FORM RENDERER - No steps found in formConfig:", formConfig);
+      return (
+        <div className="flex items-center justify-center h-full">
+          <p className="text-gray-500">This form has no steps. Please contact the form creator.</p>
+        </div>
+      );
     }
 
-    const step = formConfig.steps[currentStep - 1];
-    if (!step) return null;
+    if (isFormComplete) {
+      // If submission data exists, use it; otherwise, create a default submission
+      const submissionData = formConfig.submission || {
+        title: "Thank You for Your Submission! 🎉",
+        description: "We've received your information and will be in touch soon.",
+        steps: [
+          {
+            title: "Request Received ✓",
+            description: "We've successfully received your request."
+          },
+          {
+            title: "Processing ⏱️",
+            description: "Our team is reviewing your submission."
+          },
+          {
+            title: "Next Steps 🚀",
+            description: "We'll contact you soon with more information."
+          }
+        ]
+      };
+      return <SubmissionStep submission={submissionData} />;
+    }
+
+    // Check if currentStep is valid
+    if (currentStep < 1 || currentStep > stepsArray.length) {
+      console.log("⚠️ FORM RENDERER - Invalid currentStep:", {
+        currentStep,
+        totalSteps: stepsArray.length
+      });
+      return (
+        <div className="flex items-center justify-center h-full">
+          <p className="text-gray-500">Invalid step number. Please refresh the page.</p>
+        </div>
+      );
+    }
+
+    const step = stepsArray[currentStep - 1];
+    if (!step) {
+      console.log("⚠️ FORM RENDERER - Step not found:", {
+        currentStep,
+        totalSteps: stepsArray.length,
+        steps: stepsArray
+      });
+      return (
+        <div className="flex items-center justify-center h-full">
+          <p className="text-gray-500">Step data not found. Please refresh the page.</p>
+        </div>
+      );
+    }
 
     switch (step.type) {
       case "tiles":
@@ -206,14 +367,44 @@ export default function EmbedFormRenderer({
 
   // Check if current step is a tiles step (single correct type that auto-advances)
   const isCurrentStepTiles = useMemo(() => {
-    if (!formConfig?.steps) return false;
-    const step = formConfig.steps[currentStep - 1];
+    if (!formConfig) return false;
+    
+    // Process steps - handle both array and object formats
+    let stepsArray = [];
+    if (Array.isArray(formConfig.steps)) {
+      stepsArray = formConfig.steps;
+    } else if (typeof formConfig.steps === 'object' && formConfig.steps !== null) {
+      // If it's an object with numeric keys like {0: {...}, 1: {...}}
+      const keys = Object.keys(formConfig.steps).filter(k => !isNaN(Number(k))).sort((a, b) => Number(a) - Number(b));
+      if (keys.length > 0) {
+        stepsArray = keys.map(k => formConfig.steps[k]);
+      }
+    }
+    
+    if (!stepsArray.length || currentStep < 1 || currentStep > stepsArray.length) return false;
+    
+    const step = stepsArray[currentStep - 1];
     return step?.type === "tiles";
   }, [currentStep, formConfig]);
 
   // Check if current step is optional
   const isCurrentStepOptional = useMemo(() => {
-    if (!formConfig?.steps) return false;
+    if (!formConfig) return false;
+    
+    // Process steps - handle both array and object formats
+    let stepsArray = [];
+    if (Array.isArray(formConfig.steps)) {
+      stepsArray = formConfig.steps;
+    } else if (typeof formConfig.steps === 'object' && formConfig.steps !== null) {
+      // If it's an object with numeric keys like {0: {...}, 1: {...}}
+      const keys = Object.keys(formConfig.steps).filter(k => !isNaN(Number(k))).sort((a, b) => Number(a) - Number(b));
+      if (keys.length > 0) {
+        stepsArray = keys.map(k => formConfig.steps[k]);
+      }
+    }
+    
+    if (!stepsArray.length || currentStep < 1 || currentStep > stepsArray.length) return false;
+    
     return isStepOptional(currentStep - 1);
   }, [currentStep, formConfig, isStepOptional]);
 

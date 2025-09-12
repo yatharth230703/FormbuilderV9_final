@@ -638,9 +638,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         finalIconMode: finalIconMode
       });
       
+      // Fix: Use formConfig.config instead of formConfig to avoid double-wrapping
+      console.log("🔧 Using direct config object to avoid double-wrapping");
+      
       const formId = await supabaseService.createFormConfig(
         finalLabel, 
-        formConfig, 
+        formConfig.config, 
         finalLanguage, 
         finalDomain, 
         userId,
@@ -915,6 +918,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Language, label, and domain are required" });
       }
 
+      console.log(`[API] Fetching form by properties: language=${language}, label=${label}, domain=${domain}`);
+
       const form = await supabaseService.getFormByProperties(
         language as string,
         label as string,
@@ -922,8 +927,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       if (!form) {
+        console.log(`[API] Form not found for properties: language=${language}, label=${label}, domain=${domain}`);
         return res.status(404).json({ error: "Form not found" });
       }
+
+      console.log(`[API] Form found with ID: ${form.id}`);
+      console.log(`[API] Form config structure:`, {
+        hasConfig: !!form.config,
+        configType: typeof form.config,
+        hasSteps: form.config && form.config.steps ? true : false,
+        stepsType: form.config && form.config.steps ? typeof form.config.steps : 'undefined',
+        isStepsArray: form.config && form.config.steps ? Array.isArray(form.config.steps) : false,
+        stepsLength: form.config && form.config.steps && Array.isArray(form.config.steps) ? form.config.steps.length : 0
+      });
 
       // --- INTEGRATE AUTO-SELECT LOGIC ---
       let modifiedForm = { ...form };
@@ -937,6 +953,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       // --- END AUTO-SELECT LOGIC ---
+
+      // Ensure the config.steps is an array before sending
+      if (modifiedForm.config && typeof modifiedForm.config === 'object') {
+        // If steps exists but isn't an array, try to convert it
+        if (modifiedForm.config.steps && !Array.isArray(modifiedForm.config.steps) && typeof modifiedForm.config.steps === 'object') {
+          console.log(`[API] Converting steps object to array`);
+          try {
+            const keys = Object.keys(modifiedForm.config.steps)
+              .filter(k => !isNaN(Number(k)))
+              .sort((a, b) => Number(a) - Number(b));
+            
+            if (keys.length > 0) {
+              const stepsArray = keys.map(k => modifiedForm.config.steps[k]);
+              modifiedForm.config.steps = stepsArray;
+              console.log(`[API] Successfully converted steps to array with length: ${stepsArray.length}`);
+            }
+          } catch (err) {
+            console.error(`[API] Error converting steps to array:`, err);
+          }
+        }
+      }
+
+      console.log(`[API] Final form config structure before sending:`, {
+        hasConfig: !!modifiedForm.config,
+        hasSteps: modifiedForm.config && modifiedForm.config.steps ? true : false,
+        isStepsArray: modifiedForm.config && modifiedForm.config.steps ? Array.isArray(modifiedForm.config.steps) : false,
+        stepsLength: modifiedForm.config && modifiedForm.config.steps && Array.isArray(modifiedForm.config.steps) ? modifiedForm.config.steps.length : 0
+      });
 
       return res.json(modifiedForm);
     } catch (error) {

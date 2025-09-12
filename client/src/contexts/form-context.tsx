@@ -79,6 +79,7 @@ export function FormProvider({ children }: { children: ReactNode }) {
   // Reset step when form config changes
 useEffect(() => {
   if (formConfig) {
+    // Always reset to step 1 when form config changes
     setCurrentStep(1);
     setFormResponses({});
     setTempJson({});
@@ -89,6 +90,8 @@ useEffect(() => {
     setSessionId(null);
     setSessionNo(null);
     setSessionInitialized(false);
+    
+    console.log("[Form Context] Form config changed, reset to step 1");
   }
 }, [formConfig]);
 
@@ -113,8 +116,21 @@ useEffect(() => {
     }
   }, [formResponses, sessionInitialized, sessionId]);
 
-  // Calculate total steps
-  const totalSteps = formConfig?.steps.length || 1;
+  // Calculate total steps - ensure steps is treated as an array
+  const totalSteps = (() => {
+    if (!formConfig) return 1;
+    
+    // Handle case where steps might be an object instead of an array
+    if (Array.isArray(formConfig.steps)) {
+      return formConfig.steps.length || 1;
+    } else if (typeof formConfig.steps === 'object' && formConfig.steps !== null) {
+      // If it's an object with numeric keys like {0: {...}, 1: {...}}
+      const keys = Object.keys(formConfig.steps).filter(k => !isNaN(Number(k)));
+      return keys.length || 1;
+    }
+    
+    return 1;
+  })();
 
   // Initialize session for temporary response tracking
   const initializeSession = async () => {
@@ -330,11 +346,26 @@ useEffect(() => {
       formResponsesKeys: Object.keys(formResponses)
     });
     
+    // Validate that we have a valid form config with steps
+    if (!formConfig?.steps || !Array.isArray(formConfig.steps) || formConfig.steps.length === 0) {
+      console.error('[FORM-CONTEXT] Cannot navigate: invalid or empty form config');
+      return;
+    }
+    
+    // Validate current step is within bounds
+    if (currentStep < 1 || currentStep > formConfig.steps.length) {
+      console.error('[FORM-CONTEXT] Current step is out of bounds:', currentStep);
+      // Reset to step 1 as a fallback
+      setCurrentStep(1);
+      return;
+    }
+    
     if (currentStep < totalSteps) {
       // Check if we're on a document upload step and it's being skipped
-      if (formConfig?.steps && currentStep <= formConfig.steps.length) {
+      if (currentStep <= formConfig.steps.length) {
         const currentStepData = formConfig.steps[currentStep - 1];
-        const nextStepData = formConfig.steps[currentStep];
+        // Only try to access next step if it exists
+        const nextStepData = currentStep < formConfig.steps.length ? formConfig.steps[currentStep] : null;
         
         console.log('[FORM-CONTEXT] Step data:', {
           currentStepType: currentStepData?.type,
@@ -348,19 +379,21 @@ useEffect(() => {
             nextStepData?.type === 'documentInfo' && 
             !hasDocumentUploaded()) {
           console.log('[FORM-CONTEXT] Skipping documentUpload and documentInfo steps');
-          // Skip both documentUpload and documentInfo steps
-          setCurrentStep(currentStep + 2);
+          // Skip both documentUpload and documentInfo steps, but ensure we don't go out of bounds
+          const newStep = Math.min(currentStep + 2, formConfig.steps.length);
+          setCurrentStep(newStep);
           return;
         }
       }
       
       // Check if we're moving to a documentInfo step and no document was uploaded
-      if (formConfig?.steps && currentStep < formConfig.steps.length) {
+      if (currentStep < formConfig.steps.length) {
         const nextStepData = formConfig.steps[currentStep];
         if (nextStepData?.type === 'documentInfo' && !hasDocumentUploaded()) {
           console.log('[FORM-CONTEXT] Skipping documentInfo step - no document uploaded');
-          // Skip documentInfo step if no document was uploaded
-          setCurrentStep(currentStep + 2);
+          // Skip documentInfo step if no document was uploaded, but ensure we don't go out of bounds
+          const newStep = Math.min(currentStep + 2, formConfig.steps.length);
+          setCurrentStep(newStep);
           return;
         }
       }
@@ -372,7 +405,22 @@ useEffect(() => {
 
   // Move to the previous step
   const prevStep = () => {
+    // Validate that we have a valid form config with steps
+    if (!formConfig?.steps || !Array.isArray(formConfig.steps) || formConfig.steps.length === 0) {
+      console.error('[FORM-CONTEXT] Cannot navigate: invalid or empty form config');
+      return;
+    }
+    
+    // Validate current step is within bounds
+    if (currentStep < 1 || currentStep > formConfig.steps.length) {
+      console.error('[FORM-CONTEXT] Current step is out of bounds:', currentStep);
+      // Reset to step 1 as a fallback
+      setCurrentStep(1);
+      return;
+    }
+    
     if (currentStep > 1) {
+      console.log('[FORM-CONTEXT] Moving to previous step:', currentStep - 1);
       setCurrentStep(currentStep - 1);
     }
   };

@@ -48,14 +48,14 @@ The following form configuration is to be used as a reference for any configs th
       text: {
         dark: "#333333",
         light: "#ecebe4",
-        muted: "#6a6a6a",
+        muted: "#6a6a6a"
       },
       primary: "#10b981",
       background: {
         light: "#ffffff",
-        white: "#ffffff",
-      },
-    },
+        white: "#ffffff"
+      }
+    }
   },
   steps: [
     {
@@ -67,27 +67,27 @@ The following form configuration is to be used as a reference for any configs th
           id: "id_1",
           title: "Title_1",
           description: "Extremely Short Description",
-          icon: "",
+          icon: ""
         },
         {
           id: "id_2",
           title: "Title_2",
           description: "Extremely Short Description",
-          icon: "",
+          icon: ""
         },
         {
           id: "id_3",
           title: "Title_3",
           description: "Extremely Short Description",
-          icon: "",
+          icon: ""
         },
         {
           id: "id_4",
           title: "Title_4",
           description: "Extremely Short Description",
-          icon: "",
-        },
-      ],
+          icon: ""
+        }
+      ]
     },
     {
       type: "multiSelect",
@@ -98,27 +98,27 @@ The following form configuration is to be used as a reference for any configs th
           id: "id_1",
           title: "Title_1",
           description: "Extremely Short Description",
-          icon: "",
+          icon: ""
         },
         {
           id: "id_2",
           title: "Title_2",
           description: "Extremely Short Description",
-          icon: "",
+          icon: ""
         },
         {
           id: "id_3",
           title: "Title_3",
           description: "Extremely Short Description",
-          icon: "",
+          icon: ""
         },
         {
           id: "id_4",
           title: "Tite_4",
           description: "Extremely Short Description",
-          icon: "",
-        },
-      ],
+          icon: ""
+        }
+      ]
     },
     {
       type: "slider",
@@ -128,7 +128,7 @@ The following form configuration is to be used as a reference for any configs th
       max: max_val,
       step: step_for_slider_val,
       defaultValue: default_val,
-      prefix: "",
+      prefix: ""
     },
     {
       type: "textbox",
@@ -138,8 +138,8 @@ The following form configuration is to be used as a reference for any configs th
       rows: num_rows,
       validation: {
         required: false,
-        minLength: 20,
-      },
+        minLength: 20
+      }
     },
     {
       type: "location",
@@ -147,12 +147,12 @@ The following form configuration is to be used as a reference for any configs th
       subtitle: "Please enter your location to check service availability",
       config: {
         labels: {
-          searchPlaceholder: "Enter your postal code",
-        },
+          searchPlaceholder: "Enter your postal code"
+        }
       },
       validation: {
-        required: true,
-      },
+        required: true
+      }
     },
     {
       type: "documentUpload",
@@ -164,12 +164,12 @@ The following form configuration is to be used as a reference for any configs th
         labels: {
           uploadButton: "Choose File",
           dragDropText: "Drag and drop your file here",
-          supportedFormats: "Supported formats: PDF, DOC, DOCX, TXT, PNG, JPG, JPEG",
-        },
+          supportedFormats: "Supported formats: PDF, DOC, DOCX, TXT, PNG, JPG, JPEG"
+        }
       },
       validation: {
-        required: false,
-      },
+        required: false
+      }
     },
     {
       type: "documentInfo",
@@ -180,9 +180,9 @@ The following form configuration is to be used as a reference for any configs th
         maxHeight: "400px",
         labels: {
           loadingText: "Processing your document...",
-          errorText: "Unable to process document. Please try again.",
-        },
-      },
+          errorText: "Unable to process document. Please try again."
+        }
+      }
     },
     {
       type: "dropdown",
@@ -191,29 +191,29 @@ The following form configuration is to be used as a reference for any configs th
       options: [
         {
           id: "option_1",
-          title: "Option 1",
+          title: "Option 1"
         },
         {
           id: "option_2",
-          title: "Option 2",
+          title: "Option 2"
         },
         {
           id: "option_3",
-          title: "Option 3",
+          title: "Option 3"
         },
         {
           id: "option_4",
-          title: "Option 4",
+          title: "Option 4"
         },
         {
           id: "option_5",
-          title: "Option 5",
-        },
+          title: "Option 5"
+        }
       ],
       placeholder: "Select",
       validation: {
-        required: true,
-      },
+        required: true
+      }
     },
     {
       type: "contact",
@@ -224,17 +224,16 @@ The following form configuration is to be used as a reference for any configs th
           firstName: "First Name",
           lastName: "Last Name",
           email: "Email Address",
-          phone: "Phone Number",
+          phone: "Phone Number"
         },
         placeholders: {
           firstName: "John",
           lastName: "Doe",
           email: "john.doe@example.com",
-          phone: "+1 (555) 123-4567",
-        },
-      },
-    },
-
+          phone: "+1 (555) 123-4567"
+        }
+      }
+    }
   ],
   ui: {
     buttons: {
@@ -244,7 +243,7 @@ The following form configuration is to be used as a reference for any configs th
       startOver: "Start Over",
       submitting: "Submitting...",
       check: "Check Availability",
-      checking: "Checking...",
+      checking: "Checking..."
     },
     messages: {
       optional: "Optional",
@@ -256,14 +255,14 @@ The following form configuration is to be used as a reference for any configs th
       multiSelectHint: "Select all that apply",
       loadError: "Failed to load the form. Please refresh the page.",
       thisFieldRequired: "This field is required",
-      enterValidEmail: "Please enter a valid email address",
+      enterValidEmail: "Please enter a valid email address"
     },
     contact: {
       title: "Need help?",
       description: "Contact our support team",
       email: "support@example.com",
-      phone: "+1 (555) 987-6543",
-    },
+      phone: "+1 (555) 987-6543"
+    }
   },
   submission: {
     title: "Thank You for Your Submission! 🎉",
@@ -271,19 +270,20 @@ The following form configuration is to be used as a reference for any configs th
     steps: [
       {
         title: "Request Received ✓",
-        description: "We've successfully received your request.",
+        description: "We've successfully received your request."
       },
       {
         title: "Review Process ⏱️",
-        description: "Our team is reviewing your submission.",
+        description: "Our team is reviewing your submission."
       },
       {
         title: "Next Steps 🚀",
-        description: "We'll contact you within 24 hours with a proposal.",
-      },
-    ],
-  },
+        description: "We'll contact you within 24 hours with a proposal."
+      }
+    ]
+  }
 }
+
 
 Follow these strict rules:
 1. Each page should have 1-2 elements (except for tiles which can have up to 6)
@@ -1045,7 +1045,7 @@ export async function generateFormFromPrompt(
       return { config: formConfig };
     } catch (parseError) {
       console.error("Error parsing Gemini response as JSON:", parseError);
-      console.warn("Using demo form configuration due to parsing error");
+      console.log("Attempting to fix JSON with dedicated JSON fixer agent...");
       
       // Log the problematic Gemini response to a file
       try {
@@ -1059,12 +1059,12 @@ export async function generateFormFromPrompt(
         
         const logContent = {
           timestamp: new Date().toISOString(),
-          error: parseError.toString(),
+          error: parseError instanceof Error ? parseError.toString() : String(parseError),
           prompt: prompt,
           rawResponse: textResponse,
           jsonString: jsonMatch ? jsonMatch[0] : textResponse,
           responseLength: textResponse.length,
-          errorPosition: parseError.toString().includes('position') ? 
+          errorPosition: (parseError instanceof Error && parseError.toString().includes('position')) ? 
             parseError.toString().match(/position (\d+)/)?.[1] : 'unknown'
         };
         
@@ -1074,12 +1074,252 @@ export async function generateFormFromPrompt(
         console.error("Failed to log Gemini response error:", logError);
       }
       
-      // Remove emojis from option titles before returning
-      return {
-        config: validateAndDeduplicateForm(cleanOptionTitles(customDemoForm)),
-        error: `Error parsing Gemini response as JSON: ${parseError}`,
-        fallbackReason: "JSON parsing failed"
-      };
+      // Attempt to fix the JSON using a dedicated JSON fixer agent
+      try {
+        const fixedJsonString = await fixJsonWithAgent(jsonString);
+        console.log("JSON fixer agent returned response, attempting to parse...");
+        
+        let fixedFormConfig = JSON.parse(fixedJsonString) as FormConfig;
+        
+        // Validate the fixed configuration
+        if (
+          fixedFormConfig.steps &&
+          Array.isArray(fixedFormConfig.steps) &&
+          fixedFormConfig.steps.length > 0
+        ) {
+          console.log("JSON fixer agent successfully fixed the malformed JSON!");
+          
+          // Apply the same processing pipeline as successful responses
+          fixedFormConfig.steps = fixedFormConfig.steps.map((step) => {
+            if ("label" in step && !("title" in step)) {
+              (step as any).title = (step as any).label;
+              delete (step as any).label;
+            } else if ("question" in step && !("title" in step)) {
+              (step as any).title = (step as any).question;
+              delete (step as any).question;
+            }
+
+            if ("field" in step && !("subtitle" in step)) {
+              (step as any).subtitle = `Please select your ${(step as any).field}`;
+              delete (step as any).field;
+            } else if ("description" in step && !("subtitle" in step)) {
+              (step as any).subtitle = (step as any).description;
+              delete (step as any).description;
+            }
+
+            if (step.type === "tiles" || step.type === "multiSelect") {
+              if ("options" in step) {
+                const options = (step as any).options;
+                if (Array.isArray(options)) {
+                  (step as any).options = options.map((opt: any) => ({
+                    id:
+                      opt.value ||
+                      opt.id ||
+                      `option-${Math.random().toString(36).substring(2, 9)}`,
+                    title: opt.label || opt.title || "Option",
+                    description: opt.description || "",
+                    icon: opt.icon || "CheckCircle",
+                  }));
+                }
+              }
+            }
+
+            if (step.type === "location") {
+              if (!("config" in step)) {
+                (step as any).config = {
+                  labels: {
+                    searchPlaceholder: "Enter your postal code",
+                  },
+                };
+              }
+
+              if (!("validation" in step) && "required" in step) {
+                (step as any).validation = {
+                  required: (step as any).required,
+                };
+                delete (step as any).required;
+              }
+            }
+
+            if (step.type === "slider") {
+              if ("required" in step) {
+                delete (step as any).required;
+              }
+
+              if (!("min" in step)) (step as any).min = 0;
+              if (!("max" in step)) (step as any).max = 100;
+              if (!("step" in step)) (step as any).step = 1;
+              if (!("defaultValue" in step)) (step as any).defaultValue = 50;
+            }
+
+            if (step.type === "contact") {
+              if (!("config" in step)) {
+                (step as any).config = {
+                  labels: {
+                    firstName: "First Name",
+                    lastName: "Last Name",
+                    email: "Email Address",
+                    phone: "Phone Number",
+                  },
+                  placeholders: {
+                    firstName: "John",
+                    lastName: "Doe",
+                    email: "john.doe@example.com",
+                    phone: "+1 (555) 123-4567",
+                  },
+                };
+              }
+
+              if ("fields" in step && Array.isArray((step as any).fields)) {
+                const fields = (step as any).fields;
+
+                fields.forEach((field: any) => {
+                  if (field.field === "name" || field.field === "firstName") {
+                    (step as any).config.labels.firstName =
+                      field.label || "First Name";
+                    if (field.placeholder) {
+                      (step as any).config.placeholders.firstName =
+                        field.placeholder;
+                    }
+                  } else if (field.field === "lastName") {
+                    (step as any).config.labels.lastName =
+                      field.label || "Last Name";
+                    if (field.placeholder) {
+                      (step as any).config.placeholders.lastName =
+                        field.placeholder;
+                    }
+                  } else if (field.field === "email") {
+                    (step as any).config.labels.email =
+                      field.label || "Email Address";
+                    if (field.placeholder) {
+                      (step as any).config.placeholders.email = field.placeholder;
+                    }
+                  } else if (field.field === "phone") {
+                    (step as any).config.labels.phone =
+                      field.label || "Phone Number";
+                    if (field.placeholder) {
+                      (step as any).config.placeholders.phone = field.placeholder;
+                    }
+                  }
+                });
+
+                delete (step as any).fields;
+              }
+
+              if ("name" in step) {
+                const nameConfig = (step as any).name;
+                if (nameConfig && typeof nameConfig === "object") {
+                  (step as any).config.labels.firstName =
+                    nameConfig.label || "First Name";
+                  if (nameConfig.placeholder) {
+                    (step as any).config.placeholders.firstName =
+                      nameConfig.placeholder;
+                  }
+                }
+                delete (step as any).name;
+              }
+
+              if ("email" in step) {
+                const emailConfig = (step as any).email;
+                if (emailConfig && typeof emailConfig === "object") {
+                  (step as any).config.labels.email =
+                    emailConfig.label || "Email Address";
+                  if (emailConfig.placeholder) {
+                    (step as any).config.placeholders.email =
+                      emailConfig.placeholder;
+                  }
+                }
+                delete (step as any).email;
+              }
+
+              if ("phone" in step) {
+                const phoneConfig = (step as any).phone;
+                if (phoneConfig && typeof phoneConfig === "object") {
+                  (step as any).config.labels.phone =
+                    phoneConfig.label || "Phone Number";
+                  if (phoneConfig.placeholder) {
+                    (step as any).config.placeholders.phone = phoneConfig.placeholder;
+                  }
+                }
+                delete (step as any).phone;
+              }
+            }
+
+            return step;
+          });
+
+          if (!fixedFormConfig.ui) {
+            fixedFormConfig.ui = demoFormConfig.ui;
+          }
+
+          if (!fixedFormConfig.submission) {
+            fixedFormConfig.submission = demoFormConfig.submission;
+          }
+
+          fixedFormConfig = reorderFinalSteps(fixedFormConfig);
+
+          // Apply icon/emoji generation
+          try {
+            const flatTitles: string[] = [];
+            fixedFormConfig.steps.forEach((step) => {
+              if (Array.isArray((step as any).options)) {
+                (step as any).options.forEach((opt: any) => {
+                  flatTitles.push(opt.title);
+                });
+              }
+            });
+
+            if (flatTitles.length) {
+              const [flatIcons, flatEmojis] = await Promise.all([
+                generateIconsFromOptions(flatTitles),
+                generateEmojisFromOptions(flatTitles)
+              ]);
+              
+              let idx = 0;
+
+              fixedFormConfig.steps.forEach((step) => {
+                if (Array.isArray((step as any).options)) {
+                  (step as any).options = (step as any).options.map((opt: any) => {
+                    const result = {
+                      ...opt,
+                      icon: flatIcons[idx] || "Circle",
+                      emoji: flatEmojis[idx] || "❓",
+                    };
+                    idx++;
+                    return result;
+                  });
+                }
+              });
+            }
+          } catch (err) {
+            console.warn("Icon/emoji augmentation failed for fixed JSON, proceeding without it", err);
+          }
+
+          // Final validation and processing
+          fixedFormConfig = cleanOptionTitles(fixedFormConfig);
+          fixedFormConfig = ensureTilesOptionCount(fixedFormConfig);
+          fixedFormConfig = validateAndDeduplicateForm(fixedFormConfig);
+          
+          console.log("=== FIXED FORM CONFIGURATION SENT TO FRONTEND ===");
+          console.log(JSON.stringify(fixedFormConfig, null, 2));
+          console.log("=== END FIXED FORM CONFIGURATION ===");
+          
+          return { config: fixedFormConfig };
+        } else {
+          console.error("JSON fixer agent returned invalid form structure");
+          throw new Error("Fixed JSON still has invalid form structure");
+        }
+      } catch (fixError) {
+        console.error("JSON fixer agent failed:", fixError);
+        console.warn("Using demo form configuration due to JSON fixer failure");
+        
+        // Remove emojis from option titles before returning
+        return {
+          config: validateAndDeduplicateForm(cleanOptionTitles(customDemoForm)),
+          error: `Error parsing Gemini response as JSON: ${parseError}. JSON fixer also failed: ${fixError}`,
+          fallbackReason: "JSON parsing failed and JSON fixer failed"
+        };
+      }
     }
   } catch (error) {
     console.error("Error calling Gemini API:", error);
@@ -1162,6 +1402,116 @@ function createCustomizedDemoForm(prompt: string): FormConfig {
   }
 
   return customForm;
+}
+
+/**
+ * Uses a dedicated JSON fixer agent to repair malformed JSON responses
+ * @param malformedJson The malformed JSON string to fix
+ * @returns The fixed JSON string
+ */
+async function fixJsonWithAgent(malformedJson: string): Promise<string> {
+  const JSON_FIXER_PROMPT = `You are a JSON fixer.
+Your task is to take any JSON-like input and return the same JSON with identical content but in a valid strict JSON format (RFC 8259 compliant).
+
+Rules you must follow:
+
+Preserve all content exactly (keys, values, strings, numbers, arrays, objects).
+
+Do not reword, remove, or add anything.
+
+Only correct the structure.
+
+Always output valid strict JSON (nothing else, no explanations, no comments).
+
+Common fixes you must apply:
+
+Remove trailing commas from objects and arrays.
+
+Ensure all keys are double-quoted.
+
+Ensure all string values are double-quoted.
+
+Remove any comments (// or /* */) if present.
+
+Fix illegal characters after values (e.g., stray ",).
+
+Do not pretty-print unless the input was pretty-printed. Keep formatting consistent with input style if possible.
+
+The output must be pure JSON only.`;
+
+  try {
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        systemInstruction: {
+          role: "system",
+          parts: [{ text: JSON_FIXER_PROMPT }]
+        },
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `Fix this malformed JSON:\n${malformedJson}`,
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.1, // Very low temperature for consistent JSON fixing
+          topP: 0.8,
+          topK: 40,
+          maxOutputTokens: 60000,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(`JSON fixer API HTTP error: ${response.status} ${response.statusText}`);
+      throw new Error(`JSON fixer API HTTP error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (
+      !data.candidates ||
+      !data.candidates[0] ||
+      !data.candidates[0].content ||
+      !data.candidates[0].content.parts ||
+      !data.candidates[0].content.parts[0]
+    ) {
+      console.error("Unexpected response structure from JSON fixer API:", JSON.stringify(data));
+      throw new Error("Unexpected response structure from JSON fixer API");
+    }
+
+    const fixedJsonText = data.candidates[0].content.parts[0].text;
+
+    if (!fixedJsonText) {
+      console.error("Empty response from JSON fixer API");
+      throw new Error("Empty response from JSON fixer API");
+    }
+
+    // Extract JSON from the response (remove any markdown formatting)
+    const jsonMatch = fixedJsonText.match(/\{[\s\S]*\}/);
+    const fixedJsonString = jsonMatch ? jsonMatch[0] : fixedJsonText.trim();
+
+    // Validate that the fixed JSON is actually valid
+    try {
+      JSON.parse(fixedJsonString);
+      console.log("JSON fixer agent successfully produced valid JSON");
+      return fixedJsonString;
+    } catch (validationError) {
+      console.error("JSON fixer agent returned invalid JSON:", validationError);
+      throw new Error(`JSON fixer agent returned invalid JSON: ${validationError}`);
+    }
+
+  } catch (error) {
+    console.error("Error calling JSON fixer agent:", error);
+    throw error;
+  }
 }
 
 // — add at the bottom of the file (just before the exports)

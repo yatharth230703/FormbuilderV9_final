@@ -216,6 +216,33 @@ export async function getFormByProperties(
     iconMode: (data as any)?.icon_mode || 'lucide' // Map icon_mode to iconMode
   };
 
+  // Ensure config.steps is properly structured as an array
+  if (mappedData.config && typeof mappedData.config === 'object') {
+    console.log(`[Supabase] Form ${mappedData.id} config structure:`, {
+      hasSteps: !!mappedData.config.steps,
+      stepsType: typeof mappedData.config.steps,
+      isArray: Array.isArray(mappedData.config.steps)
+    });
+
+    // If steps exists but isn't an array, try to convert it
+    if (mappedData.config.steps && !Array.isArray(mappedData.config.steps) && typeof mappedData.config.steps === 'object') {
+      console.log(`[Supabase] Converting steps object to array for form ${mappedData.id}`);
+      try {
+        const keys = Object.keys(mappedData.config.steps)
+          .filter(k => !isNaN(Number(k)))
+          .sort((a, b) => Number(a) - Number(b));
+        
+        if (keys.length > 0) {
+          const stepsArray = keys.map(k => mappedData.config.steps[k]);
+          mappedData.config.steps = stepsArray;
+          console.log(`[Supabase] Successfully converted steps to array with length: ${stepsArray.length}`);
+        }
+      } catch (err) {
+        console.error(`[Supabase] Error converting steps to array:`, err);
+      }
+    }
+  }
+
   return mappedData;
 }
 

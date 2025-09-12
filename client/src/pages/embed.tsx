@@ -238,7 +238,319 @@ export default function EmbedForm() {
           
           console.log("📄 EMBED PAGE - Full form config:", JSON.stringify(response.config, null, 2));
           
-          setFormConfig(response.config); // Do not inject id
+          // Handle both regular and double-wrapped configs
+          // If response.config.config exists, it's a double-wrapped config from the API
+          const formConfiguration = response.config.config ? response.config.config : response.config;
+          
+          console.log("📄 EMBED PAGE - Detecting config format:", {
+            hasNestedConfig: !!response.config.config,
+            usingUnwrappedConfig: !response.config.config,
+            configKeys: Object.keys(response.config)
+          });
+          
+          // Log the raw steps data for debugging using the detected configuration
+          console.log("📄 EMBED PAGE - Raw steps data:", {
+            stepsType: typeof formConfiguration.steps,
+            isArray: Array.isArray(formConfiguration.steps),
+            rawSteps: formConfiguration.steps,
+            stepsLength: formConfiguration.steps?.length || 0,
+            stepsKeys: formConfiguration.steps ? Object.keys(formConfiguration.steps) : [],
+            configKeys: Object.keys(formConfiguration)
+          });
+
+          try{
+            console.log("The thing below is response.config.steps")
+            console.log(response.config.steps)
+            console.log("The thing below is response.config.steps.length")
+            console.log(response.config.steps.length)
+          }
+          catch (err){
+            console.log("There was an error printing step length for some fucking reason")
+          }
+
+          console.log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ SIMPLE RESPONSE , DONO ME MATCH HONA CHAHIYE MKC" ,response)
+
+
+          
+          // Direct access to the steps array from the unwrapped config object
+          let stepsArray = [];
+          
+          // First approach: Check if steps is directly an array
+          if (Array.isArray(formConfiguration.steps)) {
+            console.log("📄 EMBED PAGE - Steps is directly an array in unwrapped config");
+            stepsArray = formConfiguration.steps;
+          } 
+          // Second approach: Check if steps is an object with numeric keys
+          else if (typeof formConfiguration.steps === 'object' && formConfiguration.steps !== null) {
+            console.log("📄 EMBED PAGE - Steps is an object in unwrapped config, trying to convert to array");
+            try {
+              const keys = Object.keys(formConfiguration.steps).filter(k => !isNaN(Number(k)));
+              if (keys.length > 0) {
+                stepsArray = keys.map(k => formConfiguration.steps[k]);
+                console.log("📄 EMBED PAGE - Converted object to array:", { 
+                  convertedLength: stepsArray.length 
+                });
+              }
+            } catch (err) {
+              console.error("📄 EMBED PAGE - Error converting steps object to array:", err);
+            }
+          }
+          // Third approach: Check if formConfiguration is the steps array itself
+          else if (Array.isArray(formConfiguration) && formConfiguration.length > 0 && formConfiguration[0].type) {
+            console.log("📄 EMBED PAGE - Found steps array directly in formConfiguration");
+            stepsArray = formConfiguration;
+          }
+          // Fourth approach: Look for steps in different locations in the config
+          else {
+            console.log("📄 EMBED PAGE - Searching for steps in the unwrapped config object");
+            // Check if there's a nested 'steps' property somewhere else
+            for (const key of Object.keys(formConfiguration)) {
+              if (Array.isArray(formConfiguration[key]) && 
+                  formConfiguration[key].length > 0 && 
+                  formConfiguration[key][0] && 
+                  typeof formConfiguration[key][0] === 'object' &&
+                  formConfiguration[key][0].type) {
+                console.log(`📄 EMBED PAGE - Found steps array in formConfiguration.${key}`);
+                stepsArray = formConfiguration[key];
+                break;
+              }
+            }
+          }
+          
+          // Fifth approach: Try to extract steps from the raw config JSON string
+          if (stepsArray.length === 0) {
+            try {
+              console.log("📄 EMBED PAGE - Attempting to extract steps from raw config JSON");
+              const configStr = JSON.stringify(response.config);
+              
+              // Try to find the steps array in the raw config string
+              const stepsRegex = /"steps"\s*:\s*(\[[\s\S]*?\])(?=\s*,|\s*\})/;
+              const stepsMatch = configStr.match(stepsRegex);
+              
+              if (stepsMatch && stepsMatch[1]) {
+                const rawStepsJson = stepsMatch[1];
+                console.log("📄 EMBED PAGE - Found steps in raw JSON:", rawStepsJson.substring(0, 50) + "...");
+                
+                try {
+                  // Parse the raw steps JSON
+                  const parsedSteps = JSON.parse(rawStepsJson);
+                  if (Array.isArray(parsedSteps) && parsedSteps.length > 0) {
+                    stepsArray = parsedSteps;
+                    console.log("📄 EMBED PAGE - Successfully extracted steps from raw JSON:", {
+                      length: stepsArray.length,
+                      firstStepTitle: stepsArray[0]?.title
+                    });
+                  }
+                } catch (parseErr) {
+                  console.error("📄 EMBED PAGE - Error parsing steps from raw JSON:", parseErr);
+                  
+                  // Try to fix common JSON issues and parse again
+                  try {
+                    console.log("📄 EMBED PAGE - Attempting to fix JSON and parse again");
+                    const fixedJson = rawStepsJson
+                      .replace(/,(\s*[\]}])/g, '$1') // Remove trailing commas
+                      .replace(/'/g, '"')           // Replace single quotes with double quotes
+                      .replace(/\\"/g, '\\"');      // Fix escaped quotes
+                      
+                    const parsedSteps = JSON.parse(fixedJson);
+                    if (Array.isArray(parsedSteps) && parsedSteps.length > 0) {
+                      stepsArray = parsedSteps;
+                      console.log("📄 EMBED PAGE - Successfully parsed steps after fixing JSON:", {
+                        length: stepsArray.length,
+                        firstStepTitle: stepsArray[0]?.title
+                      });
+                    }
+                  } catch (fixErr) {
+                    console.error("📄 EMBED PAGE - Error parsing fixed JSON:", fixErr);
+                  }
+                }
+              }
+            } catch (err) {
+              console.error("📄 EMBED PAGE - Error extracting steps from raw config JSON:", err);
+            }
+          }
+          
+          // Sixth approach: Try to directly access the steps from the original form config JSON
+          if (stepsArray.length === 0 && typeof response.config === 'string') {
+            try {
+              console.log("📄 EMBED PAGE - Attempting to parse config as string");
+              const parsedConfig = JSON.parse(response.config);
+              if (parsedConfig && Array.isArray(parsedConfig.steps)) {
+                stepsArray = parsedConfig.steps;
+                console.log("📄 EMBED PAGE - Successfully extracted steps from string config:", {
+                  length: stepsArray.length,
+                  firstStepTitle: stepsArray[0]?.title
+                });
+              }
+            } catch (err) {
+              console.error("📄 EMBED PAGE - Error parsing config as string:", err);
+            }
+          }
+          
+          // Log the found steps array
+          console.log("📄 EMBED PAGE - Steps array before validation:", {
+            isArray: Array.isArray(stepsArray),
+            length: stepsArray.length,
+            firstStep: stepsArray.length > 0 ? stepsArray[0] : null
+          });
+          
+          // If we still don't have steps, but we can see them in the form config JSON,
+          // try a more direct approach by parsing the JSON again
+          if (stepsArray.length === 0) {
+            try {
+              console.log("📄 EMBED PAGE - Attempting to extract steps directly from JSON");
+              // Try to parse the full config JSON again
+              const configJson = JSON.stringify(response.config);
+              const parsedConfig = JSON.parse(configJson);
+              
+              // Check if steps exists in the parsed config
+              if (parsedConfig.steps && Array.isArray(parsedConfig.steps) && parsedConfig.steps.length > 0) {
+                console.log("📄 EMBED PAGE - Found steps in reparsed JSON");
+                stepsArray = parsedConfig.steps;
+              }
+              // If not, look for steps in the raw JSON string
+              else {
+                // Look for a steps array in the raw JSON
+                const stepsMatch = configJson.match(/"steps"\s*:\s*(\[.*?\])/s);
+                if (stepsMatch && stepsMatch[1]) {
+                  try {
+                    console.log("📄 EMBED PAGE - Extracting steps from raw JSON");
+                    const extractedSteps = JSON.parse(stepsMatch[1]);
+                    if (Array.isArray(extractedSteps) && extractedSteps.length > 0) {
+                      stepsArray = extractedSteps;
+                      console.log("📄 EMBED PAGE - Extracted steps from raw JSON:", {
+                        length: stepsArray.length
+                      });
+                    }
+                  } catch (err) {
+                    console.error("📄 EMBED PAGE - Error parsing steps from raw JSON:", err);
+                  }
+                }
+              }
+            } catch (err) {
+              console.error("📄 EMBED PAGE - Error in direct JSON extraction:", err);
+            }
+          }
+          
+          // DO NOT create hardcoded steps - only use the actual steps from the config
+          if (stepsArray.length === 0) {
+            console.log("📄 EMBED PAGE - No steps found, but will not use hardcoded steps");
+            // Instead of using hardcoded steps, we'll try to extract the steps directly from the raw JSON
+            // This is a last attempt to get the actual steps from the form config
+            try {
+              const configStr = JSON.stringify(response.config, null, 2);
+              console.log("📄 EMBED PAGE - Raw config string:", configStr.substring(0, 100) + "...");
+              
+              // Look for the steps array in the raw config string
+              const stepsMatch = configStr.match(/"steps"\s*:\s*(\[[\s\S]*?\])/);
+              if (stepsMatch && stepsMatch[1]) {
+                try {
+                  // Fix any potential JSON issues in the steps array
+                  const cleanedStepsJson = stepsMatch[1]
+                    .replace(/,(\s*[\]}])/g, '$1') // Remove trailing commas
+                    .replace(/'/g, '"'); // Replace single quotes with double quotes
+                  
+                  console.log("📄 EMBED PAGE - Attempting to parse steps from raw config string");
+                  const extractedSteps = JSON.parse(cleanedStepsJson);
+                  if (Array.isArray(extractedSteps) && extractedSteps.length > 0) {
+                    stepsArray = extractedSteps;
+                    console.log("📄 EMBED PAGE - Successfully extracted steps from raw config string:", {
+                      length: stepsArray.length,
+                      firstStepTitle: stepsArray[0]?.title
+                    });
+                  }
+                } catch (err) {
+                  console.error("📄 EMBED PAGE - Error parsing steps from raw config string:", err);
+                }
+              }
+            } catch (err) {
+              console.error("📄 EMBED PAGE - Error extracting steps from raw config:", err);
+            }
+          }
+          
+          // Ensure the config has the required structure for API-generated forms
+          const validatedConfig = {
+            ...formConfiguration,  // Use the unwrapped config as the base
+            // Use the processed steps array - do not use fallback steps to preserve original content
+            steps: stepsArray,
+            // Ensure theme exists
+            theme: formConfiguration.theme || {
+              colors: {
+                text: {
+                  dark: "#333333",
+                  light: "#ecebe4",
+                  muted: "#6a6a6a"
+                },
+                primary: "#10b981",
+                background: {
+                  light: "#ffffff",
+                  white: "#ffffff"
+                }
+              }
+            },
+            // Ensure UI exists for buttons and messages
+            ui: formConfiguration.ui || {
+              buttons: {
+                next: "Continue",
+                skip: "Skip",
+                submit: "Submit",
+                startOver: "Start Over",
+                submitting: "Submitting...",
+                check: "Check",
+                checking: "Checking..."
+              },
+              messages: {
+                optional: "Optional",
+                required: "Required",
+                invalidEmail: "Please enter a valid email address",
+                submitError: "There was an error submitting your form. Please try again.",
+                thankYou: "Thank You!",
+                submitAnother: "Submit Another Response",
+                multiSelectHint: "Select all that apply",
+                loadError: "Failed to load the form. Please refresh the page.",
+                thisFieldRequired: "This field is required",
+                enterValidEmail: "Please enter a valid email address"
+              }
+            }
+          };
+          
+          console.log("📄 EMBED PAGE - Validated config:", {
+            hasSteps: Array.isArray(validatedConfig.steps),
+            stepsLength: validatedConfig.steps?.length || 0,
+            hasTheme: !!validatedConfig.theme,
+            hasUI: !!validatedConfig.ui
+          });
+          
+          // Check if steps array is empty
+          if (!validatedConfig.steps || !validatedConfig.steps.length) {
+            console.error("📄 EMBED PAGE - Form has no steps after all extraction attempts!");
+            
+            // Check if we can see steps in the raw config JSON
+            const configStr = JSON.stringify(response.config);
+            if (configStr.includes('"steps"') && configStr.includes('"type"') && configStr.includes('"title"')) {
+              console.log("📄 EMBED PAGE - Steps found in raw config but extraction failed. Using original config.");
+              // Use the original config as-is without modification
+              setFormConfig(response.config);
+              setFormId(response.id); // Set formId state
+              
+              // Set icon mode from database if available
+              if (response.iconMode && ['lucide', 'emoji', 'none'].includes(response.iconMode)) {
+                console.log("🎨 EMBED PAGE - Setting icon mode from database:", response.iconMode);
+                setIconMode(response.iconMode as 'lucide' | 'emoji' | 'none');
+              }
+              
+              // Skip the rest of the processing since we're using the original config
+              setLoading(false);
+              return;
+            } else {
+              setError("This form has no steps. Please contact the form creator.");
+              setLoading(false);
+              return;
+            }
+          }
+          
+          // Only use validated config if we have valid steps
+          setFormConfig(validatedConfig);
           setFormId(response.id); // Set formId state
           
           // Set icon mode from database if available
