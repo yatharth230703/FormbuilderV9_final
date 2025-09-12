@@ -1,6 +1,8 @@
 import { FormConfig } from "@shared/types";
 import { generateIconsFromOptions } from "./icons"; 
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
 
 dotenv.config();
 
@@ -733,10 +735,19 @@ export async function generateFormFromPrompt(
       };
     }
 
+    // Extract JSON string at function scope so it's available in all catch blocks
+    let jsonMatch: RegExpMatchArray | null = null;
+    let jsonString: string = textResponse;
+    
     try {
-      const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
-      const jsonString = jsonMatch ? jsonMatch[0] : textResponse;
+      jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+      jsonString = jsonMatch ? jsonMatch[0] : textResponse;
+    } catch (matchError) {
+      console.warn("Failed to extract JSON from response:", matchError);
+      jsonString = textResponse;
+    }
 
+    try {
       let formConfig = JSON.parse(jsonString) as FormConfig;
 
       if (
@@ -1035,6 +1046,34 @@ export async function generateFormFromPrompt(
     } catch (parseError) {
       console.error("Error parsing Gemini response as JSON:", parseError);
       console.warn("Using demo form configuration due to parsing error");
+      
+      // Log the problematic Gemini response to a file
+      try {
+        const logDir = path.join(process.cwd(), 'logs');
+        if (!fs.existsSync(logDir)) {
+          fs.mkdirSync(logDir, { recursive: true });
+        }
+        
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const logFile = path.join(logDir, `gemini-response-error-${timestamp}.log`);
+        
+        const logContent = {
+          timestamp: new Date().toISOString(),
+          error: parseError.toString(),
+          prompt: prompt,
+          rawResponse: textResponse,
+          jsonString: jsonMatch ? jsonMatch[0] : textResponse,
+          responseLength: textResponse.length,
+          errorPosition: parseError.toString().includes('position') ? 
+            parseError.toString().match(/position (\d+)/)?.[1] : 'unknown'
+        };
+        
+        fs.writeFileSync(logFile, JSON.stringify(logContent, null, 2));
+        console.log(`Gemini response error logged to: ${logFile}`);
+      } catch (logError) {
+        console.error("Failed to log Gemini response error:", logError);
+      }
+      
       // Remove emojis from option titles before returning
       return {
         config: validateAndDeduplicateForm(cleanOptionTitles(customDemoForm)),

@@ -106,32 +106,368 @@ interface LeftPanelProps {
   }, [chatHistory]);
 
   // ─────────────────────────────────────────────────────
-  // Apply colors from formConfig when it loads
+  // Apply colors from formConfig when it loads - SCOPED TO FORM ONLY
   useEffect(() => {
     if (formConfig?.theme?.colors?.primary) {
-      const primaryColor = formConfig.theme.colors.primary;
+      const rawColor = formConfig.theme.colors.primary;
+      const primaryColor = normalizeColor(rawColor);
+      
+      console.log("🎨 LEFT PANEL - Applying form color:", rawColor, "->", primaryColor);
       
       // Generate darker shade
       const primaryDark = getDarkerShade(primaryColor);
 
-      // Apply CSS variables
-      document.documentElement.style.setProperty('--color-primary', primaryColor);
-      document.documentElement.style.setProperty('--color-primary-dark', primaryDark);
+      // Create scoped CSS variables for form components only
+      const styleEl = document.createElement("style");
+      styleEl.id = "form-theme-scoped";
+      styleEl.textContent = `
+        /* Target the main form container with multiple selectors */
+        [data-testid="embed-form-container"],
+        [data-testid="embed-form-container"] *,
+        .embed-form-container,
+        .embed-form-container *,
+        .form-renderer-container,
+        .form-renderer-container *,
+        .form-step-container,
+        .form-step-container * {
+          --color-primary: ${primaryColor} !important;
+          --color-primary-dark: ${primaryDark} !important;
+        }
+        
+        /* Target Tailwind primary classes within form */
+        [data-testid="embed-form-container"] .border-primary,
+        [data-testid="embed-form-container"] .bg-primary,
+        [data-testid="embed-form-container"] .text-primary,
+        [data-testid="embed-form-container"] .bg-primary\\/10,
+        [data-testid="embed-form-container"] .bg-primary\\/5,
+        [data-testid="embed-form-container"] .from-primary,
+        [data-testid="embed-form-container"] .to-primary\\/80 {
+          --primary: ${hexToHslString(primaryColor)} !important;
+        }
+        
+        /* Override Tailwind's primary color for form elements with higher specificity */
+        [data-testid="embed-form-container"] .border-primary {
+          border-color: ${primaryColor} !important;
+        }
+        
+        [data-testid="embed-form-container"] .bg-primary {
+          background-color: ${primaryColor} !important;
+        }
+        
+        [data-testid="embed-form-container"] .text-primary {
+          color: ${primaryColor} !important;
+        }
+        
+        [data-testid="embed-form-container"] .bg-primary\\/10 {
+          background-color: ${primaryColor}1a !important;
+        }
+        
+        [data-testid="embed-form-container"] .bg-primary\\/5 {
+          background-color: ${primaryColor}0d !important;
+        }
+        
+        [data-testid="embed-form-container"] .from-primary {
+          --tw-gradient-from: ${primaryColor} !important;
+        }
+        
+        [data-testid="embed-form-container"] .to-primary\\/80 {
+          --tw-gradient-to: ${primaryColor}cc !important;
+        }
+        
+        /* Additional high-specificity overrides */
+        [data-testid="embed-form-container"] div.border-primary {
+          border-color: ${primaryColor} !important;
+        }
+        
+        [data-testid="embed-form-container"] div.bg-primary\\/10 {
+          background-color: ${primaryColor}1a !important;
+        }
+        
+        [data-testid="embed-form-container"] span.text-primary {
+          color: ${primaryColor} !important;
+        }
+        
+        [data-testid="embed-form-container"] div.from-primary {
+          --tw-gradient-from: ${primaryColor} !important;
+        }
+        
+        [data-testid="embed-form-container"] div.to-primary\\/80 {
+          --tw-gradient-to: ${primaryColor}cc !important;
+        }
+        
+        /* Target specific button classes */
+        [data-testid="embed-form-container"] button.bg-primary {
+          background-color: ${primaryColor} !important;
+        }
+        
+        [data-testid="embed-form-container"] button.bg-primary\\/90 {
+          background-color: ${primaryColor}e6 !important;
+        }
+        
+        /* Target gradient text */
+        [data-testid="embed-form-container"] span.bg-gradient-to-r {
+          background-image: linear-gradient(to right, ${primaryColor}, ${primaryColor}b3) !important;
+        }
+        
+        /* Target hover states */
+        [data-testid="embed-form-container"] .hover\\:text-primary:hover {
+          color: ${primaryColor} !important;
+        }
+        
+        [data-testid="embed-form-container"] .hover\\:border-primary:hover {
+          border-color: ${primaryColor} !important;
+        }
+        
+        /* Target specific opacity variations */
+        [data-testid="embed-form-container"] .to-primary\\/70 {
+          --tw-gradient-to: ${primaryColor}b3 !important;
+        }
+        
+        /* FALLBACK: Apply to ALL primary elements regardless of container */
+        .border-primary {
+          border-color: ${primaryColor} !important;
+        }
+        
+        .bg-primary {
+          background-color: ${primaryColor} !important;
+        }
+        
+        .text-primary {
+          color: ${primaryColor} !important;
+        }
+        
+        .bg-primary\\/10 {
+          background-color: ${primaryColor}1a !important;
+        }
+        
+        .bg-primary\\/5 {
+          background-color: ${primaryColor}0d !important;
+        }
+        
+        .from-primary {
+          --tw-gradient-from: ${primaryColor} !important;
+        }
+        
+        .to-primary\\/80 {
+          --tw-gradient-to: ${primaryColor}cc !important;
+        }
+        
+        .to-primary\\/70 {
+          --tw-gradient-to: ${primaryColor}b3 !important;
+        }
+      `;
       
-      // Also set Tailwind CSS variable --primary so utilities like bg-primary/10 use the chosen color
-      try {
-        const hsl = hexToHslString(primaryColor);
-        document.documentElement.style.setProperty("--primary", hsl);
-      } catch {}
+      console.log("🎨 LEFT PANEL - CSS content:", styleEl.textContent);
+      
+      // Remove existing scoped styles
+      const existingStyle = document.getElementById("form-theme-scoped");
+      if (existingStyle) {
+        existingStyle.remove();
+      }
+      
+      // Add new scoped styles
+      document.head.appendChild(styleEl);
+      
+      console.log("🎨 LEFT PANEL - Style element added to DOM");
+      
+      // Debug: Check if elements are being targeted with multiple attempts
+      const checkAndApplyColors = () => {
+        console.log("🎨 LEFT PANEL - Checking for form container...");
+        
+        // Check for various possible form containers
+        const possibleContainers = [
+          '[data-testid="embed-form-container"]',
+          '.embed-form-container',
+          '.form-renderer-container',
+          '.form-step-container',
+          '[class*="form"]',
+          '[class*="embed"]'
+        ];
+        
+        let formContainer = null;
+        for (const selector of possibleContainers) {
+          const found = document.querySelector(selector);
+          if (found) {
+            console.log(`🎨 LEFT PANEL - Found container with selector "${selector}":`, found);
+            formContainer = found;
+            break;
+          }
+        }
+        
+        // Also check for any elements with "primary" classes anywhere in the document
+        const allPrimaryElements = document.querySelectorAll('[class*="primary"]');
+        console.log("🎨 LEFT PANEL - ALL primary elements in document:", allPrimaryElements.length, allPrimaryElements);
+        
+        // Check for any elements with "form" classes anywhere in the document
+        const allFormElements = document.querySelectorAll('[class*="form"]');
+        console.log("🎨 LEFT PANEL - ALL form elements in document:", allFormElements.length, allFormElements);
+        
+        if (formContainer) {
+          console.log("🎨 LEFT PANEL - Form container found:", formContainer);
+          const primaryElements = formContainer.querySelectorAll('.bg-primary, .text-primary, .border-primary');
+          console.log("🎨 LEFT PANEL - Primary elements found:", primaryElements.length, primaryElements);
+          
+          // Check for ALL possible primary-related classes
+          const allPrimaryElements = formContainer.querySelectorAll('[class*="primary"]');
+          console.log("🎨 LEFT PANEL - ALL primary-related elements:", allPrimaryElements.length, allPrimaryElements);
+          
+          // Check for gradient elements specifically
+          const gradientElements = formContainer.querySelectorAll('[class*="gradient"], [class*="from-"], [class*="to-"]');
+          console.log("🎨 LEFT PANEL - Gradient elements:", gradientElements.length, gradientElements);
+          
+          // Try direct style injection as fallback
+          console.log("🎨 LEFT PANEL - Attempting direct style injection...");
+          (formContainer as HTMLElement).style.setProperty('--color-primary', primaryColor);
+          (formContainer as HTMLElement).style.setProperty('--primary', hexToHslString(primaryColor));
+          
+          // Force apply to any elements with primary classes
+          primaryElements.forEach((el: Element) => {
+            const htmlEl = el as HTMLElement;
+            if (el.classList.contains('bg-primary')) {
+              htmlEl.style.backgroundColor = primaryColor;
+              console.log("🎨 LEFT PANEL - Applied bg-primary to:", el);
+            }
+            if (el.classList.contains('text-primary')) {
+              htmlEl.style.color = primaryColor;
+              console.log("🎨 LEFT PANEL - Applied text-primary to:", el);
+            }
+            if (el.classList.contains('border-primary')) {
+              htmlEl.style.borderColor = primaryColor;
+              console.log("🎨 LEFT PANEL - Applied border-primary to:", el);
+            }
+          });
+          
+          // Also try to apply to gradient elements
+          gradientElements.forEach((el: Element) => {
+            const htmlEl = el as HTMLElement;
+            if (el.classList.contains('from-primary')) {
+              htmlEl.style.setProperty('--tw-gradient-from', primaryColor);
+              console.log("🎨 LEFT PANEL - Applied from-primary to:", el);
+            }
+            if (el.classList.contains('to-primary')) {
+              htmlEl.style.setProperty('--tw-gradient-to', primaryColor);
+              console.log("🎨 LEFT PANEL - Applied to-primary to:", el);
+            }
+          });
+          
+          // AGGRESSIVE APPROACH: Apply color to ALL elements that might need it
+          console.log("🎨 LEFT PANEL - Applying AGGRESSIVE color injection...");
+          const allElements = formContainer.querySelectorAll('*');
+          allElements.forEach((el: Element) => {
+            const htmlEl = el as HTMLElement;
+            const classes = Array.from(el.classList);
+            
+            // Check if element has any primary-related classes
+            const hasPrimaryClass = classes.some(cls => 
+              cls.includes('primary') || 
+              cls.includes('gradient') || 
+              cls.includes('from-') || 
+              cls.includes('to-')
+            );
+            
+            if (hasPrimaryClass) {
+              console.log("🎨 LEFT PANEL - Found element with primary classes:", el, classes);
+              
+              // Apply all possible primary styles
+              if (classes.includes('bg-primary')) {
+                htmlEl.style.backgroundColor = primaryColor;
+              }
+              if (classes.includes('text-primary')) {
+                htmlEl.style.color = primaryColor;
+              }
+              if (classes.includes('border-primary')) {
+                htmlEl.style.borderColor = primaryColor;
+              }
+              if (classes.includes('from-primary')) {
+                htmlEl.style.setProperty('--tw-gradient-from', primaryColor);
+              }
+              if (classes.includes('to-primary')) {
+                htmlEl.style.setProperty('--tw-gradient-to', primaryColor);
+              }
+            }
+          });
+          
+          return true; // Found and processed
+        } else {
+          console.log("🎨 LEFT PANEL - Form container NOT found!");
+          return false; // Not found
+        }
+      };
+      
+      // Try immediately
+      checkAndApplyColors();
+      
+      // Try again after delays
+      setTimeout(checkAndApplyColors, 500);
+      setTimeout(checkAndApplyColors, 1000);
+      setTimeout(checkAndApplyColors, 2000);
+      
+      // Cleanup function
+      return () => {
+        const styleToRemove = document.getElementById("form-theme-scoped");
+        if (styleToRemove) {
+          styleToRemove.remove();
+        }
+      };
     }
   }, [formConfig]);
 
+  // Convert color name to hex if needed
+  const normalizeColor = (color: string): string => {
+    // If it's already a hex color, return as is
+    if (color.startsWith('#')) {
+      return color;
+    }
+    
+    // Convert common color names to hex
+    const colorMap: { [key: string]: string } = {
+      'red': '#ef4444',
+      'blue': '#3b82f6',
+      'green': '#10b981',
+      'yellow': '#f59e0b',
+      'purple': '#8b5cf6',
+      'pink': '#ec4899',
+      'indigo': '#6366f1',
+      'orange': '#f97316',
+      'teal': '#14b8a6',
+      'cyan': '#06b6d4',
+      'lime': '#84cc16',
+      'emerald': '#10b981',
+      'violet': '#8b5cf6',
+      'fuchsia': '#d946ef',
+      'rose': '#f43f5e',
+      'sky': '#0ea5e9',
+      'amber': '#f59e0b',
+      'slate': '#64748b',
+      'gray': '#6b7280',
+      'zinc': '#71717a',
+      'neutral': '#737373',
+      'stone': '#78716c'
+    };
+    
+    return colorMap[color.toLowerCase()] || color;
+  };
+
   // Generate a darker shade of a color for hover states
-  const getDarkerShade = (hexColor: string): string => {
+  const getDarkerShade = (color: string): string => {
+    const hexColor = normalizeColor(color);
+    
+    // Ensure it's a valid hex color
+    if (!hexColor.startsWith('#') || hexColor.length !== 7) {
+      console.warn('Invalid hex color:', hexColor);
+      return '#ef4444'; // fallback to red
+    }
+    
     // Convert hex to RGB
     const r = parseInt(hexColor.substring(1, 3), 16);
     const g = parseInt(hexColor.substring(3, 5), 16);
     const b = parseInt(hexColor.substring(5, 7), 16);
+    
+    // Check for valid RGB values
+    if (isNaN(r) || isNaN(g) || isNaN(b)) {
+      console.warn('Invalid RGB values:', { r, g, b });
+      return '#bf3636'; // fallback darker red
+    }
     
     // Make each component darker by reducing by 20%
     const darkerR = Math.max(0, Math.floor(r * 0.8));
@@ -143,8 +479,16 @@ interface LeftPanelProps {
   };
 
   // Helper: convert HEX -> HSL string "H S% L%" for Tailwind CSS variables
-  const hexToHslString = (hex: string): string => {
+  const hexToHslString = (color: string): string => {
+    const hex = normalizeColor(color);
     const clean = hex.replace('#', '');
+    
+    // Ensure we have a valid hex color
+    if (clean.length !== 6) {
+      console.warn('Invalid hex color for HSL conversion:', hex);
+      return '0 84% 60%'; // fallback HSL for red
+    }
+    
     const r = parseInt(clean.substring(0, 2), 16) / 255;
     const g = parseInt(clean.substring(2, 4), 16) / 255;
     const b = parseInt(clean.substring(4, 6), 16) / 255;

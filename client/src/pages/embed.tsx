@@ -272,12 +272,62 @@ export default function EmbedForm() {
     if (formConfig?.theme?.colors) {
       const { colors } = formConfig.theme;
 
+      // Convert color name to hex if needed
+      const normalizeColor = (color: string): string => {
+        // If it's already a hex color, return as is
+        if (color.startsWith('#')) {
+          return color;
+        }
+        
+        // Convert common color names to hex
+        const colorMap: { [key: string]: string } = {
+          'red': '#ef4444',
+          'blue': '#3b82f6',
+          'green': '#10b981',
+          'yellow': '#f59e0b',
+          'purple': '#8b5cf6',
+          'pink': '#ec4899',
+          'indigo': '#6366f1',
+          'orange': '#f97316',
+          'teal': '#14b8a6',
+          'cyan': '#06b6d4',
+          'lime': '#84cc16',
+          'emerald': '#10b981',
+          'violet': '#8b5cf6',
+          'fuchsia': '#d946ef',
+          'rose': '#f43f5e',
+          'sky': '#0ea5e9',
+          'amber': '#f59e0b',
+          'slate': '#64748b',
+          'gray': '#6b7280',
+          'zinc': '#71717a',
+          'neutral': '#737373',
+          'stone': '#78716c'
+        };
+        
+        return colorMap[color.toLowerCase()] || color;
+      };
+
       // Generate a darker shade of a color for hover states
-      const getDarkerShade = (hexColor: string): string => {
+      const getDarkerShade = (color: string): string => {
+        const hexColor = normalizeColor(color);
+        
+        // Ensure it's a valid hex color
+        if (!hexColor.startsWith('#') || hexColor.length !== 7) {
+          console.warn('Invalid hex color:', hexColor);
+          return '#ef4444'; // fallback to red
+        }
+        
         // Convert hex to RGB
         const r = parseInt(hexColor.substring(1, 3), 16);
         const g = parseInt(hexColor.substring(3, 5), 16);
         const b = parseInt(hexColor.substring(5, 7), 16);
+        
+        // Check for valid RGB values
+        if (isNaN(r) || isNaN(g) || isNaN(b)) {
+          console.warn('Invalid RGB values:', { r, g, b });
+          return '#bf3636'; // fallback darker red
+        }
         
         // Make each component darker by reducing by 20%
         const darkerR = Math.max(0, Math.floor(r * 0.8));
@@ -289,23 +339,26 @@ export default function EmbedForm() {
       };
 
       // Use primary color from form config, fallback to localStorage if not available
-      const primaryColor = colors.primary || localStorage.getItem('custom-theme-primary') || "#10b981";
+      const rawColor = colors.primary || localStorage.getItem('custom-theme-primary') || "#10b981";
+      const primaryColor = normalizeColor(rawColor);
       const savedSecondary = localStorage.getItem('custom-theme-secondary') || "#a855f7";
       const savedAccent = localStorage.getItem('custom-theme-accent') || "#2dd4bf";
       const savedFont = localStorage.getItem('custom-theme-font') || "'Poppins', sans-serif";
       
-      // Apply custom theme settings to match the main application
-      document.documentElement.style.setProperty('--color-primary', primaryColor);
-      document.documentElement.style.setProperty('--color-primary-dark', getDarkerShade(primaryColor));
-      document.documentElement.style.setProperty('--color-secondary', savedSecondary);
-      document.documentElement.style.setProperty('--color-accent', savedAccent);
-      document.documentElement.style.setProperty('--color-background', '#ffffff'); // Always white
-      document.documentElement.style.setProperty('--color-foreground', '#1e293b'); // Always dark slate
-      document.documentElement.style.setProperty('--font-primary', savedFont);
-
-      // Set primary color in HSL so Tailwind "primary" tokens (e.g., bg-primary/10) match the chosen theme
-      const hexToHslString = (hex: string): string => {
+      console.log("🎨 EMBED - Applying form color:", rawColor, "->", primaryColor);
+      console.log("🎨 EMBED - Form config colors:", colors);
+      
+      // Helper function to convert HEX to HSL string
+      const hexToHslString = (color: string): string => {
+        const hex = normalizeColor(color);
         const clean = hex.replace('#', '');
+        
+        // Ensure we have a valid hex color
+        if (clean.length !== 6) {
+          console.warn('Invalid hex color for HSL conversion:', hex);
+          return '0 84% 60%'; // fallback HSL for red
+        }
+        
         const r = parseInt(clean.substring(0, 2), 16) / 255;
         const g = parseInt(clean.substring(2, 4), 16) / 255;
         const b = parseInt(clean.substring(4, 6), 16) / 255;
@@ -331,32 +384,193 @@ export default function EmbedForm() {
         }
         return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
       };
-      document.documentElement.style.setProperty("--primary", hexToHslString(primaryColor));
+      
+      // Create scoped CSS variables for form components only (NOT global)
+      const styleEl = document.createElement("style");
+      styleEl.id = "embed-form-theme-scoped";
+      styleEl.textContent = `
+        /* Target the main form container */
+        [data-testid="embed-form-container"],
+        [data-testid="embed-form-container"] * {
+          --color-primary: ${primaryColor} !important;
+          --color-primary-dark: ${getDarkerShade(primaryColor)} !important;
+          --color-secondary: ${savedSecondary} !important;
+          --color-accent: ${savedAccent} !important;
+          --color-background: #ffffff !important;
+          --color-foreground: #1e293b !important;
+          --font-primary: ${savedFont} !important;
+        }
+        
+        /* Target Tailwind primary classes within form */
+        [data-testid="embed-form-container"] .border-primary,
+        [data-testid="embed-form-container"] .bg-primary,
+        [data-testid="embed-form-container"] .text-primary,
+        [data-testid="embed-form-container"] .bg-primary\\/10,
+        [data-testid="embed-form-container"] .bg-primary\\/5,
+        [data-testid="embed-form-container"] .from-primary,
+        [data-testid="embed-form-container"] .to-primary\\/80 {
+          --primary: ${hexToHslString(primaryColor)} !important;
+        }
+        
+        /* Override Tailwind's primary color for form elements with higher specificity */
+        [data-testid="embed-form-container"] .border-primary {
+          border-color: ${primaryColor} !important;
+        }
+        
+        [data-testid="embed-form-container"] .bg-primary {
+          background-color: ${primaryColor} !important;
+        }
+        
+        [data-testid="embed-form-container"] .text-primary {
+          color: ${primaryColor} !important;
+        }
+        
+        [data-testid="embed-form-container"] .bg-primary\\/10 {
+          background-color: ${primaryColor}1a !important;
+        }
+        
+        [data-testid="embed-form-container"] .bg-primary\\/5 {
+          background-color: ${primaryColor}0d !important;
+        }
+        
+        [data-testid="embed-form-container"] .from-primary {
+          --tw-gradient-from: ${primaryColor} !important;
+        }
+        
+        [data-testid="embed-form-container"] .to-primary\\/80 {
+          --tw-gradient-to: ${primaryColor}cc !important;
+        }
+        
+        /* Additional high-specificity overrides */
+        [data-testid="embed-form-container"] div.border-primary {
+          border-color: ${primaryColor} !important;
+        }
+        
+        [data-testid="embed-form-container"] div.bg-primary\\/10 {
+          background-color: ${primaryColor}1a !important;
+        }
+        
+        [data-testid="embed-form-container"] span.text-primary {
+          color: ${primaryColor} !important;
+        }
+        
+        [data-testid="embed-form-container"] div.from-primary {
+          --tw-gradient-from: ${primaryColor} !important;
+        }
+        
+        [data-testid="embed-form-container"] div.to-primary\\/80 {
+          --tw-gradient-to: ${primaryColor}cc !important;
+        }
+        
+        /* Target specific button classes */
+        [data-testid="embed-form-container"] button.bg-primary {
+          background-color: ${primaryColor} !important;
+        }
+        
+        [data-testid="embed-form-container"] button.bg-primary\\/90 {
+          background-color: ${primaryColor}e6 !important;
+        }
+        
+        /* Target gradient text */
+        [data-testid="embed-form-container"] span.bg-gradient-to-r {
+          background-image: linear-gradient(to right, ${primaryColor}, ${primaryColor}b3) !important;
+        }
+        
+        /* Target hover states */
+        [data-testid="embed-form-container"] .hover\\:text-primary:hover {
+          color: ${primaryColor} !important;
+        }
+        
+        [data-testid="embed-form-container"] .hover\\:border-primary:hover {
+          border-color: ${primaryColor} !important;
+        }
+        
+        /* Target specific opacity variations */
+        [data-testid="embed-form-container"] .to-primary\\/70 {
+          --tw-gradient-to: ${primaryColor}b3 !important;
+        }
+      `;
+      
+      // Remove existing scoped styles
+      const existingStyle = document.getElementById("embed-form-theme-scoped");
+      if (existingStyle) {
+        existingStyle.remove();
+      }
+      
+      // Add new scoped styles
+      document.head.appendChild(styleEl);
+      
+      console.log("🎨 EMBED - CSS style element added to DOM");
+      console.log("🎨 EMBED - CSS content:", styleEl.textContent);
+
+      // Debug: Check if elements are being targeted and try direct injection
+      setTimeout(() => {
+        const formContainer = document.querySelector('[data-testid="embed-form-container"]');
+        if (formContainer) {
+          console.log("🎨 EMBED - Form container found:", formContainer);
+          const primaryElements = formContainer.querySelectorAll('.bg-primary, .text-primary, .border-primary');
+          console.log("🎨 EMBED - Primary elements found:", primaryElements.length, primaryElements);
+          
+          // Try direct style injection as fallback
+          console.log("🎨 EMBED - Attempting direct style injection...");
+          (formContainer as HTMLElement).style.setProperty('--color-primary', primaryColor);
+          (formContainer as HTMLElement).style.setProperty('--primary', hexToHslString(primaryColor));
+          
+          // Force apply to any elements with primary classes
+          primaryElements.forEach((el: Element) => {
+            const htmlEl = el as HTMLElement;
+            if (el.classList.contains('bg-primary')) {
+              htmlEl.style.backgroundColor = primaryColor;
+              console.log("🎨 EMBED - Applied bg-primary to:", el);
+            }
+            if (el.classList.contains('text-primary')) {
+              htmlEl.style.color = primaryColor;
+              console.log("🎨 EMBED - Applied text-primary to:", el);
+            }
+            if (el.classList.contains('border-primary')) {
+              htmlEl.style.borderColor = primaryColor;
+              console.log("🎨 EMBED - Applied border-primary to:", el);
+            }
+          });
+        } else {
+          console.log("🎨 EMBED - Form container NOT found!");
+        }
+      }, 1000);
 
       // Apply other theme colors from form config
       if (colors.text) {
-        document.documentElement.style.setProperty(
-          "--text-dark",
-          colors.text.dark,
-        );
-        document.documentElement.style.setProperty(
-          "--text-light",
-          colors.text.light,
-        );
+        const textStyleEl = document.createElement("style");
+        textStyleEl.id = "embed-form-text-theme-scoped";
+        textStyleEl.textContent = `
+          .embed-form-container,
+          [data-testid="embed-form-container"],
+          .form-renderer-container,
+          .form-step-container {
+            --text-dark: ${colors.text.dark} !important;
+            --text-light: ${colors.text.light} !important;
+          }
+        `;
+        
+        // Remove existing text styles
+        const existingTextStyle = document.getElementById("embed-form-text-theme-scoped");
+        if (existingTextStyle) {
+          existingTextStyle.remove();
+        }
+        
+        // Add new text styles
+        document.head.appendChild(textStyleEl);
       }
 
       // Clean up when component unmounts
       return () => {
-        document.documentElement.style.removeProperty("--color-primary");
-        document.documentElement.style.removeProperty("--color-primary-dark");
-        document.documentElement.style.removeProperty("--color-secondary");
-        document.documentElement.style.removeProperty("--color-accent");
-        document.documentElement.style.removeProperty("--color-background");
-        document.documentElement.style.removeProperty("--color-foreground");
-        document.documentElement.style.removeProperty("--font-primary");
-        document.documentElement.style.removeProperty("--primary");
-        document.documentElement.style.removeProperty("--text-dark");
-        document.documentElement.style.removeProperty("--text-light");
+        const styleToRemove = document.getElementById("embed-form-theme-scoped");
+        if (styleToRemove) {
+          styleToRemove.remove();
+        }
+        const textStyleToRemove = document.getElementById("embed-form-text-theme-scoped");
+        if (textStyleToRemove) {
+          textStyleToRemove.remove();
+        }
       };
     }
   }, [formConfig]);
