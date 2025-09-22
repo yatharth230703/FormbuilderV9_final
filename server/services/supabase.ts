@@ -62,7 +62,8 @@ export async function createFormConfig(
   language = 'en',
   domain: string | null = null,
   userId: string | null = null,
-  iconMode: string = 'lucide'
+  iconMode: string = 'lucide',
+  color: string | null = null
 ): Promise<number> {
   if (!supabase) {
     throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
@@ -83,7 +84,8 @@ export async function createFormConfig(
         language,
         domain: finalDomain,
         user_uuid: userId,
-        icon_mode: iconMode  // Already correct snake_case
+        icon_mode: iconMode,  // Already correct snake_case
+        color: color          // Add color parameter
       }
     ])
     .select('id')
@@ -105,6 +107,7 @@ export async function createFormConfig(
     language: language,
     domain: finalDomain,
     iconMode: iconMode,
+    color: color,
     formId: formId
   });
   
@@ -134,7 +137,7 @@ export async function createFormConfig(
  * @param id The form configuration ID
  * @returns The form configuration or null if not found
  */
-export async function getFormConfig(id: number): Promise<{ id: number; label: string; config: FormConfig; created_at: string; user_uuid: string | null; form_console?: any; language: string; domain: string; url?: string; iconMode?: string } | null> {
+export async function getFormConfig(id: number): Promise<{ id: number; label: string; config: FormConfig; created_at: string; user_uuid: string | null; form_console?: any; language: string; domain: string; url?: string; iconMode?: string; color?: string } | null> {
   if (!supabase) {
     throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
   }
@@ -159,13 +162,15 @@ export async function getFormConfig(id: number): Promise<{ id: number; label: st
   // Map snake_case database fields to camelCase for frontend
   const mappedData = {
     ...data,
-    iconMode: (data as any)?.icon_mode || 'lucide' // Map icon_mode to iconMode
+    iconMode: (data as any)?.icon_mode || 'lucide', // Map icon_mode to iconMode
+    color: (data as any)?.color || null // Ensure color is explicitly mapped
   };
 
   console.log("✅ SUPABASE - Form config retrieved:", {
     id: mappedData?.id,
     label: mappedData?.label,
     iconMode: mappedData?.iconMode,
+    color: mappedData?.color,
     hasConfig: !!mappedData?.config
   });
 
@@ -183,7 +188,7 @@ export async function getFormByProperties(
   language: string,
   label: string,
   domain: string
-): Promise<{ id: number; label: string; config: FormConfig; created_at: string; user_uuid: string | null; form_console?: any; language: string; domain: string; url?: string; iconMode?: string } | null> {
+): Promise<{ id: number; label: string; config: FormConfig; created_at: string; user_uuid: string | null; form_console?: any; language: string; domain: string; url?: string; iconMode?: string; color?: string } | null> {
   if (!supabase) {
     throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
   }
@@ -213,7 +218,8 @@ export async function getFormByProperties(
   // Map snake_case database fields to camelCase for frontend
   const mappedData = {
     ...data,
-    iconMode: (data as any)?.icon_mode || 'lucide' // Map icon_mode to iconMode
+    iconMode: (data as any)?.icon_mode || 'lucide', // Map icon_mode to iconMode
+    color: (data as any)?.color || null // Ensure color is explicitly mapped
   };
 
   // Ensure config.steps is properly structured as an array
@@ -250,7 +256,7 @@ export async function getFormByProperties(
  * Gets all form configurations from Supabase
  * @returns Array of form configurations
  */
-export async function getAllFormConfigs(): Promise<{ id: number; label: string; config: FormConfig; created_at: string; user_uuid: string | null }[]> {
+export async function getAllFormConfigs(): Promise<{ id: number; label: string; config: FormConfig; created_at: string; user_uuid: string | null; color?: string }[]> {
   if (!supabase) {
     throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
   }
@@ -281,7 +287,7 @@ export async function getAllFormConfigs(): Promise<{ id: number; label: string; 
  * @param userId The user ID to filter forms by
  * @returns Array of form configurations owned by the user
  */
-export async function getUserFormConfigs(userId: string): Promise<{ id: number; label: string; config: FormConfig; created_at: string; user_uuid: string | null }[]> {
+export async function getUserFormConfigs(userId: string): Promise<{ id: number; label: string; config: FormConfig; created_at: string; user_uuid: string | null; color?: string }[]> {
   if (!supabase) {
     throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
   }
@@ -989,6 +995,41 @@ export async function updateFormProperties(
     console.log(`Updated form properties for form ${formId}`);
   } catch (err) {
     console.error('Error in updateFormProperties:', err);
+    throw err;
+  }
+}
+
+/**
+ * Updates form color
+ * @param formId The form ID
+ * @param color The hex color code
+ */
+export async function updateFormColor(
+  formId: number,
+  color: string
+): Promise<void> {
+  if (!supabase) {
+    throw new Error('Supabase client is not initialized. Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+  }
+
+  try {
+    console.log(`🎨 SUPABASE - Updating color for form ${formId} to ${color}`);
+    
+    const { error } = await supabase
+      .from('form_config')
+      .update({
+        color: color
+      })
+      .eq('id', formId);
+
+    if (error) {
+      console.error('🎨 Error updating form color:', error);
+      throw new Error(`Failed to update form color: ${error.message}`);
+    }
+
+    console.log(`🎨 Updated color for form ${formId} to ${color}`);
+  } catch (err) {
+    console.error('Error in updateFormColor:', err);
     throw err;
   }
 }

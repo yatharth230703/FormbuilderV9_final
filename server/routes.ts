@@ -557,14 +557,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { prompt, domain, label, language, icon_mode } = req.body;
+      const { prompt, domain, label, language, icon_mode, color } = req.body;
       
       console.log("🔍 API Request received:", {
         prompt: prompt ? `${prompt.substring(0, 50)}...` : "undefined",
         domain: domain || "undefined",
         label: label || "undefined", 
         language: language || "undefined",
-        icon_mode: icon_mode || "undefined"
+        icon_mode: icon_mode || "undefined",
+        color: color || "undefined"
       });
       
       if (!prompt) {
@@ -580,6 +581,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (icon_mode && !["lucide", "emoji", "none"].includes(icon_mode)) {
         return res.status(400).json({ error: "icon_mode must be one of: 'lucide', 'emoji', 'none'" });
       }
+      
+      // Validate color format if provided
+      if (color && !/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color)) {
+        return res.status(400).json({ error: "color must be a valid hex color code (e.g., #FF5733)" });
+      }
 
       // Use provided values or defaults
       const finalLanguage = language || "en";
@@ -594,7 +600,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         finalLabel: finalLabel,
         finalLanguage: finalLanguage,
         finalDomain: finalDomain,
-        finalIconMode: finalIconMode
+        finalIconMode: finalIconMode,
+        color: color
       });
 
       // Generate form config
@@ -635,7 +642,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         finalLabel: finalLabel,
         finalLanguage: finalLanguage,
         finalDomain: finalDomain,
-        finalIconMode: finalIconMode
+        finalIconMode: finalIconMode,
+        color: color
       });
       
       // Fix: Use formConfig.config instead of formConfig to avoid double-wrapping
@@ -647,7 +655,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         finalLanguage, 
         finalDomain, 
         userId,
-        finalIconMode
+        finalIconMode,
+        color
       );
 
       // Deduct credit after successful generation
@@ -665,7 +674,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         language: form.language,
         label: form.label,
         domain: form.domain,
-        iconMode: form.iconMode
+        iconMode: form.iconMode,
+        color: form.color
       });
     } catch (error: any) {
       console.error("/api/create-form-url error:", error);
@@ -906,6 +916,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating form properties:", error);
       return res.status(500).json({ error: "Failed to update form properties" });
+    }
+  });
+  
+  // Update form color
+  app.put("/api/forms/:id/color", async (req, res) => {
+    try {
+      console.log("🎨 Color update request received:", { 
+        params: req.params,
+        body: req.body,
+        user: req.session.user?.supabaseUserId
+      });
+      
+      const userId = req.session.user?.supabaseUserId;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const formId = parseInt(req.params.id);
+      if (isNaN(formId)) {
+        return res.status(400).json({ error: "Invalid form ID" });
+      }
+
+      const { color } = req.body;
+      console.log("🎨 Processing color update:", { formId, color });
+
+      // Validate color format (hex color)
+      if (!color || !/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color)) {
+        console.log("🎨 Invalid color format:", color);
+        return res.status(400).json({ error: "Valid color in hex format is required" });
+      }
+
+      // Check if form exists and belongs to user
+      const form = await supabaseService.getFormConfig(formId);
+      if (!form) {
+        console.log("🎨 Form not found:", formId);
+        return res.status(404).json({ error: "Form not found" });
+      }
+      
+      if (form.user_uuid !== userId) {
+        console.log("🎨 Form belongs to different user:", { formUserId: form.user_uuid, requestUserId: userId });
+        return res.status(403).json({ error: "You don't have permission to update this form" });
+      }
+
+      // Update form color
+      console.log("🎨 Updating form color in database");
+      await supabaseService.updateFormColor(formId, color);
+
+      console.log("🎨 Color update successful");
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("🎨 Error updating form color:", error);
+      return res.status(500).json({ error: "Failed to update form color" });
     }
   });
 

@@ -25,12 +25,14 @@ interface FormConfig {
       };
     };
   };
-  steps: Array<{
+  steps?: Array<{
     type: string;
     title: string;
     subtitle: string;
     [key: string]: any;
   }>;
+  // Support for double-wrapped config structure
+  config?: FormConfig;
   [key: string]: any;
 }
 
@@ -246,7 +248,7 @@ export function FormPreviewPage() {
                     </div>
                     <div>
                       <Label className="font-semibold">Number of Steps</Label>
-                      <p>{formData.config.steps.length}</p>
+                      <p>{formData.config.config ? (formData.config.config.steps?.length || 0) : (formData.config.steps?.length || 0)}</p>
                     </div>
                     <div>
                       <Label className="font-semibold">Form ID</Label>

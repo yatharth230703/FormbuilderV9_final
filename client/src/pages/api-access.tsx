@@ -188,7 +188,8 @@ console.log(res.data);`}
     "domain": "my_custom_domain",
     "label": "feedback_form_v1",
     "language": "en",
-    "icon_mode": "emoji"
+    "icon_mode": "emoji",
+    "color": "#FF5733"
   }'`}
                   </pre>
                 </div>
@@ -218,7 +219,8 @@ response = requests.post(
     "domain": "my_custom_domain",
     "label": "feedback_form_v1", 
     "language": "en",
-    "icon_mode": "emoji"
+    "icon_mode": "emoji",
+    "color": "#FF5733"
   }
 )
 
@@ -246,7 +248,8 @@ const customRes = await axios.post("${serverOrigin}/api/create-form-url", {
   domain: "my_custom_domain",
   label: "feedback_form_v1",
   language: "en", 
-  icon_mode: "emoji"
+  icon_mode: "emoji",
+  color: "#FF5733"
 }, {
   headers: {
     Authorization: "Bearer <your_api_key_here>",
@@ -266,6 +269,7 @@ console.log(customRes.data);`}
                       <li><strong>label</strong> (optional): Custom form label. Generated from form title if not provided</li>
                       <li><strong>language</strong> (optional): Form language. Options: <code className="bg-gray-100 px-1 rounded">'en'</code> or <code className="bg-gray-100 px-1 rounded">'de'</code>. Defaults to 'en'</li>
                       <li><strong>icon_mode</strong> (optional): Icon style for form elements. Options: <code className="bg-gray-100 px-1 rounded">'lucide'</code> (line icons), <code className="bg-gray-100 px-1 rounded">'emoji'</code> (emoji icons), or <code className="bg-gray-100 px-1 rounded">'none'</code> (no icons). Defaults to 'lucide'</li>
+                      <li><strong>color</strong> (optional): The primary color for the form in hex format (e.g., <code className="bg-gray-100 px-1 rounded">'#FF5733'</code>). This color will be used for buttons, highlights, and other UI elements. Defaults to green (<code className="bg-gray-100 px-1 rounded">'#10b981'</code>) if not specified.</li>
                     </ul>
                   </div>
                   <div>
@@ -277,7 +281,8 @@ console.log(customRes.data);`}
   "language": "en", 
   "label": "feedback_form_v1",
   "domain": "my_custom_domain",
-  "iconMode": "emoji"
+  "iconMode": "emoji",
+  "color": "#FF5733"
 }`}
                     </pre>
                   </div>
@@ -287,6 +292,14 @@ console.log(customRes.data);`}
                       <li><code className="bg-blue-50 px-2 py-1 rounded text-blue-800">'lucide'</code> - Modern line icons (default)</li>
                       <li><code className="bg-yellow-50 px-2 py-1 rounded text-yellow-800">'emoji'</code> - Colorful emoji icons</li>
                       <li><code className="bg-gray-50 px-2 py-1 rounded text-gray-800">'none'</code> - No icons, text only</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-green-600">🎨 Color Options</h4>
+                    <ul className="list-disc list-inside text-gray-600 space-y-1 mt-2">
+                      <li>Specify any valid hex color code (e.g., <code className="bg-red-50 px-2 py-1 rounded text-red-800">'#FF5733'</code>, <code className="bg-blue-50 px-2 py-1 rounded text-blue-800">'#3498DB'</code>)</li>
+                      <li>The color will be used for buttons, highlights, and other UI elements</li>
+                      <li>If not specified, defaults to green (<code className="bg-green-50 px-2 py-1 rounded text-green-800">'#10b981'</code>)</li>
                     </ul>
                   </div>
                   <div>

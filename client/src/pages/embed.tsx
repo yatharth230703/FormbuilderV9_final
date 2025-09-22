@@ -40,12 +40,27 @@ function IconModeInitializer({ iconMode }: { iconMode: 'lucide' | 'emoji' | 'non
   return null;
 }
 
+// Define an extended form response type that includes the color property
+interface FormConfigResponse {
+  id: number;
+  label: string;
+  config: FormConfig & { config?: FormConfig }; // Allow for double-wrapped config
+  created_at: string;
+  iconMode?: string;
+  color?: string; // Add the color property
+  form_console?: any;
+  language?: string;
+  domain?: string;
+  url?: string;
+}
+
 export default function EmbedForm() {
   const [formConfig, setFormConfig] = useState<FormConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formId, setFormId] = useState<number | null>(null);
   const [iconMode, setIconMode] = useState<'lucide' | 'emoji' | 'none'>('lucide');
+  const [formColor, setFormColor] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Set theme for embedded forms
@@ -203,25 +218,13 @@ export default function EmbedForm() {
         if (language && label && domain) {
           // New URL structure
           console.log("🔍 EMBED PAGE - Using new URL structure with properties");
-          response = await apiRequest<{
-            id: number;
-            label: string;
-            config: FormConfig;
-            created_at: string;
-            iconMode?: string;
-          }>({
+          response = await apiRequest<FormConfigResponse>({
             url: `/api/forms/by-properties?language=${encodeURIComponent(language)}&label=${encodeURIComponent(label)}&domain=${encodeURIComponent(domain)}`,
           });
         } else if (oldFormId) {
           // Old URL structure (backward compatibility)
           console.log("🔍 EMBED PAGE - Using old URL structure with form ID:", oldFormId);
-          response = await apiRequest<{
-            id: number;
-            label: string;
-            config: FormConfig;
-            created_at: string;
-            iconMode?: string;
-          }>({
+          response = await apiRequest<FormConfigResponse>({
             url: `/api/forms/${oldFormId}`,
           });
         }
@@ -233,8 +236,12 @@ export default function EmbedForm() {
             iconMode: response.iconMode,
             hasConfig: !!response.config,
             configSteps: response.config.steps?.length || 0,
-            configTheme: !!response.config.theme
+            configTheme: !!response.config.theme,
+            color: response.color // Log the color value from the database
           });
+          
+          // Store the color from the form_config table
+          setFormColor(response.color || null);
           
           console.log("📄 EMBED PAGE - Full form config:", JSON.stringify(response.config, null, 2));
           
@@ -637,8 +644,10 @@ export default function EmbedForm() {
         return `#${darkerR.toString(16).padStart(2, '0')}${darkerG.toString(16).padStart(2, '0')}${darkerB.toString(16).padStart(2, '0')}`;
       };
 
-      // Use primary color from form config, fallback to localStorage if not available
-      const rawColor = colors.primary || localStorage.getItem('custom-theme-primary') || "#10b981";
+      // Use color from form_config.color column if available, 
+      // otherwise use colors.primary from form config, 
+      // then fallback to localStorage, and finally to green (#10b981)
+      const rawColor = formColor || colors.primary || localStorage.getItem('custom-theme-primary') || "#10b981";
       const primaryColor = normalizeColor(rawColor);
       const savedSecondary = localStorage.getItem('custom-theme-secondary') || "#a855f7";
       const savedAccent = localStorage.getItem('custom-theme-accent') || "#2dd4bf";
@@ -872,7 +881,7 @@ export default function EmbedForm() {
         }
       };
     }
-  }, [formConfig]);
+  }, [formConfig, formColor]);
 
   // Enhanced ResizeObserver to measure content height and send to parent
   useEffect(() => {

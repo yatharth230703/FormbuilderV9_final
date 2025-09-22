@@ -33,6 +33,7 @@ interface FormItem {
   config: any;
   language?: string;
   domain?: string;
+  color?: string;
 }
 
 // Helper to format label
@@ -75,6 +76,7 @@ export function DashboardPage() {
           config: form.config,
           language: form.language || "en",
           domain: form.domain || "",
+          color: form.color || "#10b981", // Default to green if color is not set
         }));
 
         setForms(formattedForms);
@@ -303,6 +305,7 @@ export function DashboardPage() {
                       currentLabel={form.label}
                       currentLanguage={form.language}
                       currentDomain={form.domain}
+                      currentColor={form.color}
                       onUpdate={() => {
                         // Refresh forms after update
                         const fetchForms = async () => {
@@ -316,6 +319,7 @@ export function DashboardPage() {
                               config: form.config,
                               language: form.language || "en",
                               domain: form.domain || "",
+                              color: form.color || "#10b981", // Default to green if color is not set
                             }));
                             setForms(formattedForms);
                           } catch (err) {
