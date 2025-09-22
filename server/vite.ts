@@ -109,7 +109,8 @@ export function serveStatic(app: Express) {
   // Handle SPA routing - serve index.html for all non-API routes
   app.get("*", (req, res) => {
     // Don't serve index.html for API routes
-    if (req.path.startsWith("/api")) {
+    // Use strict prefix match so pages like "/api-access" are NOT treated as API
+    if (req.path === "/api" || req.path.startsWith("/api/")) {
       return res.status(404).json({ error: "Not Found" });
     }
     
