@@ -10,7 +10,7 @@ interface AdminContextType {
   logout: () => Promise<void>;
   checkAuth: () => Promise<boolean>;
 }
-
+// comments 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 export function AdminProvider({ children }: { children: ReactNode }) {
