@@ -25,6 +25,8 @@ const app = express();
 // use secure cookies behind a reverse proxy; otherwise Express thinks the
 // connection is HTTP and will refuse to set/send the cookie. 1 = trust first
 // hop only.
+
+// adding a comment here for mac push
 app.set('trust proxy', 1);
 
 // Production-ready session configuration
