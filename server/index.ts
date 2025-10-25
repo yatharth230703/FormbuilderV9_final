@@ -49,28 +49,25 @@ const corsOptions = {
   origin: function (origin: string | undefined, callback: Function) {
     // Allow requests with no origin (like mobile apps, local files, or curl requests)
     if (!origin) return callback(null, true);
-    
+
     // Allow localhost origins
     if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
       return callback(null, true);
     }
-    
+
     // Allow the main frontend origin
     if (origin === allowedOrigin) {
       return callback(null, true);
     }
-    
-    // Allow any origin in development
-    if (!isProduction) {
-      return callback(null, true);
-    }
-    
-    // In production, only allow the main domain
+
+    // Allow the main domain in production
     if (origin === process.env.APP_URL) {
       return callback(null, true);
     }
-    
-    callback(new Error('Not allowed by CORS'));
+
+    // Allow all origins for form embedding (both development and production)
+    // This enables forms to be embedded on any customer website
+    callback(null, true);
   },
   credentials: true,
 };
